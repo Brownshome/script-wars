@@ -1,10 +1,13 @@
 package brownshome.server.connection;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 import brownshome.server.Server;
-import brownshome.server.game.*;
+import brownshome.server.game.GameHandler;
+import brownshome.server.game.OutOfIDsException;
+import brownshome.server.game.Player;
 
 /**
  * This class handles the connections to each player and times out players when they take too long.
@@ -73,6 +76,8 @@ public abstract class ConnectionHandler {
 					continue;
 				
 				buffer.flip();
+				sendData(player, buffer);
+				buffer.clear();
 			}
 			
 			sendData(player, buffer);
