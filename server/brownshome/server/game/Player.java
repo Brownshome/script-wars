@@ -1,11 +1,5 @@
 package brownshome.server.game;
 
-import java.util.logging.Level;
-
-import brownshome.server.Server;
-//Would the awt color be better?
-import javafx.scene.paint.Color;
-
 /** Holds the identifying information for each connected member.
  * This class is suitable for using as a key in a Map */
 public class Player {

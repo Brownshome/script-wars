@@ -57,7 +57,12 @@ public class TestGame implements Game {
 
 	@Override
 	public void displayGame(DisplayHandler handler) {
-		//DO NOTHING
+		handler.putGrid(new char[][] {
+			{'#', '#', '#', '#', '#'},
+			{' ', ' ', 'P', ' ', ' '}
+		});
+		
+		handler.print();
 	}
 
 	@Override

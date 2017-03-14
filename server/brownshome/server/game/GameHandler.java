@@ -1,11 +1,9 @@
 package brownshome.server.game;
 
-import java.util.*;
 import java.util.logging.Level;
 
 import brownshome.server.Server;
 import brownshome.server.connection.ConnectionHandler;
-import brownshome.server.game.GameHandler.GameState;
 
 public class GameHandler {
 	enum GameState {
