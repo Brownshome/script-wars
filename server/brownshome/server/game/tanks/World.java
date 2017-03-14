@@ -52,8 +52,10 @@ class World {
 		tankMap[tank.getY()][tank.getX()] = tank;
 	}
 
-	public void fireTank(Player player, Direction direction) {
-		Tank tank = tanks.get(player);
+	public void fireTank(Tank tank) {
+		tanksToFire.remove(tank); //This prevents weird infinite loops
+		
+		Direction direction = tank.getDirection();
 		
 		int x = tank.getX();
 		int y = tank.getY();
@@ -65,6 +67,10 @@ class World {
 		
 		Tank otherTank = getTank(x, y);
 		if(otherTank != null) {
+			if(tanksToFire.contains(otherTank)) {
+				fireTank(otherTank);
+			}
+			
 			otherTank.kill();
 			return;
 		}
@@ -83,11 +89,9 @@ class World {
 	}
 
 	public void fireTanks() {
-		for(Tank t : tanksToFire) {
-			fireTank(t.getOwner(), t.getDirection());
+		while(!tanksToFire.isEmpty()) {
+			fireTank(tanksToFire.iterator().next()); //not exactly efficient but it avoids concurrent mod exceptions
 		}
-		
-		tanksToFire.clear();
 	}
 
 	public void moveShots() {
