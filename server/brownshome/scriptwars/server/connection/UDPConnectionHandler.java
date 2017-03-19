@@ -1,13 +1,17 @@
-package brownshome.server.connection;
+package brownshome.scriptwars.server.connection;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 
-import brownshome.server.Server;
-import brownshome.server.game.*;
+import brownshome.scriptwars.server.Server;
+import brownshome.scriptwars.server.game.Game;
+import brownshome.scriptwars.server.game.Player;
 
 /**
  * Communicates over UDP with the client library. Each packet received is formatted as follows.
@@ -78,16 +82,16 @@ public class UDPConnectionHandler extends ConnectionHandler {
 				int playerCode = ID & 0xff;
 				int gameCode = (ID >> 8) & 0xff;
 
-				GameHandler gameHandler = GameHandler.getGame(gameCode);
+				Game game = Game.getGame(gameCode);
 
-				if(gameHandler == null) {
+				if(game == null) {
 					sendErrorPacket(new ConnectionDetails(packet));
 					continue;
 				}
 
 				UDPConnectionHandler connectionHandler;
 				try {
-					connectionHandler = (UDPConnectionHandler) gameHandler.connectionHandler;
+					connectionHandler = (UDPConnectionHandler) game.getConnectionHandler();
 				} catch(ClassCastException cce) {
 					Server.LOG.log(Level.SEVERE, "Incorrect Protcol byte", cce);
 					sendErrorPacket(new ConnectionDetails(packet));

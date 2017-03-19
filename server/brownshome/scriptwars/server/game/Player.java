@@ -1,4 +1,4 @@
-package brownshome.server.game;
+package brownshome.scriptwars.server.game;
 
 /** Holds the identifying information for each connected member.
  * This class is suitable for using as a key in a Map */

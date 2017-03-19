@@ -1,10 +1,16 @@
-package brownshome.server.game;
+package brownshome.scriptwars.server.game;
 
 import java.nio.ByteBuffer;
 
-import brownshome.server.Server;
+import brownshome.scriptwars.server.Server;
+import brownshome.scriptwars.server.connection.UDPConnectionHandler;
 
-public class TestGame implements Game {
+public class TestGame extends Game {
+	
+	public TestGame() throws OutOfIDsException {
+		super(new UDPConnectionHandler(), new DisplayHandler());
+	}
+
 	GameHandler handler;
 	boolean end = false;
 	
@@ -26,7 +32,7 @@ public class TestGame implements Game {
 	@Override
 	public void tick() {
 		if(end)
-			handler.gameEnded();
+			gameEnded();
 		
 		Server.LOG.info("Game tick");
 	}
@@ -45,13 +51,11 @@ public class TestGame implements Game {
 	@Override
 	public void processData(ByteBuffer data, Player player) {}
 
-	@Override
-	public String getName() {
+	public static String getName() {
 		return "Test game";
 	}
 
-	@Override
-	public String getDescription() {
+	public static String getDescription() {
 		return "A bare-bones game to test the networking";
 	}
 
@@ -68,11 +72,6 @@ public class TestGame implements Game {
 	@Override
 	public void stop() {
 		end = true;
-	}
-
-	@Override
-	public void setHandler(GameHandler gameHandler) {
-		this.handler = gameHandler;
 	}
 
 	@Override

@@ -1,4 +1,4 @@
-package brownshome.server.game.tanks;
+package brownshome.scriptwars.server.game.tanks;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import brownshome.server.game.DisplayHandler;
-import brownshome.server.game.Player;
+import brownshome.scriptwars.server.game.DisplayHandler;
+import brownshome.scriptwars.server.game.Player;
 
 class World {
 	List<Shot> shots = new ArrayList<>();

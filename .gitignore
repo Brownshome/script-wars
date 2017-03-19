@@ -13,4 +13,8 @@ hs_err_pid*
 /bin/
 
 .classpath
+/.settings/
 .project
+/build/
+
+WebContent/META-INF/MANIFEST.MF

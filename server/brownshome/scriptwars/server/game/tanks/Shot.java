@@ -1,4 +1,4 @@
-package brownshome.server.game.tanks;
+package brownshome.scriptwars.server.game.tanks;
 
 class Shot {
 	static final char BULLET = '•';

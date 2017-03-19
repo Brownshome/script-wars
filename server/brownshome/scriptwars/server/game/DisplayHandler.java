@@ -1,4 +1,4 @@
-package brownshome.server.game;
+package brownshome.scriptwars.server.game;
 
 public class DisplayHandler {
 	char[][] grid;

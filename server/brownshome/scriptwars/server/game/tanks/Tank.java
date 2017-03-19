@@ -1,6 +1,6 @@
-package brownshome.server.game.tanks;
+package brownshome.scriptwars.server.game.tanks;
 
-import brownshome.server.game.Player;
+import brownshome.scriptwars.server.game.Player;
 
 class Tank {
 	Player owner;

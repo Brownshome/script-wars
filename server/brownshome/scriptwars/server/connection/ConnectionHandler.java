@@ -1,13 +1,13 @@
-package brownshome.server.connection;
+package brownshome.scriptwars.server.connection;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
-import brownshome.server.Server;
-import brownshome.server.game.GameHandler;
-import brownshome.server.game.OutOfIDsException;
-import brownshome.server.game.Player;
+import brownshome.scriptwars.server.Server;
+import brownshome.scriptwars.server.game.Game;
+import brownshome.scriptwars.server.game.OutOfIDsException;
+import brownshome.scriptwars.server.game.Player;
 
 /**
  * This class handles the connections to each player and times out players when they take too long.
@@ -16,7 +16,7 @@ import brownshome.server.game.Player;
  * Strings have a short prefixed to them representing the length of the string.
  */
 public abstract class ConnectionHandler {
-	public GameHandler gameHandler;
+	public Game game;
 	
 	Player[] connectedPlayers = new Player[256];
 	Set<Player> activePlayers = new HashSet<>();
@@ -61,18 +61,18 @@ public abstract class ConnectionHandler {
 	abstract void sendData(Player player, ByteBuffer buffer);
 	
 	public synchronized void sendData() {
-		ByteBuffer buffer = ByteBuffer.wrap(new byte[gameHandler.game.getDataSize()]);
+		ByteBuffer buffer = ByteBuffer.wrap(new byte[game.getDataSize()]);
 		
-		if(!gameHandler.game.hasPerPlayerData()) {
-			if(gameHandler.game.getData(null, buffer))
+		if(!game.hasPerPlayerData()) {
+			if(game.getData(null, buffer))
 				return;
 			
 			buffer.flip();
 		}
 		
 		for(Player player : activePlayers) {
-			if(gameHandler.game.hasPerPlayerData()) {
-				if(!gameHandler.game.getData(player, buffer))
+			if(game.hasPerPlayerData()) {
+				if(!game.getData(player, buffer))
 					continue;
 				
 				buffer.flip();
@@ -91,7 +91,7 @@ public abstract class ConnectionHandler {
 	 * If the number is negative there was no free ID to be generated */
 	public int getID() {
 		try {
-			return getProtocolByte() << 16 | gameHandler.getID() << 8 | createPlayer();
+			return getProtocolByte() << 16 | game.getID() << 8 | createPlayer();
 		} catch (OutOfIDsException e) {
 			return -1;
 		}
@@ -113,17 +113,17 @@ public abstract class ConnectionHandler {
 	}
 	
 	public synchronized void makePlayerActive(Player player) {
-		if(activePlayers.size() >= gameHandler.game.getMaximumPlayers())
-			throw new IllegalStateException("Game " + gameHandler.game.getName() + " has reached it's maximum player count.");
+		if(activePlayers.size() >= game.getMaximumPlayers())
+			throw new IllegalStateException("Game " + game.getName() + " has reached it's maximum player count.");
 		
 		player.setActive(true);
 		activePlayers.add(player);
-		gameHandler.game.addPlayer(player);
+		game.addPlayer(player);
 	}
 	
 	public synchronized void incommingData(ByteBuffer passingBuffer, Player player) {
 		if(outstandingPlayers.remove(player)) {
-			gameHandler.game.processData(passingBuffer, player);
+			game.processData(passingBuffer, player);
 			
 			if(outstandingPlayers.isEmpty())
 				notify(); //Wake the game thread if it is waiting for responses

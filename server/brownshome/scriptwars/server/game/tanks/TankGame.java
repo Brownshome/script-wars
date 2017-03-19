@@ -1,12 +1,14 @@
-package brownshome.server.game.tanks;
+package brownshome.scriptwars.server.game.tanks;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-import brownshome.server.game.DisplayHandler;
-import brownshome.server.game.Game;
-import brownshome.server.game.GameHandler;
-import brownshome.server.game.Player;
+import brownshome.scriptwars.server.connection.UDPConnectionHandler;
+import brownshome.scriptwars.server.game.DisplayHandler;
+import brownshome.scriptwars.server.game.Game;
+import brownshome.scriptwars.server.game.GameHandler;
+import brownshome.scriptwars.server.game.OutOfIDsException;
+import brownshome.scriptwars.server.game.Player;
 
 /* Each tick shots are moved x spaces. Then tanks shoot. Then tanks move
  
@@ -25,14 +27,33 @@ import brownshome.server.game.Player;
   
  */
 
-public class TankGame implements Game {
+public class TankGame extends Game {
 	GameHandler handler;
 	World world;
 	
-	public TankGame(boolean[][] map) {
+	public TankGame(boolean[][] map) throws OutOfIDsException {
+		super(new UDPConnectionHandler(), new DisplayHandler());
+		
 		this.world = new World(map, this);
 	}
 	
+	public TankGame() throws OutOfIDsException {
+		this(generateMap(5));
+	}
+	
+	private static boolean[][] generateMap(int size) {
+		boolean[][] map = new boolean[size][size];
+		
+		for(int i = 0; i < size; i++) {
+			map[0][i] = true;
+			map[i][0] = true;
+			map[size - 1][i] = true;
+			map[i][size - 1] = true;
+		}
+		
+		return map;
+	}
+
 	@Override
 	public boolean hasPerPlayerData() {
 		return true;
@@ -123,13 +144,11 @@ public class TankGame implements Game {
 		}
 	}
 
-	@Override
-	public String getName() {
+	public static String getName() {
 		return "Tank game";
 	}
 
-	@Override
-	public String getDescription() {
+	public static String getDescription() {
 		return "A tatical 2D tank game with stealth mechanics.";
 	}
 
@@ -141,11 +160,6 @@ public class TankGame implements Game {
 
 	@Override
 	public void stop() {}
-
-	@Override
-	public void setHandler(GameHandler gameHandler) {
-		handler = gameHandler;
-	}
 
 	@Override
 	public synchronized void addPlayer(Player player) {
