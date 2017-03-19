@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-		<title>Insert title here</title>
+		<title>Script-Wars</title>
 	</head>
 	<body>
 		<h1>Script Wars</h1>
@@ -17,14 +17,19 @@
     
         <h2>Available Games</h2>
         
-        <%@ page import = "brownshome.scriptwars.server.Server" %>
-        <%@ page import = "brownshome.scriptwars.server.game.GameType" %>
-        
-        <% int i = 0;
-        for(GameType game : Server.getGames()) {
-        	System.out.println(game.getName() + "<br>");
-        } %>
-        
-        <p><%= System.currentTimeMillis() %></p>
+        <table>
+            <tr>
+                <%-- Use EL instead, apparently this stuff is bad...--%>
+                <%@ page import = "brownshome.scriptwars.server.Server, brownshome.scriptwars.server.game.GameType" %>
+                <% for(GameType game : Server.getGames()) { %>
+                <td>
+                    <a href="games/<%= game.getName() %>">
+                        <img src="<%= game.getName() %>.png" alt="<%= game.getName() %>" style="width:128px;height:128px;">
+                        <h3>Tanks</h3>
+                    </a>
+                </td>
+                <% } %>
+            <tr>
+        </table>
 	</body>
 </html>

@@ -1,12 +1,10 @@
 package brownshome.scriptwars.server;
 
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import brownshome.scriptwars.server.game.GameCreationException;
-import brownshome.scriptwars.server.game.GameType;
-import brownshome.scriptwars.server.game.TestGame;
+import brownshome.scriptwars.server.game.*;
 import brownshome.scriptwars.server.game.tanks.TankGame;
 
 /** Main entrypoint of the server program. 
@@ -23,7 +21,11 @@ public class Server {
 		}
 	}
 	
-	public static List<GameType> getGames() {
+	public static Collection<GameType> getGames() {
 		return GameType.getGameTypes();
+	}
+
+	public static int getUserID(int gameID) {
+		return Game.getGame(gameID).getConnectionHandler().getID();
 	}
 }

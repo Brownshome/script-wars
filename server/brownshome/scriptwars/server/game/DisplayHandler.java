@@ -1,26 +1,102 @@
 package brownshome.scriptwars.server.game;
 
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.function.Consumer;
+
 public class DisplayHandler {
 	char[][] grid;
+	char[][] oldGrid;
 	
-	public void setGridSize(int x, int y) {
-		grid = new char[x][y];
+	Set<Consumer<ByteBuffer>> viewers = new HashSet<>(); //TODO thread safety
+	Set<Consumer<ByteBuffer>> newViewers = new HashSet<>(); //TODO thread safety
+	
+	/* Message format.
+	 * Type:
+	 * 	0 - bulk sync
+	 * 	1 - delta update
+	 * 
+	 * 	0: width, height, char data
+	 * 	1: {char, x, y}
+	 */
+	public void print() {
+		ByteBuffer buffer = getBulkSyncBuffer();
+		
+		for(Consumer<ByteBuffer> viewer : newViewers) {
+			viewer.accept(buffer.duplicate()); //send bulk update
+		}
+		
+		if(!shouldBulkSync()) {
+			ByteBuffer delta = getDeltaBuffer();
+			if(delta.remaining() < buffer.remaining())
+				buffer = delta;
+		}
+		
+		for(Consumer<ByteBuffer> viewer : viewers) {
+			viewer.accept(buffer.duplicate()); //duplicating for thread safety and async uploads
+		}
+		
+		if(oldGrid == null)
+			oldGrid = new char[getHeight()][getWidth()];
+		
+		for(int row = 0; row < grid.length; row++) {
+			System.arraycopy(grid[row], 0, oldGrid[row], 0, grid[row].length);
+		}
+		
+		viewers.addAll(newViewers);
+		newViewers.clear();
 	}
 	
-	public void print() {
-		System.out.println("Game Grid:");
+	private boolean shouldBulkSync() {
+		if(oldGrid == null || grid.length != oldGrid.length || grid[0].length != oldGrid[0].length) {
+			return true;
+		}
+		
+		return false;
+	}
+
+	private ByteBuffer getBulkSyncBuffer() {
+		ByteBuffer buffer = ByteBuffer.allocate(Byte.BYTES + Byte.BYTES + Byte.BYTES + Character.BYTES * getWidth() * getHeight());
+		
+		buffer.put((byte) 0);
+		buffer.put((byte) getWidth()).put((byte) getHeight());
 		
 		for(char[] row : grid) {
-			System.out.print('|');
-			
 			for(char c : row) {
-				System.out.print(c);
+				buffer.putChar(c);
 			}
-			
-			System.out.println('|');
 		}
+		
+		buffer.flip();
+		return buffer;
 	}
 	
+	private ByteBuffer getDeltaBuffer() {
+		ByteBuffer buffer = ByteBuffer.allocate(Byte.BYTES + (Character.BYTES + Byte.BYTES + Byte.BYTES) * getWidth() * getHeight());
+
+		buffer.put((byte) 1);
+		
+		for(int y = 0; y < grid.length; y++) {
+			for(int x = 0; x < grid[y].length; x++) {
+				if(oldGrid[y][x] != grid[y][x]) {
+					buffer.putChar(grid[y][x]).put((byte) x).put((byte) y);
+				}
+			}
+		}
+		
+		buffer.flip();
+		
+		return buffer;
+	}
+	
+	public int getHeight() {
+		return grid.length;
+	}
+
+	public int getWidth() {
+		return grid[0].length;
+	}
+
 	public void putGrid(char[][] grid) {
 		this.grid = grid;
 	}
@@ -38,5 +114,13 @@ public class DisplayHandler {
 				grid[yCoord][xCoord] = character;
 			}
 		}
+	}
+
+	public void addViewer(Consumer<ByteBuffer> viewer) {
+		newViewers.add(viewer);
+	}
+
+	public void removeViewer(Consumer<ByteBuffer> viewer) {
+		viewers.remove(viewer);
 	}
 }

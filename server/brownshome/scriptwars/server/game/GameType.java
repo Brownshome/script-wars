@@ -2,8 +2,7 @@ package brownshome.scriptwars.server.game;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Supplier;
 
 import brownshome.scriptwars.server.game.tanks.TankGame;
@@ -13,24 +12,33 @@ public class GameType {
 		Game get() throws GameCreationException;
 	}
 	
-	static List<GameType> publicGames = new ArrayList<>();
-	static List<GameType> debugGames = new ArrayList<>();
+	static Map<String, GameType> publicGames = new HashMap<>();
+	static Map<String, GameType> debugGames = new HashMap<>();
 	
 	public static void addType(Class<TankGame> clazz) throws GameCreationException {
-		publicGames.add(new GameType(clazz));
+		GameType type = new GameType(clazz);
+		publicGames.put(type.getName(), type);
 	}
 	
-	public static List<GameType> getGameTypes() {
-		return publicGames;
+	public static Collection<GameType> getGameTypes() {
+		return publicGames.values();
 	}
 	
 	public static void addDebugType(Class<TestGame> clazz) throws GameCreationException {
-		debugGames.add(new GameType(clazz));
+		GameType type = new GameType(clazz);
+		debugGames.put(type.getName(), type);
+	}
+	
+	public static GameType getGameType(String string) {
+		return publicGames.get(string);
 	}
 	
 	GameCreator constructor;
 	String name;
 	String description;
+	
+	//tmp variable
+	Game game;
 	
 	public GameType(Class<? extends Game> clazz) throws GameCreationException {
 		Constructor<? extends Game> constructor;
@@ -70,5 +78,16 @@ public class GameType {
 	
 	public String getName() {
 		return name;
+	}
+	
+	public int getId() {
+		if(game == null) {
+			try {
+				game = constructor.get();
+				game.start();
+			} catch (GameCreationException e) {}
+		}
+		
+		return game.slot;
 	}
 }

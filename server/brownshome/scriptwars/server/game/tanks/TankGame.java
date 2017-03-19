@@ -145,7 +145,7 @@ public class TankGame extends Game {
 	}
 
 	public static String getName() {
-		return "Tank game";
+		return "Tanks";
 	}
 
 	public static String getDescription() {

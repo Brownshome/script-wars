@@ -186,4 +186,8 @@ public abstract class Game {
 	public ConnectionHandler getConnectionHandler() {
 		return connectionHandler;
 	}
+
+	public DisplayHandler getDisplayHandler() {
+		return displayHandler;
+	}
 }
