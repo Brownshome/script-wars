@@ -24,3 +24,5 @@ To use eclipse with the project, install the javaee version of eclipse or upgrad
 Click next and remove the `src` folder. Add `server` and `client/java` to the source path. Then click finish. You should be able to now build and run the project via eclipse.
 
 The ability to run the project directly from gradle may be added later.
+
+For more information please see the [technical details document](https://github.com/Brownshome/script-wars/blob/master/Technical%20Details.md)
