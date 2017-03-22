@@ -14,7 +14,13 @@ While I would like to keep the development of the core system to myself there ar
 
 For any of the items above submit a pull request or get in contact depending on how much work you are planning to do. As for contributing other features or fixes use your common sense. Ask me first before you start anything big in case it is A) already being implemented or B) not wanted. For small fixes or requests submit an issue as at this stage the code base is too fluid for pull requests to be worth anything for small fixes.
 
-## Building
-I will be uploading a [gradle](https://gradle.org/) based solution soon but if you simply can't wait the main source file is `/server` and `WebContent` is the standard javaee web content directory. The deployment server is [Tomcat 9.0](http://tomcat.apache.org/). Your millage may vary with other versions / servers.
+## Building & Downloading
+Download the [git client](https://desktop.github.com/) (or the git command line tools) and fork the project into a directory, edit the files and make a pull request.
 
-For those of you who have no idea what this means. Hang tight. I will be adding a much more user friendly guide once the new build system is running.
+This project is using a [gradle](https://gradle.org/) based solution. Install the gradle tool and use the command `gradle war` to compile the server files and `gradle clientJar` to make the client library. Drop this file in the server webApps folder (or equivalent). The deployment server is [Tomcat 9.0](http://tomcat.apache.org/). Your millage may vary with other versions / servers may vary.
+
+To use eclipse with the project, install the javaee version of eclipse or upgrade your installation with the needed plugins. Install the tomcat server to your disk. Click `new project` and go to `Dynamic Web Project` point the project location to the folder you placed the git repo. Set the server runtime to Tomcat 9.0 and the module version to 3.1.
+
+Click next and remove the `src` folder. Add `server` and `client/java` to the source path. Then click finish. You should be able to now build and run the project via eclipse.
+
+The ability to run the project directly from gradle may be added later.
