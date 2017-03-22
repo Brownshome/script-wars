@@ -1,0 +1,27 @@
+apply plugin: 'java'
+apply plugin: 'war'
+
+project.webAppDirName = 'WebContent'
+
+sourceSets {
+    main.java.srcDirs = ['server']    
+    client.java.srcDirs = ['client/java']
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    //idk why both of these are needed or why my code uses non-documented tomcat only API, I'll fix it later
+    providedCompile group: 'org.apache.tomcat', name: 'tomcat-catalina', version: '9.0.0.M18'
+    providedCompile group: 'org.apache.tomcat', name: 'tomcat-websocket', version: '9.0.0.M18'
+}
+
+task serverJavadoc(type: Javadoc) {
+    source sourceSets.client.allJava
+}
+
+task clientJar(type: Jar) {
+    from sourceSets.client.output
+}

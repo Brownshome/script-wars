@@ -11,7 +11,7 @@ function connectWebSocket(gameID) {
 }
 
 function createWSURL(gameID) {
-	return ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/Script_Wars/gameviewer/" + gameID;
+	return ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + window.location.pathname + "/../../gameviewer/" + gameID;
 }
 
 //disconnections the websocket from the server

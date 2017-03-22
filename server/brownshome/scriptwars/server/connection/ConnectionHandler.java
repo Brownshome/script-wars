@@ -1,11 +1,16 @@
 package brownshome.scriptwars.server.connection;
 
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import brownshome.scriptwars.server.Server;
 import brownshome.scriptwars.server.game.Game;
+import brownshome.scriptwars.server.game.GameCreationException;
 import brownshome.scriptwars.server.game.OutOfIDsException;
 import brownshome.scriptwars.server.game.Player;
 
@@ -59,6 +64,7 @@ public abstract class ConnectionHandler {
 	abstract void endGame(Player player);
 	abstract int getProtocolByte();
 	abstract void sendData(Player player, ByteBuffer buffer);
+	abstract void sendError(Player player, String message);
 	
 	public synchronized void sendData() {
 		ByteBuffer buffer = ByteBuffer.wrap(new byte[game.getDataSize()]);
@@ -105,6 +111,15 @@ public abstract class ConnectionHandler {
 			}
 		}
 		
+		List<Integer> ids = IntStream.range(0, connectedPlayers.length).boxed().collect(Collectors.toList());
+		Collections.shuffle(ids);
+		
+		for(int i : ids) {
+			if(!connectedPlayers[i].isActive()) {
+				return i;
+			}
+		}
+		
 		throw new OutOfIDsException();
 	}
 	
@@ -113,8 +128,14 @@ public abstract class ConnectionHandler {
 	}
 	
 	public synchronized void makePlayerActive(Player player) {
-		if(activePlayers.size() >= game.getMaximumPlayers())
-			throw new IllegalStateException("Game " + game.getName() + " has reached it's maximum player count.");
+		if(activePlayers.size() >= game.getMaximumPlayers()) {
+			//Move player to a new game
+			try {
+				sendError(player, "That game is full, here is a new ID " + game.getType().getUserID());
+			} catch (GameCreationException e) {
+				sendError(player, "That game is full and we were unable to generate a new ID");
+			}
+		}
 		
 		player.setActive(true);
 		activePlayers.add(player);
@@ -128,5 +149,9 @@ public abstract class ConnectionHandler {
 			if(outstandingPlayers.isEmpty())
 				notify(); //Wake the game thread if it is waiting for responses
 		}
+	}
+
+	public int getPlayerCount() {
+		return activePlayers.size();
 	}
 }

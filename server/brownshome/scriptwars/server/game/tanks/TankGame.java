@@ -6,7 +6,6 @@ import java.util.Collection;
 import brownshome.scriptwars.server.connection.UDPConnectionHandler;
 import brownshome.scriptwars.server.game.DisplayHandler;
 import brownshome.scriptwars.server.game.Game;
-import brownshome.scriptwars.server.game.GameHandler;
 import brownshome.scriptwars.server.game.OutOfIDsException;
 import brownshome.scriptwars.server.game.Player;
 
@@ -28,7 +27,6 @@ import brownshome.scriptwars.server.game.Player;
  */
 
 public class TankGame extends Game {
-	GameHandler handler;
 	World world;
 	
 	public TankGame(boolean[][] map) throws OutOfIDsException {
@@ -38,7 +36,7 @@ public class TankGame extends Game {
 	}
 	
 	public TankGame() throws OutOfIDsException {
-		this(generateMap(5));
+		this(generateMap(15));
 	}
 	
 	private static boolean[][] generateMap(int size) {
@@ -66,7 +64,7 @@ public class TankGame extends Game {
 
 	@Override
 	public int getTickRate() {
-		return 500;
+		return 100;
 	}
 
 	@Override
@@ -124,7 +122,7 @@ public class TankGame extends Game {
 	@Override
 	public synchronized void processData(ByteBuffer data, Player player) {
 		if(!world.isAlive(player))
-			return;
+			world.spawnTank(player);
 		
 		//0: do nothing
 		//1: move

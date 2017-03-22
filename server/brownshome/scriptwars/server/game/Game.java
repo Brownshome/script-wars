@@ -23,6 +23,7 @@ public abstract class Game {
 	
 	GameState state = GameState.ACTIVE; //TODO possibility of pre-start phase
 	long timeClosed;
+	GameType type;
 	
 	/** 
 	 * @return If the game sends specific data to each player
@@ -178,16 +179,19 @@ public abstract class Game {
 		return slot;
 	}
 
-	public void makePlayerActive(Player player) {
-		assert false : "not implemented";
-		
-	}
-
 	public ConnectionHandler getConnectionHandler() {
 		return connectionHandler;
 	}
 
 	public DisplayHandler getDisplayHandler() {
 		return displayHandler;
+	}
+
+	public boolean hasSpaceForPlayer() {
+		return connectionHandler.getPlayerCount() < getMaximumPlayers();
+	}
+
+	public GameType getType() {
+		return type;
 	}
 }

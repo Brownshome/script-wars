@@ -2,8 +2,9 @@ package brownshome.scriptwars.server.game;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
-import java.util.function.Supplier;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import brownshome.scriptwars.server.game.tanks.TankGame;
 
@@ -37,8 +38,7 @@ public class GameType {
 	String name;
 	String description;
 	
-	//tmp variable
-	Game game;
+	Game availableGame;
 	
 	public GameType(Class<? extends Game> clazz) throws GameCreationException {
 		Constructor<? extends Game> constructor;
@@ -51,7 +51,10 @@ public class GameType {
 		
 		this.constructor = () -> {
 			try {
-				return constructor.newInstance();
+				Game game = constructor.newInstance();
+				game.type = this;
+				game.start();
+				return game;
 			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 				throw new GameCreationException("Unable to instantiate game", e);
 			}
@@ -70,24 +73,21 @@ public class GameType {
 		}
 	}
 	
-	public GameType(Supplier<Game> constructor, String name, String description) {
-		this.constructor = constructor::get;
-		this.name = name;
-		this.description = description;
-	}
-	
 	public String getName() {
 		return name;
 	}
+
+	/** generates a new ID 
+	 * @throws GameCreationException if a new game could not be created and the existing one is full */
+	public int getUserID() throws GameCreationException {
+		return getAvailableGame().getConnectionHandler().getID();
+	}
 	
-	public int getId() {
-		if(game == null) {
-			try {
-				game = constructor.get();
-				game.start();
-			} catch (GameCreationException e) {}
+	public Game getAvailableGame() throws GameCreationException {
+		if(availableGame == null || !availableGame.hasSpaceForPlayer()) {
+			availableGame = constructor.get();
 		}
 		
-		return game.slot;
+		return availableGame;
 	}
 }

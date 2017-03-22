@@ -10,8 +10,7 @@ public class TestGame extends Game {
 	public TestGame() throws OutOfIDsException {
 		super(new UDPConnectionHandler(), new DisplayHandler());
 	}
-
-	GameHandler handler;
+	
 	boolean end = false;
 	
 	@Override

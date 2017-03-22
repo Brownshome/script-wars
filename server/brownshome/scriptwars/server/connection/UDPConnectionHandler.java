@@ -11,6 +11,7 @@ import java.util.logging.Level;
 
 import brownshome.scriptwars.server.Server;
 import brownshome.scriptwars.server.game.Game;
+import brownshome.scriptwars.server.game.GameCreationException;
 import brownshome.scriptwars.server.game.Player;
 
 /**
@@ -30,6 +31,34 @@ public class UDPConnectionHandler extends ConnectionHandler {
 	static byte[] errorPacket; //TODO allow custom error messages 
 
 	static class ConnectionDetails {
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((address == null) ? 0 : address.hashCode());
+			result = prime * result + port;
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (!(obj instanceof ConnectionDetails))
+				return false;
+			ConnectionDetails other = (ConnectionDetails) obj;
+			if (address == null) {
+				if (other.address != null)
+					return false;
+			} else if (!address.equals(other.address))
+				return false;
+			if (port != other.port)
+				return false;
+			return true;
+		}
+
 		InetAddress address;
 		int port;
 
@@ -85,7 +114,7 @@ public class UDPConnectionHandler extends ConnectionHandler {
 				Game game = Game.getGame(gameCode);
 
 				if(game == null) {
-					sendErrorPacket(new ConnectionDetails(packet));
+					sendErrorPacket(new ConnectionDetails(packet), "Invalid ID");
 					continue;
 				}
 
@@ -94,14 +123,14 @@ public class UDPConnectionHandler extends ConnectionHandler {
 					connectionHandler = (UDPConnectionHandler) game.getConnectionHandler();
 				} catch(ClassCastException cce) {
 					Server.LOG.log(Level.SEVERE, "Incorrect Protcol byte", cce);
-					sendErrorPacket(new ConnectionDetails(packet));
+					sendErrorPacket(new ConnectionDetails(packet), "Invalid ID");
 					continue;
 				}
 
 				Player player = connectionHandler.getPlayer(playerCode);
 
 				if(player == null) {
-					sendErrorPacket(new ConnectionDetails(packet));
+					sendErrorPacket(new ConnectionDetails(packet), "Invalid ID");
 					continue;
 				}
 
@@ -113,20 +142,39 @@ public class UDPConnectionHandler extends ConnectionHandler {
 					connectionHandler.details[player.getSlot()] = new ConnectionDetails(packet);
 					connectionHandler.makePlayerActive(player);
 				} else {
+					ConnectionDetails newDetails = new ConnectionDetails(packet);
+					
+					if(!newDetails.equals(connectionHandler.details[player.getSlot()])) {
+						try {
+							sendErrorPacket(newDetails, "That ID is in use. Please use this one: " + connectionHandler.game.getType().getUserID());
+						} catch(GameCreationException e)  {
+							sendErrorPacket(newDetails, "That ID is in use. Unable to create a new game");
+						}
+					}
+					
 					connectionHandler.incommingData(passingBuffer, player);
 				}
 			} catch (Exception e) {
 				Server.LOG.log(Level.SEVERE, "Error processing packet", e);
 				
 				if(recieved)
-					sendErrorPacket(new ConnectionDetails(packet));
+					sendErrorPacket(new ConnectionDetails(packet), "Error processing packet " + e.getMessage());
 			}
 		}
 	}
 
-	static void sendErrorPacket(ConnectionDetails details) {
+	static void sendErrorPacket(ConnectionDetails details, String message) {
 		try {
-			socket.send(new DatagramPacket(errorPacket, errorPacket.length, details.address, details.port));
+			byte[] bytes = message.getBytes();
+			short length = (short) bytes.length;
+			
+			ByteBuffer buffer = ByteBuffer.allocate(bytes.length + Byte.BYTES + Short.BYTES);
+			buffer.put((byte) -1);
+			buffer.putShort(length);
+			buffer.put(bytes);
+			buffer.flip();
+			
+			socket.send(new DatagramPacket(buffer.array(), buffer.remaining(), details.address, details.port));
 		} catch (IOException e) {
 			Server.LOG.log(Level.SEVERE, "Unable to send error packet", e);
 		}
@@ -169,15 +217,27 @@ public class UDPConnectionHandler extends ConnectionHandler {
 	@Override
 	void timeOutPlayer(Player player) {
 		sendTimeoutPacket(details[player.getSlot()]);
+		disconnect(player);
 	}
 
 	@Override
 	void endGame(Player player) {
 		sendDisconnectPacket(details[player.getSlot()]);
+		disconnect(player);
 	}
 
 	@Override
 	void sendData(Player player, ByteBuffer buffer) {
 		sendPacket(details[player.getSlot()], buffer);
+	}
+
+	@Override
+	void sendError(Player player, String message) {
+		sendErrorPacket(details[player.getSlot()], message);
+		disconnect(player);
+	}
+	
+	private void disconnect(Player player) {
+		details[player.getSlot()] = null;
 	}
 }
