@@ -25,12 +25,13 @@ Player are expected to send in commands once per game tick. Failure to do so wil
 The UDP connection protocol between the server and the client is relatively simple. Each packet from the client to the server is their User ID followed by some data. All numerical types are byte alligned and send as is. Strings are sent with two bytes preceding them describing the length followed by the character data encoded in UTF-8. Booleans are bit packed with the LSB being the first bit to be read. Remaining bits in the written byte are padded to maintain the byte allignment.
 
 The communication from the server to the client has no ID but does have a single byte header dictating the message type.
-| Byte | Meaning |
-|------|---------|
+
+| Byte | Meaning                            |
+|:-----|:-----------------------------------|
 | -1   | Error, followed by a status string |
-| 0    | Game Data |
-| 1    | Disconnect, no further data |
-| 2    | Timed out, no further data |
+| 0    | Game Data                          |
+| 1    | Disconnect, no further data        |
+| 2    | Timed out, no further data         |
 
 ## Threading information
 
