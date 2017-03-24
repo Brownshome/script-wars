@@ -2,10 +2,12 @@ package brownshome.scriptwars.server.game;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import brownshome.scriptwars.server.connection.ConnectionHandler;
 import brownshome.scriptwars.server.game.tanks.TankGame;
 
 public class GameType {
@@ -38,6 +40,7 @@ public class GameType {
 	String name;
 	String description;
 	
+	Collection<Game> games = new ArrayList<>();
 	Game availableGame;
 	
 	public GameType(Class<? extends Game> clazz) throws GameCreationException {
@@ -76,7 +79,15 @@ public class GameType {
 	public String getName() {
 		return name;
 	}
-
+	
+	public int getPlayerCount() {
+		return games.stream().map(Game::getConnectionHandler).mapToInt(ConnectionHandler::getPlayerCount).sum();
+	}
+	
+	public String getDescription() {
+		return description;
+	}
+	
 	/** generates a new ID 
 	 * @throws GameCreationException if a new game could not be created and the existing one is full */
 	public int getUserID() throws GameCreationException {
@@ -86,6 +97,7 @@ public class GameType {
 	public Game getAvailableGame() throws GameCreationException {
 		if(availableGame == null || !availableGame.hasSpaceForPlayer()) {
 			availableGame = constructor.get();
+			games.add(availableGame);
 		}
 		
 		return availableGame;

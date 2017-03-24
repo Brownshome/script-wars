@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -19,16 +20,14 @@
         
         <table>
             <tr>
-                <%-- Use EL instead, apparently this stuff is bad...--%>
-                <%@ page import = "brownshome.scriptwars.server.Server, brownshome.scriptwars.server.game.GameType" %>
-                <% for(GameType game : Server.getGames()) { %>
+                <jsp:useBean id="gameTypes" class="brownshome.scriptwars.site.GameTypeList"/>
+                
+                <c:forEach items="${gameTypes.typeList}" var="gameType">
                 <td>
-                    <a href="games/<%= game.getName() %>">
-                        <img src="<%= game.getName() %>.png" alt="<%= game.getName() %>" style="width:128px;height:128px;">
-                        <h3>Tanks</h3>
-                    </a>
+                    <a href="games/${gameType.name}"><img title="${gameType.description}" src="${gameType.name}.png" alt="${gameType.name}" style="width:128px;height:128px;"></a>
+                    <br>${gameType.playerCount} players online.
                 </td>
-                <% } %>
+                </c:forEach>
             <tr>
         </table>
 	</body>

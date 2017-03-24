@@ -101,7 +101,7 @@ function requestID(gameID) {
 	request.onreadystatechange = AJAXReady;
 	request.open("POST", "../requestID", true);
 	request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-	request.send("id=" + gameID);
+	request.send("type=" + gameID);
 }
 
 function AJAXReady() {
