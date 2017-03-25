@@ -19,7 +19,6 @@ function disconnectWebSocket() {
 	socket.close();
 }
 
-var i = 0;
 var pixelSize = 256;
 var width;
 var height;
@@ -38,9 +37,6 @@ function onMessage(message) {
 	default:
 		canvasError();	
 	}
-	
-	i = i + 1;
-	document.getElementById("Counter").innerHTML = "Update Count: " + i;
 }
 
 function handleBulkData(dataView) {

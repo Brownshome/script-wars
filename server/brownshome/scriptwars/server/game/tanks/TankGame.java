@@ -86,10 +86,20 @@ public class TankGame extends Game {
 	 * byte: y
 	 * byte: width
 	 * byte: height
-	 * X*boolean: wall array
-	 * x*{
+	 * 
+	 * width * height * boolean: wall array
+	 * 
+	 * byte: players
+	 * players * {
 	 * 	byte: x
 	 * 	byte: y
+	 * }
+	 * 
+	 * byte: shots
+	 * shots * {
+	 * 	byte: x
+	 * 	byte: y
+	 * 	byte: direction
 	 * }
 	 */
 	@Override
@@ -110,9 +120,18 @@ public class TankGame extends Game {
 			world.writeWorld(data);
 			
 			Collection<Tank> visibleTanks = world.getVisibleTanks(player);
+			data.put((byte) visibleTanks.size());
 			for(Tank otherTank : visibleTanks) {
 				data.put((byte) otherTank.getX());
 				data.put((byte) otherTank.getY());
+			}
+			
+			Collection<Shot> shots = world.getShots();
+			data.put((byte) shots.size());
+			for(Shot shot : shots) {
+				data.put((byte) shot.getX());
+				data.put((byte) shot.getY());
+				data.put((byte) shot.getDirection().ordinal());
 			}
 		}
 		

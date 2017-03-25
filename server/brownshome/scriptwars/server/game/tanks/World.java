@@ -210,4 +210,8 @@ class World {
 	public int getDataSize() {
 		return (getWidth() * getHeight() - 1) / Byte.SIZE + 1;
 	}
+
+	public Collection<Shot> getShots() {
+		return shots;
+	}
 }

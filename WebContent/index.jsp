@@ -20,9 +20,9 @@
         
         <table>
             <tr>
-                <jsp:useBean id="gameTypes" class="brownshome.scriptwars.site.GameTypeList"/>
+                <jsp:useBean id="staticBean" class="brownshome.scriptwars.site.StaticBean"/>
                 
-                <c:forEach items="${gameTypes.typeList}" var="gameType">
+                <c:forEach items="${staticBean.typeList}" var="gameType">
                 <td>
                     <a href="games/${gameType.name}"><img title="${gameType.description}" src="${gameType.name}.png" alt="${gameType.name}" style="width:128px;height:128px;"></a>
                     <br>${gameType.playerCount} players online.

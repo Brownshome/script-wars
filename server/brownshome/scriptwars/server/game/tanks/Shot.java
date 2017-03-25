@@ -1,8 +1,8 @@
 package brownshome.scriptwars.server.game.tanks;
 
-class Shot {
+public class Shot {
 	static final char BULLET = '•';
-	static final int SPEED = 1;
+	public static final int SPEED = 1;
 	
 	World world;
 	Direction direction;
@@ -37,5 +37,17 @@ class Shot {
 		}
 		
 		return false;
+	}
+
+	public int getX() {
+		return x;
+	}
+	
+	public int getY() {
+		return y;
+	}
+
+	public Direction getDirection() {
+		return direction;
 	}
 }
