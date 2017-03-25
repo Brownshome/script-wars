@@ -64,7 +64,7 @@ public class TankGame extends Game {
 
 	@Override
 	public int getTickRate() {
-		return 250;
+		return 50;
 	}
 
 	@Override
@@ -156,7 +156,7 @@ public class TankGame extends Game {
 			break;
 		case SHOOT:
 			Tank tank = world.getTank(player);
-			tank.serDirection(Direction.values()[data.get()]);
+			tank.setDirection(Direction.values()[data.get()]);
 			world.tanksToFire.add(world.getTank(player));
 			break;
 		}
@@ -185,7 +185,7 @@ public class TankGame extends Game {
 	}
 
 	@Override
-	public void removePlayer(Player player) {
+	public synchronized void removePlayer(Player player) {
 		if(world.isAlive(player))
 			world.removeTank(player);
 	}

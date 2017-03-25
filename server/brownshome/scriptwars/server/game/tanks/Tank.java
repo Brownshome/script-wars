@@ -22,7 +22,7 @@ class Tank {
 		return direction;
 	}
 	
-	void serDirection(Direction direction) {
+	void setDirection(Direction direction) {
 		this.direction = direction;
 	}
 	
@@ -33,7 +33,6 @@ class Tank {
 	boolean move(Direction direction) {
 		this.direction = direction;
 		
-		hasMoved = false;
 		int newX = direction.moveX(x);
 		int newY = direction.moveY(y);
 		
@@ -57,6 +56,11 @@ class Tank {
 		return true;
 	}
 	
+	@Override
+	public String toString() {
+		return "(" + x + ", " + y + ")T: " + owner.getSlot();
+	}
+	
 	void kill() {
 		world.removeTank(this);
 	}
@@ -72,6 +76,7 @@ class Tank {
 	void rollBack() {
 		x -= direction.dx;
 		y -= direction.dy;
+		return;
 	}
 
 	Player getOwner() {

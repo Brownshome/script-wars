@@ -135,6 +135,8 @@ public abstract class ConnectionHandler {
 			} catch (GameCreationException e) {
 				sendError(player, "That game is full and we were unable to generate a new ID");
 			}
+			
+			return;
 		}
 		
 		player.setActive(true);

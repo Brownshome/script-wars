@@ -71,7 +71,10 @@ class World {
 				fireTank(otherTank);
 			}
 			
-			otherTank.kill();
+			//Needed to avoid strange circular gun chains
+			if(isAlive(otherTank.getOwner()))
+				otherTank.kill();
+			
 			return;
 		}
 		
@@ -86,6 +89,10 @@ class World {
 		}
 		
 		tanksToRollBack.clear();
+		
+		for(Tank t : tanks.values()) {
+			t.hasMoved = false;
+		}
 	}
 
 	public void fireTanks() {
