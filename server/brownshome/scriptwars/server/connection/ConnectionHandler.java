@@ -50,6 +50,7 @@ public abstract class ConnectionHandler {
 		for(Player p : outstandingPlayers) {
 			activePlayers.remove(p);
 			p.setActive(false);
+			game.removePlayer(p);
 			timeOutPlayer(p);
 			
 			Server.LOG.info("Player " + p.getName() + " timed out.");
@@ -78,12 +79,11 @@ public abstract class ConnectionHandler {
 		
 		for(Player player : activePlayers) {
 			if(game.hasPerPlayerData()) {
+				buffer.clear();
 				if(!game.getData(player, buffer))
 					continue;
 				
 				buffer.flip();
-				sendData(player, buffer);
-				buffer.clear();
 			}
 			
 			sendData(player, buffer);

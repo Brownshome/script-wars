@@ -64,7 +64,7 @@ public class TankGame extends Game {
 
 	@Override
 	public int getTickRate() {
-		return 330;
+		return 250;
 	}
 
 	@Override
@@ -76,7 +76,8 @@ public class TankGame extends Game {
 
 	@Override
 	public int getDataSize() {
-		return 5 + getMaximumPlayers() * 2 + world.getDataSize();
+		//bytes + worldsize + bulletData
+		return 7 + getMaximumPlayers() * 2 + world.getDataSize() + Math.max(world.getWidth(), world.getHeight()) * getMaximumPlayers() * 3;
 	}
 
 	/**
@@ -181,5 +182,11 @@ public class TankGame extends Game {
 	@Override
 	public synchronized void addPlayer(Player player) {
 		world.spawnTank(player);
+	}
+
+	@Override
+	public void removePlayer(Player player) {
+		if(world.isAlive(player))
+			world.removeTank(player);
 	}
 }

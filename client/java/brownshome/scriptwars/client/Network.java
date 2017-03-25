@@ -103,7 +103,7 @@ public class Network {
 	
 	/** Gets a true or false value from the data. */
 	public static boolean getBoolean() {
-		if(bit == 0x100 || positionOfByte != dataIn.position()) {
+		if(bit == 0x100 || positionOfByte != dataIn.position() - 1) {
 			bit = 1;
 			positionOfByte = dataIn.position();
 			dataIn.get();
@@ -169,6 +169,7 @@ class UDPConnection implements Connection {
 		this.address = address;
 		this.port = port;
 		socket = new DatagramSocket();
+		socket.setSoTimeout(5000);
 	}
 	
 	@Override
@@ -195,12 +196,15 @@ class UDPConnection implements Connection {
 		//Error and disconnect handling
 		switch(code) {
 			case 1:
+				System.out.println("Disconnected by server.");
 				return null;
 			case 2:
+				System.out.println("Failed to keep up with game tick.");
 				return null;
 			case -1:
 				int stringLength = data.getShort();
-				throw new RuntimeException("Server error: " + new String(data.array(), data.position() + data.arrayOffset(), stringLength, StandardCharsets.UTF_8));
+				System.out.println("Server error: " + new String(data.array(), data.position() + data.arrayOffset(), stringLength, StandardCharsets.UTF_8));
+				return null;
 		}
 		
 		return data;

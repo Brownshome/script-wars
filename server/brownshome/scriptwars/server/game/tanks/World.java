@@ -139,14 +139,12 @@ class World {
 		
 		for(boolean[] row : map) {
 			for(boolean isWall : row) {
-				if(isWall) {
-					buffer |= 1 << index++;
+					buffer |= (isWall ? 1 : 0) << index++;
 					if(index == 8) {
 						index = 0;
 						data.put(buffer);
 						buffer = 0;
 					}
-				}
 			}
 		}
 		
@@ -195,8 +193,7 @@ class World {
 	}
 
 	void removeTank(Tank tank) {
-		tanks.remove(tank.getOwner());
-		tankMap[tank.getY()][tank.getX()] = null;
+		removeTank(tank.getOwner());
 	}
 
 	void addToRewindList(Tank tank) {
@@ -213,5 +210,10 @@ class World {
 
 	public Collection<Shot> getShots() {
 		return shots;
+	}
+
+	public void removeTank(Player player) {
+		Tank tank = tanks.remove(player);
+		tankMap[tank.getY()][tank.getX()] = null;
 	}
 }

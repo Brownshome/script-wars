@@ -64,6 +64,12 @@ public abstract class Game {
 	 */
 	public abstract void processData(ByteBuffer data, Player player);
 	
+	/**Called when a player times out from the server
+	 * 
+	 * @param p
+	 */
+	public abstract void removePlayer(Player p);
+	
 	/**
 	 * @return The name of this game to be displayed on the website
 	 */

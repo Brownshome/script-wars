@@ -77,4 +77,9 @@ public class TestGame extends Game {
 	public void addPlayer(Player player) {
 		System.out.println(player.getName() + " joined the server.");
 	}
+
+	@Override
+	public void removePlayer(Player player) {
+		System.out.println(player.getName() + " left the server.");
+	}
 }
