@@ -166,7 +166,7 @@ public class TankGame extends Game {
 	}
 
 	public static String getDescription() {
-		return "A tatical 2D tank game with stealth mechanics.";
+		return "A tactical 2D tank game with stealth mechanics.";
 	}
 
 	@Override
