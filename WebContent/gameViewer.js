@@ -7,6 +7,9 @@ var canvas = document.getElementById("gameCanvas").getContext("2d");
 function connectWebSocket(gameID) {
 	socket = new WebSocket(createWSURL(gameID));
 	socket.onmessage = onMessage;
+	socket.onopen = canvasNoGame;
+	socket.onclose = canvasError;
+	socket.onerror = canvasError;
 	socket.binaryType = "arraybuffer";
 }
 
@@ -35,7 +38,7 @@ function onMessage(message) {
 		handleBulkData(dataView);
 		break;
 	default:
-		canvasError();	
+		canvasError();
 	}
 }
 
@@ -88,7 +91,13 @@ function fill(x, y, c) {
 }
 
 function canvasError() {
-	canvas.fillText("Error connection to server", pixelSize / 4, pixelSize / 2);
+	canvas.clearRect(0, 0, pixelSize, pixelSize);
+	canvas.fillText("Error connecting to server", pixelSize / 4, pixelSize / 2);
+}
+
+function canvasNoGame() {
+	canvas.clearRect(0, 0, pixelSize, pixelSize);
+	canvas.fillText("No game selected", pixelSize / 4, pixelSize / 2);
 }
 
 //Requests an connectionID value from the server using AJAX
@@ -104,4 +113,10 @@ function AJAXReady() {
 	if(this.readyState == 4 && this.status == 200) {
 		document.getElementById("UserID").innerHTML = "ID: " + this.responseText + " (Click for another)";
 	}
+}
+
+function watchGame(gameSlot) {
+	buffer = new ArrayBuffer(1);
+	new DataView(buffer).setUint8(0, gameSlot);
+	socket.send(buffer);
 }

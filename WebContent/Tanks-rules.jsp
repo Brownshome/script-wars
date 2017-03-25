@@ -1,6 +1,8 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <jsp:useBean id="staticBean" class="brownshome.scriptwars.site.StaticBean"/>
 
+<h2>Rules</h2>
 <h3>Gameplay</h3>
 <p>
 Tank game is a 2D tactical stealth game where each player controls a tank that

@@ -194,4 +194,8 @@ public abstract class Game {
 	public GameType getType() {
 		return type;
 	}
+	
+	public int getSlot() {
+		return slot;
+	}
 }

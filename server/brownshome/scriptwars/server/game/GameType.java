@@ -102,4 +102,8 @@ public class GameType {
 		
 		return availableGame;
 	}
+	
+	public Collection<Game> getGames() {
+		return games;
+	}
 }
