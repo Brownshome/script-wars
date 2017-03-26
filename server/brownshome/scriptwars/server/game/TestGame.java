@@ -7,8 +7,8 @@ import brownshome.scriptwars.server.connection.UDPConnectionHandler;
 
 public class TestGame extends Game {
 	
-	public TestGame() throws OutOfIDsException {
-		super(new UDPConnectionHandler(), new DisplayHandler());
+	public TestGame(GameType type) throws OutOfIDsException {
+		super(new UDPConnectionHandler(), new DisplayHandler(), type);
 	}
 	
 	boolean end = false;
@@ -75,11 +75,13 @@ public class TestGame extends Game {
 
 	@Override
 	public void addPlayer(Player player) {
+		super.addPlayer(player);
 		System.out.println(player.getName() + " joined the server.");
 	}
 
 	@Override
 	public void removePlayer(Player player) {
+		super.removePlayer(player);
 		System.out.println(player.getName() + " left the server.");
 	}
 }

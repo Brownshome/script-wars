@@ -37,8 +37,24 @@ function onMessage(message) {
 	case 0: //bulk
 		handleBulkData(dataView);
 		break;
+	case 2:
+		updateTable();
+		break;
 	default:
 		canvasError();
+	}
+}
+
+function updateTable() {
+	var request = new XMLHttpRequest();
+	request.onreadystatechange = tableUpdateReady;
+	request.open("GET", "../gameTable.jsp", true);
+	request.send();
+}
+
+function tableUpdateReady() {
+	if(this.readyState == 4 && this.status == 200) {
+		document.getElementById("gameTable").innerHTML = this.responseText;
 	}
 }
 

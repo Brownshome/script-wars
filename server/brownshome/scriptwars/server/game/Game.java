@@ -68,7 +68,9 @@ public abstract class Game {
 	 * 
 	 * @param p
 	 */
-	public abstract void removePlayer(Player p);
+	public void removePlayer(Player p) {
+		type.signalListUpdate();
+	}
 	
 	/**
 	 * @return The name of this game to be displayed on the website
@@ -96,9 +98,11 @@ public abstract class Game {
 	 */
 	public abstract void stop();
 
-	public abstract void addPlayer(Player player);
+	public void addPlayer(Player player) {
+		type.signalListUpdate();
+	}
 	
-	public Game(ConnectionHandler connectionHandler, DisplayHandler displayHandler) throws OutOfIDsException {
+	public Game(ConnectionHandler connectionHandler, DisplayHandler displayHandler, GameType type) throws OutOfIDsException {
 		int tmp = -1;
 		
 		for(int i = 0; i < activeGames.length; i++) {
@@ -118,6 +122,8 @@ public abstract class Game {
 		this.connectionHandler = connectionHandler;
 		connectionHandler.game = this;
 		this.displayHandler = displayHandler;
+		
+		this.type = type;
 	}
 	
 	public static Game getGame(int gameCode) {

@@ -4,10 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 
 import brownshome.scriptwars.server.connection.UDPConnectionHandler;
-import brownshome.scriptwars.server.game.DisplayHandler;
-import brownshome.scriptwars.server.game.Game;
-import brownshome.scriptwars.server.game.OutOfIDsException;
-import brownshome.scriptwars.server.game.Player;
+import brownshome.scriptwars.server.game.*;
 
 /* Each tick shots are moved x spaces. Then tanks shoot. Then tanks move
  
@@ -29,14 +26,14 @@ import brownshome.scriptwars.server.game.Player;
 public class TankGame extends Game {
 	World world;
 	
-	public TankGame(boolean[][] map) throws OutOfIDsException {
-		super(new UDPConnectionHandler(), new DisplayHandler());
+	public TankGame(boolean[][] map, GameType type) throws OutOfIDsException {
+		super(new UDPConnectionHandler(), new DisplayHandler(), type);
 		
 		this.world = new World(map, this);
 	}
 	
-	public TankGame() throws OutOfIDsException {
-		this(generateMap(15));
+	public TankGame(GameType type) throws OutOfIDsException {
+		this(generateMap(15), type);
 	}
 	
 	private static boolean[][] generateMap(int size) {
@@ -64,7 +61,7 @@ public class TankGame extends Game {
 
 	@Override
 	public int getTickRate() {
-		return 50;
+		return 250;
 	}
 
 	@Override
@@ -181,11 +178,13 @@ public class TankGame extends Game {
 
 	@Override
 	public synchronized void addPlayer(Player player) {
+		super.addPlayer(player);
 		world.spawnTank(player);
 	}
 
 	@Override
 	public synchronized void removePlayer(Player player) {
+		super.removePlayer(player);
 		if(world.isAlive(player))
 			world.removeTank(player);
 	}

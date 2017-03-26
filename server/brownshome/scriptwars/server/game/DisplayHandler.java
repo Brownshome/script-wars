@@ -11,13 +11,8 @@ public class DisplayHandler {
 	Set<Consumer<ByteBuffer>> viewers = new HashSet<>(); //TODO thread safety
 	Set<Consumer<ByteBuffer>> newViewers = new HashSet<>(); //TODO thread safety
 	
-	/* Message format.
-	 * Type:
-	 * 	0 - bulk sync
-	 * 	1 - delta update
-	 * 
-	 * 	0: width, height, char data
-	 * 	1: {char, x, y}
+	/**
+	 * For send format see GameViewerSocket
 	 */
 	public void print() {
 		ByteBuffer buffer = getBulkSyncBuffer();

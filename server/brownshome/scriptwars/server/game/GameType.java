@@ -2,10 +2,7 @@ package brownshome.scriptwars.server.game;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import brownshome.scriptwars.server.connection.ConnectionHandler;
 import brownshome.scriptwars.server.game.tanks.TankGame;
@@ -41,20 +38,20 @@ public class GameType {
 	String description;
 	
 	Collection<Game> games = new ArrayList<>();
-	Game availableGame;
+	Set<Runnable> onListUpdate = new HashSet<>();
 	
 	public GameType(Class<? extends Game> clazz) throws GameCreationException {
 		Constructor<? extends Game> constructor;
 		
 		try {
-			constructor = clazz.getConstructor();
+			constructor = clazz.getConstructor(GameType.class);
 		} catch (NoSuchMethodException | SecurityException e) {
 			throw new GameCreationException("Game " + clazz.getSimpleName() + " did not have a suitable constructor.", e);
 		}
 		
 		this.constructor = () -> {
 			try {
-				Game game = constructor.newInstance();
+				Game game = constructor.newInstance(this);
 				game.type = this;
 				game.start();
 				return game;
@@ -95,15 +92,30 @@ public class GameType {
 	}
 	
 	public Game getAvailableGame() throws GameCreationException {
-		if(availableGame == null || !availableGame.hasSpaceForPlayer()) {
-			availableGame = constructor.get();
-			games.add(availableGame);
+		for(Game game : games) {
+			if(game.hasSpaceForPlayer())
+				return game;
 		}
 		
+		Game availableGame = constructor.get();
+		games.add(availableGame);
+		signalListUpdate();
 		return availableGame;
 	}
 	
 	public Collection<Game> getGames() {
 		return games;
+	}
+
+	public synchronized void onListUpdate(Runnable update) {
+		onListUpdate.add(update);
+	}
+
+	public synchronized void removeOnListUpdate(Runnable update) {
+		onListUpdate.remove(update);
+	}
+
+	public synchronized void signalListUpdate() {
+		onListUpdate.forEach(Runnable::run);
 	}
 }

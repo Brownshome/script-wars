@@ -14,19 +14,32 @@ import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
-import brownshome.scriptwars.server.game.Game;
+import brownshome.scriptwars.server.game.*;
 
 /**
- * The websocket sends binary data to the web page on every game tick
- **/
+ * The websocket sends binary data to the web page on every game tick.
+ * 
+ * Message format.
+ * Type:
+ * 	0 - bulk sync
+ * 	1 - delta update
+ * 	2 - game table update
+ * 
+ * 	0: width, height, char data
+ * 	1: {char, x, y}
+ *  2: No data, get the table via AJAX
+ */
 
 @ServerEndpoint("/gameviewer/{gametype}")
 public class GameViewerSocket {
 	Consumer<ByteBuffer> viewer;
+	Runnable update;
+	
 	Game game;
+	GameType type;
 	
 	@OnMessage
-	public void message(@PathParam("gametype") String gameID, Session session, ByteBuffer buffer) throws IOException {
+	public void message(Session session, ByteBuffer buffer) throws IOException {
 		int slot;
 		
 		try {
@@ -36,7 +49,7 @@ public class GameViewerSocket {
 			return;
 		}
 		
-		close();
+		removeViewer();
 		
 		if(slot > 255 || (game = Game.getGame(slot)) == null) {
 			session.close(new CloseReason(CloseReason.CloseCodes.UNEXPECTED_CONDITION, "Invalid slot ID"));
@@ -48,7 +61,24 @@ public class GameViewerSocket {
 	
 	@OnOpen
 	public void open(@PathParam("gametype") String gameID, Session session) throws IOException {
+		type = GameType.getGameType(gameID);
+		if(type == null) {
+			session.close(new CloseReason(CloseReason.CloseCodes.UNEXPECTED_CONDITION, "Invalid game type"));
+			return;
+		}
+		
 		Basic sender = session.getBasicRemote();
+		
+		update = () -> {
+			synchronized(session) {
+				if(session.isOpen()) {
+					try { sender.sendBinary(ByteBuffer.wrap(new byte[] {(byte) 2}));} catch (IOException e) {}
+				}
+			}
+		};
+		
+		type.onListUpdate(update);
+		
 		viewer = data -> {
 				synchronized(session) {
 					if(session.isOpen())
@@ -60,6 +90,13 @@ public class GameViewerSocket {
 	//TODO find out if session.close causes this to fire
 	@OnClose
 	public void close() {
+		removeViewer();
+		
+		if(type != null)
+			type.removeOnListUpdate(update);
+	}
+	
+	private void removeViewer() {
 		if(game != null)
 			game.getDisplayHandler().removeViewer(viewer);
 	}
