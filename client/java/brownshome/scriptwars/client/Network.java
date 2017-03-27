@@ -1,36 +1,32 @@
 package brownshome.scriptwars.client;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 /**
- * The main class that clients can use to comunicate with the server.
+ * The main class that clients can use to communicate with the server.
+ * 
+ * This class has an internal data buffer of 1024 bytes. Attempts to write more
+ * data than that will lead to errors.
  *  
  * Example Usage:
  * <pre>
  * <code>
  * public static main(String[] args) { 
- *  	Network.connect(123456);
+ *  	Network.connect(ID, "13.55.154.170", 35565, "John Smith");
  *  
  *  	while(Network.nextTick()) {
- *  		byte[][] grid = new byte[32][32];
+ *  		//Read data using Network.getX();
  *  
- *  		int x = getByte();
- *  		int y = getByte();
- *  
- *  		for(int i = 0; i < 32; i++) {
- *  			for(int j = 0; j < 32; j++) {
- *  				grid[i][j] = getByte();
- *  			}
- *  		}
- *  
- *  		if(x < 30 && grid[x + 1][y] == 0) {
- *  			sendInt(1);
- *  		}
+ *  		//Send data using Network.sendX();
  *  	}
- *  }
+ * }
  *  </code>
  *  </pre>
  *  
@@ -43,7 +39,13 @@ public class Network {
 	static ByteBuffer dataIn;
 	static int ID = -1;
 	
-	/** Call this using the ID given to you by the website to connect. */
+	/**
+	 * Call this using the ID given to you by the website to connect
+	 * @param ID The ID given to you by the website
+	 * @param ip The ip of the website
+	 * @param port The port the server uses, usually 35565
+	 * @param name The name of your bot
+	 */
 	public static void connect(int ID, String ip, int port, String name) {
 		if(Network.ID != -1) {
 			throw new IllegalStateException("Cannot initialize the connection more than once.");
@@ -70,8 +72,10 @@ public class Network {
 		}
 	}
 	
-	/** Waits until all the players have made their moves and sends the data.
-	 * This method returns false if the game is over or you have timed out. */
+	/** Waits until all the players have made their moves and sends the data and retrieved a new set of data
+	 * from the server. This method returns false if the game is over or you have timed out. 
+	 * @return If the client was disconnected or timed out.
+	 **/
 	public static boolean nextTick() {
 		dataOut.flip();
 		connection.sendData(dataOut);
@@ -82,18 +86,30 @@ public class Network {
 		return dataIn != null;
 	}
 	
-	/** Returns true if there is still data remaining. */
+	/**
+	 * Checks if the next getX() will throw an exception. Note that even though
+	 * this method returns false {@link #getBoolean()} may not error if there are booleans left
+	 * in the buffer.
+	 * @return true if there is at least one byte left to be read
+	 */
 	public static boolean hasData() {
 		return dataIn.hasRemaining();
 	}
 	
-	/** Gets a single integer from the data. */
+	/**
+	 * Gets a single integer from the data.
+	 * @return An integer from the data
+	 */
 	public static int getInt() {
 		return dataIn.getInt();
 	}
 	
-	/** Gets a single byte from the data. */
-	public static byte getByte() {
+	/**
+	 * Gets a single byte from the data. This byte is returned as an integer in the
+	 * range 0-255
+	 * @return An integer containing the read byte.
+	 */
+	public static int getByte() {
 		return dataIn.get();
 	}
 	
@@ -101,7 +117,9 @@ public class Network {
 	static int bit = 0x100;
 	static int positionOfByte;
 	
-	/** Gets a true or false value from the data. */
+	/** Gets a true or false value from the data. 
+	 * @return A boolean read from the data.
+	 **/
 	public static boolean getBoolean() {
 		if(bit == 0x100 || positionOfByte != dataIn.position() - 1) {
 			bit = 1;
@@ -116,7 +134,9 @@ public class Network {
 		return bool;
 	}
 	
-	/** Gets a string from the data */
+	/** Gets a string from the data.
+	 * @return The decoded String object
+	 **/
 	public static String getString() {
 		int length = dataIn.getShort();
 		String result = new String(dataIn.array(), dataIn.arrayOffset() + dataIn.position(), length, StandardCharsets.UTF_8);
@@ -125,26 +145,50 @@ public class Network {
 		return result;
 	}
 	
-	/** Gets the raw packet data, Only use this if you know what you are doing. */
+	/** 
+	 * Gets the raw packet data, Only use this if you know what you are doing. Note that any calls to 
+	 * getX() will update the position pointer in the buffer.
+	 * @return The ByteBuffer containing the raw data sent by the server.
+	 **/
 	public static ByteBuffer getData() {
 		return dataIn;
 	}
 	
-	/** Gets a floating point number from the data */
+	/** Gets a floating point number from the data 
+	 * @return The decoded floating point value 
+	 **/
 	public static float getFloat() {
 		return dataIn.getFloat();
 	}
 	
-	public static void sendInt(int i) { dataOut.putInt(i); }
-	public static void sendByte(byte i) { dataOut.put(i); }
+	/**
+	 * Sends a single integer to the server.
+	 * @param i The integer to send.
+	 **/
+	public static void sendInt(int i) { 
+		dataOut.putInt(i); 
+	}
+	
+	/**
+	 * Sends a single byte to the server. This byte is send as a value from 0-255. If the
+	 * integer contains values larger that that the lowest 8 bits will be taken.
+	 * @param i An integer containing a value from 0-255.
+	 */
+	public static void sendByte(int i) { dataOut.put((byte) (i & 0xff)); }
 	public static void sendFloat(float f) { dataOut.putFloat(f); }
 	
 	/** Sends raw data to the server. Only use this if you know what you are doing.
-	 *
+	 * Ensure that the limit and position are set properly.
 	 * @param data A byte array holding the data to send.
 	 **/
-	public static void sendData(byte[] data) { dataOut.put(data); }
+	public static void sendData(byte[] data) { 
+		dataOut.put(data); 
+	}
 	
+	/**
+	 * Sends a String to the server.
+	 * @param s The string to send to the server.
+	 */
 	public static void sendString(String s) { 
 		byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
 		dataOut.putShort((short) bytes.length);

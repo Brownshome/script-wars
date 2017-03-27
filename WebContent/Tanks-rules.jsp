@@ -63,3 +63,66 @@ The direction values are as follows
 		<td>3</td><td>RIGHT</td>
 	</tr>
 </table>
+<h3>Example Script</h3>
+<p>This is an example AI script with the code for reading data from the server filled in. It has
+the AI logic missing. Feel free to use your own method of reading the data if you see fit.</p>
+<pre>
+import brownshome.scriptwars.client.Network;
+
+public class AI {
+	static final int TANK = -3;
+	static final int SPACE = -2;
+	static final int WALL = -1;
+	static final int UP = 0;
+	static final int DOWN = 1;
+	static final int LEFT = 2;
+	static final int RIGHT = 3;
+	
+	public static void main(String[] args) {
+		Network.connect(Integer.parseInt(args[0]), &quot;13.55.154.170&quot;, 35565, &quot;John Smith&quot;);
+		
+		loop:
+		while(Network.nextTick()) {
+			boolean isAlive = Network.getByte() == 1;
+			if(isAlive) {
+				int x = Network.getByte();
+				int y = Network.getByte();
+				int width = Network.getByte();
+				int height = Network.getByte();
+				
+				int[][] grid = new int[height][width];
+				
+				for(int row = 0; row &lt; grid.length; row++) {
+					for(int column = 0; column &lt; grid[row].length; column++) {
+						if(Network.getBoolean()) {
+							grid[row][column] = WALL;
+						} else {
+							grid[row][column] = SPACE;
+						}
+					}
+				}
+				
+				int tanks = Network.getByte();
+				for(int i = 0; i &lt; tanks; i++) {
+					int tankX = Network.getByte();
+					int tankY = Network.getByte();
+					grid[tankY][tankX] = TANK;
+				}
+				
+				int shots = Network.getByte();
+				for(int i = 0; i &lt; shots; i++) {
+					int shotX = Network.getByte();
+					int shotY = Network.getByte();
+					grid[shotX][shotY] = Network.getByte();
+				}
+				
+				//INSERT AI CODE HERE
+				
+			} else {
+				Network.sendByte((byte) 0);
+				System.out.println(&quot;We Are Dead&quot;);
+			}
+		}
+	}
+}
+</pre>
