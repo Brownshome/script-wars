@@ -2,19 +2,22 @@ package brownshome.scriptwars.server.game;
 
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
 public class DisplayHandler {
 	char[][] grid;
 	char[][] oldGrid;
 	
-	Set<Consumer<ByteBuffer>> viewers = new HashSet<>(); //TODO thread safety
-	Set<Consumer<ByteBuffer>> newViewers = new HashSet<>(); //TODO thread safety
+	Set<Consumer<ByteBuffer>> viewers = new HashSet<>();
+	Set<Consumer<ByteBuffer>> newViewers = new HashSet<>();
+	
+	private final ReentrantReadWriteLock displayLock = new ReentrantReadWriteLock();
 	
 	/**
-	 * For send format see GameViewerSocket
+	 * For send format see GameViewerSocket.
 	 */
-	public void print() {
+	public synchronized void print() {
 		ByteBuffer buffer = getBulkSyncBuffer();
 		
 		for(Consumer<ByteBuffer> viewer : newViewers) {
@@ -111,11 +114,15 @@ public class DisplayHandler {
 		}
 	}
 
-	public void addViewer(Consumer<ByteBuffer> viewer) {
+	public synchronized void addViewer(Consumer<ByteBuffer> viewer) {
 		newViewers.add(viewer);
 	}
 
-	public void removeViewer(Consumer<ByteBuffer> viewer) {
+	public synchronized void removeViewer(Consumer<ByteBuffer> viewer) {
 		viewers.remove(viewer);
+	}
+
+	ReentrantReadWriteLock getLock() {
+		return displayLock;
 	}
 }

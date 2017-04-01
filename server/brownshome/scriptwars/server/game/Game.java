@@ -1,6 +1,7 @@
 package brownshome.scriptwars.server.game;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 
 import brownshome.scriptwars.server.Server;
@@ -8,22 +9,24 @@ import brownshome.scriptwars.server.connection.ConnectionHandler;
 
 /** The interface that all played games must implement. */
 public abstract class Game {
-	enum GameState {
+	private enum GameState {
 		ACTIVE, CLOSING, CLOSED
 	}
 
-	static Game[] activeGames = new Game[256];
+	private static final ReentrantReadWriteLock activeGamesLock = new ReentrantReadWriteLock();
+	/** This may be read and written to from all three threads. All access must use {@link #activeGamesLock} except from single reads */
+	private static final Game[] activeGames = new Game[256];
 
 	/** The time the game has to close in millis */
-	static final long CLOSING_GRACE = 30 * 1000l;
+	public static final long CLOSING_GRACE = 30 * 1000l;
 
 	private final ConnectionHandler connectionHandler;
-	final DisplayHandler displayHandler;
-	final int slot;
+	private final DisplayHandler displayHandler;
+	private int slot = -1;
 	
-	GameState state = GameState.ACTIVE; //TODO possibility of pre-start phase
-	long timeClosed;
-	GameType type;
+	private GameState state = GameState.ACTIVE; //TODO possibility of pre-start phase
+	private long timeClosed;
+	private GameType type;
 	
 	/** 
 	 * @return If the game sends specific data to each player
@@ -43,7 +46,7 @@ public abstract class Game {
 	/**
 	 * Runs the tick for the game
 	 */
-	public abstract void tick();
+	protected abstract void tick();
 	
 	/**
 	 * @return The maximum size of the data to send in bytes per player.
@@ -90,35 +93,19 @@ public abstract class Game {
 	 * 
 	 * @param handler The {@link brownshome.scriptwars.server.game.DisplayHandler DisplayHandler} that the commands are to be sent to
 	 */
-	public abstract void displayGame(DisplayHandler handler);
+	protected abstract void displayGame(DisplayHandler handler);
 
 	/**
 	 * Called when the game is externally told to close down. This is a signal to start the end process.
 	 * The game will have 30 seconds once this is called to call the {@link GameHandler#gameEnded() gameEnded} method.
 	 */
-	public abstract void stop();
+	protected abstract void stop();
 
 	public void addPlayer(Player player) {
 		type.signalListUpdate();
 	}
 	
-	public Game(ConnectionHandler connectionHandler, DisplayHandler displayHandler, GameType type) throws OutOfIDsException {
-		int tmp = -1;
-		
-		for(int i = 0; i < activeGames.length; i++) {
-			if(activeGames[i] == null) {
-				activeGames[i] = this;
-				tmp = i;
-				break;
-			}
-		}
-		
-		slot = tmp;
-		if(slot == -1) {
-			Server.LOG.log(Level.SEVERE, "Not enough slots to start game \'" + getName() + "\'.");
-			throw new OutOfIDsException();
-		}
-		
+	protected Game(ConnectionHandler connectionHandler, DisplayHandler displayHandler, GameType type) {
 		this.connectionHandler = connectionHandler;
 		connectionHandler.game = this;
 		this.displayHandler = displayHandler;
@@ -126,8 +113,33 @@ public abstract class Game {
 		this.type = type;
 	}
 	
+	/** This must be called inside a write locked block */
+	void addToSlot() throws OutOfIDsException {
+		for(int i = 0; i < activeGames.length; i++) {
+			if(activeGames[i] == null) {
+				activeGames[i] = this;
+				slot = i;
+				break;
+			}
+		}
+
+		if(slot == -1) {
+			Server.LOG.log(Level.SEVERE, "Not enough slots to start game \'" + getName() + "\'.");
+			throw new OutOfIDsException();
+		}
+	}
+	
+	static ReentrantReadWriteLock getActiveGamesLock() {
+		return activeGamesLock;
+	}
+	
 	public static Game getGame(int gameCode) {
-		return activeGames[gameCode];
+		activeGamesLock.readLock().lock();
+		try {
+			return activeGames[gameCode];
+		} finally {
+			activeGamesLock.readLock().unlock();
+		}
 	}
 	
 	/** Causes the game loop to exit. This should be called from the tick method */
@@ -137,8 +149,10 @@ public abstract class Game {
 	
 	/** This is the main method that is called from the game thread
 	 * 
+	 *  This method is syncronized on the game object, making it so that no network opperations can occur while the game is not sleeping
+	 * 
 	 *  FOR INTERNAL USE ONLY */
-	void gameLoop() {
+	private synchronized void gameLoop() {
 		while(true) {
 			long lastTick = System.currentTimeMillis(); //keep this the first line.
 
@@ -149,14 +163,15 @@ public abstract class Game {
 			}
 			
 			displayGame(displayHandler);
+			
 			getConnectionHandler().sendData();
 			getConnectionHandler().waitForResponses(lastTick + getTickRate());
 			
-			long timeToSleep = lastTick - System.currentTimeMillis() + getTickRate();
+			long timeToSleep;
 
-			if(timeToSleep > 0) {
+			while((timeToSleep = lastTick - System.currentTimeMillis() + getTickRate()) > 0) {
 				try {
-					Thread.sleep(timeToSleep); //keep this the last line.
+					wait(timeToSleep); //keep this the last line. (wait is used to give up this object's monitor). Posible replace this with sleep and used blocks or locks instead
 				} catch (InterruptedException e) {
 					//Used as a shutdown flag.
 					stop();
@@ -174,7 +189,12 @@ public abstract class Game {
 			Server.LOG.log(Level.WARNING, "Game \'" + getName() + "\' failed to close in time.");
 		}
 		
-		activeGames[slot] = null;
+		activeGamesLock.writeLock().lock();
+		try {
+			activeGames[slot] = null;
+		} finally {
+			activeGamesLock.writeLock().unlock();
+		}
 	}
 	
 	public void start() {

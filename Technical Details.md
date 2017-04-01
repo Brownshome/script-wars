@@ -35,4 +35,10 @@ The communication from the server to the client has no ID but does have a single
 
 ## Threading information
 
-At the moment there is a UDP listener thread, one thread per game, and the tomcat server thread. There has been very little work done on thread safety and is an issue I will be addressing in the future.
+At the moment there is a UDP listener thread, one thread per game, and the tomcat server thread.
+
+The Game loop / Network system is synchronized through the game object monitor.
+The Game - ID mapping is synchronized through a ReentantReadWriteLock.
+The Display Viewer list (web clients) is synchronized through the display object monitor.
+The Game Type list is synchronized through the a ReentrantReadWriteLock.
+The Game Type table listeners are synchronized through the gameType object monitor.

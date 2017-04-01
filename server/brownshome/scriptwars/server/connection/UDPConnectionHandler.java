@@ -25,12 +25,10 @@ import brownshome.scriptwars.server.game.Player;
  * For outgoing packets the first byte is a purpose code, 0 is game data, 1 is disconnect, 2 is timedOut, -1 is server error.
  */
 public class UDPConnectionHandler extends ConnectionHandler {
-	public static final int port = 35565;
-	static DatagramSocket socket;
-
-	static byte[] errorPacket; //TODO allow custom error messages 
-
-	static class ConnectionDetails {
+	public static final int PORT = 35565;
+	public static final int UPD_PROTOCOL_BYTE = 1;
+	
+	private static class ConnectionDetails {
 		@Override
 		public int hashCode() {
 			final int prime = 31;
@@ -39,7 +37,7 @@ public class UDPConnectionHandler extends ConnectionHandler {
 			result = prime * result + port;
 			return result;
 		}
-
+	
 		@Override
 		public boolean equals(Object obj) {
 			if (this == obj)
@@ -58,31 +56,23 @@ public class UDPConnectionHandler extends ConnectionHandler {
 				return false;
 			return true;
 		}
-
-		InetAddress address;
-		int port;
-
-		ConnectionDetails(DatagramPacket packet) {
+	
+		private InetAddress address;
+		private int port;
+	
+		private ConnectionDetails(DatagramPacket packet) {
 			port = packet.getPort();
 			address = packet.getAddress();
 		}
 	}
 
-	ConnectionDetails[] details = new ConnectionDetails[256];
+	private static DatagramSocket socket;
 
-	static {
-		byte[] string = "Error processing packet".getBytes(StandardCharsets.UTF_8);
-		errorPacket = new byte[Byte.BYTES + Short.BYTES + string.length];
-		errorPacket[0] = -1;
-		errorPacket[1] = (byte) ((string.length >> 8) & 0xff);
-		errorPacket[2] = (byte) (string.length & 0xff);
-
-		startListenerThread();
-	}
+	private ConnectionDetails[] details = new ConnectionDetails[256];
 
 	public static void startListenerThread() {
 		try {
-			socket = new DatagramSocket(35565);
+			socket = new DatagramSocket(PORT);
 		} catch (SocketException e) {
 			Server.LOG.log(Level.SEVERE, "Unable to bind to port.", e);
 			System.exit(1);
@@ -92,7 +82,7 @@ public class UDPConnectionHandler extends ConnectionHandler {
 		listenerThread.start();
 	}
 
-	static void listenLoop() {
+	private static void listenLoop() {
 		byte[] buffer = new byte[1024];
 		ByteBuffer passingBuffer = ByteBuffer.wrap(buffer);
 		DatagramPacket packet = new DatagramPacket(buffer, 1024);
@@ -108,9 +98,15 @@ public class UDPConnectionHandler extends ConnectionHandler {
 				passingBuffer.limit(packet.getLength());
 
 				int ID = passingBuffer.getInt();
+				int protocol = (ID >> 16) & 0xff;
 				int playerCode = ID & 0xff;
 				int gameCode = (ID >> 8) & 0xff;
 
+				if(protocol != UPD_PROTOCOL_BYTE) {
+					sendErrorPacket(new ConnectionDetails(packet), "Incorrect Protocol Byte for UDP");
+					continue;
+				}
+				
 				Game game = Game.getGame(gameCode);
 
 				if(game == null) {
@@ -126,34 +122,8 @@ public class UDPConnectionHandler extends ConnectionHandler {
 					sendErrorPacket(new ConnectionDetails(packet), "Invalid ID");
 					continue;
 				}
-
-				Player player = connectionHandler.getPlayer(playerCode);
-
-				if(player == null) {
-					sendErrorPacket(new ConnectionDetails(packet), "Invalid ID");
-					continue;
-				}
-
-				if(!player.isActive()) {
-					short length = passingBuffer.getShort();
-					String name = new String(passingBuffer.array(), passingBuffer.arrayOffset() + passingBuffer.position(), length, StandardCharsets.UTF_8); //TODO move to utility function?
-					player.setName(name);
-					
-					connectionHandler.details[player.getSlot()] = new ConnectionDetails(packet);
-					connectionHandler.makePlayerActive(player);
-				} else {
-					ConnectionDetails newDetails = new ConnectionDetails(packet);
-					
-					if(!newDetails.equals(connectionHandler.details[player.getSlot()])) {
-						try {
-							sendErrorPacket(newDetails, "That ID is in use. Please use this one: " + connectionHandler.game.getType().getUserID());
-						} catch(GameCreationException e)  {
-							sendErrorPacket(newDetails, "That ID is in use. Unable to create a new game");
-						}
-					}
-					
-					connectionHandler.incommingData(passingBuffer, player);
-				}
+				
+				connectionHandler.handlePacket(playerCode, packet, passingBuffer);
 			} catch (Exception e) {
 				Server.LOG.log(Level.SEVERE, "Error processing packet", e);
 				
@@ -163,7 +133,72 @@ public class UDPConnectionHandler extends ConnectionHandler {
 		}
 	}
 
-	static void sendErrorPacket(ConnectionDetails details, String message) {
+	private void handlePacket(int playerCode, DatagramPacket packet, ByteBuffer passingBuffer) {
+		//There are faster ways to do this, but this shouldn't be too bad.
+		//The only issue is that slow games could cause fast games to be starved as they are denied access to the Network thread
+		synchronized(game) {
+			Player player = getPlayer(playerCode);
+			if(player == null) {
+				sendErrorPacket(new ConnectionDetails(packet), "Invalid ID");
+				return;
+			}
+
+			if(!player.isActive()) {
+				short length = passingBuffer.getShort();
+				String name = new String(passingBuffer.array(), passingBuffer.arrayOffset() + passingBuffer.position(), length, StandardCharsets.UTF_8); //TODO move to utility function?
+				player.setName(name);
+
+				details[player.getSlot()] = new ConnectionDetails(packet);
+				makePlayerActive(player);
+			} else {
+				ConnectionDetails newDetails = new ConnectionDetails(packet);
+
+				if(!newDetails.equals(details[player.getSlot()])) {
+					try {
+						sendErrorPacket(newDetails, "That ID is in use. Please use this one: " + game.getType().getUserID());
+					} catch(GameCreationException e)  {
+						sendErrorPacket(newDetails, "That ID is in use. Unable to create a new game");
+					}
+				}
+
+				incommingData(passingBuffer, player);
+			}
+		}
+	}
+
+	@Override
+	protected int getProtocolByte() {
+		return UPD_PROTOCOL_BYTE;
+	}
+
+	@Override
+	protected void sendData(Player player, ByteBuffer buffer) {
+		sendPacket(details[player.getSlot()], buffer);
+	}
+
+	@Override
+	protected void timeOutPlayer(Player player) {
+		sendTimeoutPacket(details[player.getSlot()]);
+		disconnect(player);
+	}
+
+	@Override
+	protected void endGame(Player player) {
+		sendDisconnectPacket(details[player.getSlot()]);
+		disconnect(player);
+	}
+
+	@Override
+	protected void sendError(Player player, String message) {
+		sendErrorPacket(details[player.getSlot()], message);
+		disconnect(player);
+	}
+	
+	private void disconnect(Player player) {
+		details[player.getSlot()] = null;
+	}
+
+	private static void sendErrorPacket(ConnectionDetails details, String message) {
 		try {
 			byte[] bytes = message.getBytes();
 			short length = (short) bytes.length;
@@ -180,7 +215,7 @@ public class UDPConnectionHandler extends ConnectionHandler {
 		}
 	}
 
-	static void sendDisconnectPacket(ConnectionDetails details) {
+	private static void sendDisconnectPacket(ConnectionDetails details) {
 		try {
 			socket.send(new DatagramPacket(new byte[] {1}, 1, details.address, details.port));
 		} catch (IOException e) {
@@ -188,7 +223,7 @@ public class UDPConnectionHandler extends ConnectionHandler {
 		}
 	}
 
-	static void sendTimeoutPacket(ConnectionDetails details) {
+	private static void sendTimeoutPacket(ConnectionDetails details) {
 		try {
 			socket.send(new DatagramPacket(new byte[] {2}, 1, details.address, details.port));
 		} catch (IOException e) {
@@ -196,48 +231,16 @@ public class UDPConnectionHandler extends ConnectionHandler {
 		}
 	}
 
-	static void sendPacket(ConnectionDetails details, ByteBuffer data) {
+	private static void sendPacket(ConnectionDetails details, ByteBuffer data) {
 		try {
 			byte[] array = new byte[data.remaining() + 1];
 			array[0] = 0;
 			data.get(array, 1, array.length - 1);
-
+	
 			socket.send(new DatagramPacket(array, array.length, details.address, details.port));
 			data.rewind();
 		} catch(IOException e) {
 			Server.LOG.log(Level.SEVERE, "Unable to send packet", e);
 		}
-	}
-
-	@Override
-	int getProtocolByte() {
-		return 1;
-	}
-
-	@Override
-	void timeOutPlayer(Player player) {
-		sendTimeoutPacket(details[player.getSlot()]);
-		disconnect(player);
-	}
-
-	@Override
-	void endGame(Player player) {
-		sendDisconnectPacket(details[player.getSlot()]);
-		disconnect(player);
-	}
-
-	@Override
-	void sendData(Player player, ByteBuffer buffer) {
-		sendPacket(details[player.getSlot()], buffer);
-	}
-
-	@Override
-	void sendError(Player player, String message) {
-		sendErrorPacket(details[player.getSlot()], message);
-		disconnect(player);
-	}
-	
-	private void disconnect(Player player) {
-		details[player.getSlot()] = null;
 	}
 }

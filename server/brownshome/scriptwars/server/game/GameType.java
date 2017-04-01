@@ -3,6 +3,7 @@ package brownshome.scriptwars.server.game;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import brownshome.scriptwars.server.connection.ConnectionHandler;
 import brownshome.scriptwars.server.game.tanks.TankGame;
@@ -37,6 +38,7 @@ public class GameType {
 	String name;
 	String description;
 	
+	ReentrantReadWriteLock gamesLock = new ReentrantReadWriteLock();
 	Collection<Game> games = new ArrayList<>();
 	Set<Runnable> onListUpdate = new HashSet<>();
 	
@@ -51,12 +53,15 @@ public class GameType {
 		
 		this.constructor = () -> {
 			try {
+				Game.getActiveGamesLock().writeLock().lock();
 				Game game = constructor.newInstance(this);
-				game.type = this;
+				game.addToSlot();
 				game.start();
 				return game;
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			} catch (OutOfIDsException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 				throw new GameCreationException("Unable to instantiate game", e);
+			} finally {
+				Game.getActiveGamesLock().writeLock().unlock(); //This will always be executed, even if the function returns normally
 			}
 		};
 		
@@ -78,7 +83,12 @@ public class GameType {
 	}
 	
 	public int getPlayerCount() {
-		return games.stream().map(Game::getConnectionHandler).mapToInt(ConnectionHandler::getPlayerCount).sum();
+		gamesLock.readLock().lock();
+		try {
+			return games.stream().map(Game::getConnectionHandler).mapToInt(ConnectionHandler::getPlayerCount).sum();
+		} finally {
+			gamesLock.readLock().unlock();
+		}
 	}
 	
 	public String getDescription() {
@@ -92,19 +102,29 @@ public class GameType {
 	}
 	
 	public Game getAvailableGame() throws GameCreationException {
-		for(Game game : games) {
-			if(game.hasSpaceForPlayer())
-				return game;
+		gamesLock.writeLock().lock();
+		try {
+			for(Game game : games) {
+				if(game.hasSpaceForPlayer())
+					return game;
+			}
+
+			Game availableGame = constructor.get();
+			games.add(availableGame);
+			signalListUpdate();
+			return availableGame;
+		} finally {
+			gamesLock.writeLock().unlock();
 		}
-		
-		Game availableGame = constructor.get();
-		games.add(availableGame);
-		signalListUpdate();
-		return availableGame;
 	}
 	
 	public Collection<Game> getGames() {
-		return games;
+		gamesLock.readLock().lock();
+		try {
+			return new ArrayList<>(games); //return a copy for thread safety
+		} finally {
+			gamesLock.readLock().unlock();
+		}
 	}
 
 	public synchronized void onListUpdate(Runnable update) {

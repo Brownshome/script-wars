@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import brownshome.scriptwars.server.connection.UDPConnectionHandler;
 import brownshome.scriptwars.server.game.*;
 import brownshome.scriptwars.server.game.tanks.TankGame;
 
@@ -14,6 +15,7 @@ public class Server {
 	
 	public static void initialize() {
 		try {
+			UDPConnectionHandler.startListenerThread();
 			GameType.addDebugType(TestGame.class);
 			GameType.addType(TankGame.class);
 		} catch (GameCreationException gce) {

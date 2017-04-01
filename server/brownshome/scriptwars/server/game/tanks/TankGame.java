@@ -61,11 +61,11 @@ public class TankGame extends Game {
 
 	@Override
 	public int getTickRate() {
-		return 250;
+		return 50;
 	}
 
 	@Override
-	public synchronized void tick() {
+	public void tick() {
 		world.rollBackTanks();
 		world.moveShots();
 		world.fireTanks();
@@ -101,7 +101,7 @@ public class TankGame extends Game {
 	 * }
 	 */
 	@Override
-	public synchronized boolean getData(Player player, ByteBuffer data) {
+	public boolean getData(Player player, ByteBuffer data) {
 		boolean isAlive = world.isAlive(player);
 		
 		data.put(isAlive ? (byte) 1 : (byte) 0);
@@ -137,7 +137,7 @@ public class TankGame extends Game {
 	}
 
 	@Override
-	public synchronized void processData(ByteBuffer data, Player player) {
+	public void processData(ByteBuffer data, Player player) {
 		if(!world.isAlive(player))
 			world.spawnTank(player);
 		
@@ -168,7 +168,7 @@ public class TankGame extends Game {
 	}
 
 	@Override
-	public synchronized void displayGame(DisplayHandler handler) {
+	public void displayGame(DisplayHandler handler) {
 		world.displayWorld(handler);
 		handler.print();
 	}
@@ -177,13 +177,13 @@ public class TankGame extends Game {
 	public void stop() {}
 
 	@Override
-	public synchronized void addPlayer(Player player) {
+	public void addPlayer(Player player) {
 		super.addPlayer(player);
 		world.spawnTank(player);
 	}
 
 	@Override
-	public synchronized void removePlayer(Player player) {
+	public void removePlayer(Player player) {
 		super.removePlayer(player);
 		if(world.isAlive(player))
 			world.removeTank(player);
