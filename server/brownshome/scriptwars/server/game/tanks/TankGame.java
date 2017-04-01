@@ -61,7 +61,7 @@ public class TankGame extends Game {
 
 	@Override
 	public int getTickRate() {
-		return 50;
+		return 250;
 	}
 
 	@Override
