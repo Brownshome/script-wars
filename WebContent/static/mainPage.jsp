@@ -31,7 +31,7 @@
         </table>
         
         <h2>How To Compete</h2>
-        <p>Download the client library <a href="https://raw.githubusercontent.com/Brownshome/script-wars/master/client/java/brownshome/scriptwars/client/Network.java">
+        <p>Download the client library <a href="https://raw.githubusercontent.com/Brownshome/script-wars/master/client/java/brownshome/scriptwars/client/Network.java" download="Network.java">
         here</a>. It needs to be placed in a <b>brownshome/scriptwars/client</b> folder next to your AI code.
         Pick a game to play from the list above. Use the functions in the Network class documented 
         <a href="/doc/brownshome/scriptwars/client/Network.html">here</a> to create an AI. Request an ID from the game page and use it in
@@ -45,6 +45,7 @@
         <a href="https://github.com/Brownshome/script-wars">here</a> along with more information about how to
         contribute to the project. But to sum up the information, the project needs help writing the css pages
         for the site and creating games other than "Tank Game". Any other changes to the project to benefit
-        ease of use and / or the user experience are also welcome.
+        ease of use and / or the user experience are also welcome.</p>
+        <p>Also feel free to document any improvements or feedback <a href="https://github.com/Brownshome/script-wars/issues">here</a>.</p>
 	</body>
 </html>
