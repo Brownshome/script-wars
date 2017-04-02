@@ -75,13 +75,14 @@ function paintItem(x, y, c) {
 		wall(x, y);
 		break;
 	case 2: //bullet
-		fill(x, y, images.bullet);
-		break;
-	case 3: //tank
-		fill(x, y, images.tank);
+		shot(x, y);
 		break;
 	default:
-		canvasError();
+		if(c - 3 < 10) {
+			tank(x, y, c - 3);
+		} else {
+			canvasError();
+		}
 	}
 }
 
@@ -99,6 +100,33 @@ function handleDeltaData(dataView) {
 	}
 }
 
+var colours = [
+	[255, 99, 71], //red
+	[0, 128, 0], //green
+	[64, 224, 208], //cyan
+	[0, 0, 255], //blue
+	[148, 0, 211], //violet
+	[255, 20, 147], //pink
+	[128, 128, 0], //yellow
+	[0, 0, 0], //black
+	[75, 0, 130], //indigo
+	[255, 165, 0] //orange
+];
+
+function tank(x, y, k) {
+	canvas.drawImage(images.tank, x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
+	var imageData = canvas.getImageData(x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
+	for(var i = 0; i < imageData.data.length; i += 4) {
+		if(imageData.data[i] < 100) {
+			imageData.data[i] = colours[k][0];
+			imageData.data[i + 1] = colours[k][1];
+			imageData.data[i + 2] = colours[k][2];
+		}
+	}
+	
+	canvas.putImageData(imageData, x * pixelSize / width, y * pixelSize / height);
+}
+
 function wall(x, y) {
 	canvas.fillStyle = 'black';
 	canvas.fillRect(x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
@@ -108,9 +136,9 @@ function clear(x, y) {
 	canvas.clearRect(x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
 }
 
-function fill(x, y, image) {
+function shot(x, y) {
 	clear(x, y);
 	
-	canvas.drawImage(image, x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
+	canvas.drawImage(images.bullet, x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
 }
 
