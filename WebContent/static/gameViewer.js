@@ -22,7 +22,7 @@ function disconnectWebSocket() {
 	socket.close();
 }
 
-var pixelSize = 1024;
+var pixelSize = 512;
 var width;
 var height;
 
