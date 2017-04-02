@@ -12,4 +12,9 @@ public class StartupHooks implements ServletContextListener {
 	public void contextInitialized(ServletContextEvent sce) {
 		Server.initialize();
 	}
+	
+	@Override
+	public void contextDestroyed(ServletContextEvent sce) {
+		Server.shutdown();
+	}
 }

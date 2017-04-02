@@ -153,7 +153,7 @@ public abstract class Game {
 	 * 
 	 *  FOR INTERNAL USE ONLY */
 	private synchronized void gameLoop() {
-		while(true) {
+		while(!Server.shouldStop()) {
 			long lastTick = System.currentTimeMillis(); //keep this the first line.
 
 			tick();

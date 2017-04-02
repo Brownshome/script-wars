@@ -26,7 +26,7 @@ public class IDRequestServlet extends HttpServlet {
 		try {
 			id = GameType.getGameType(rawGameType).getUserID();
 		} catch (GameCreationException e) {
-			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Unable to create game: " + e.getMessage());
+			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unable to create game: " + e.getMessage());
 			return;
 		}
 		
