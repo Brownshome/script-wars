@@ -1,7 +1,7 @@
 package brownshome.scriptwars.server.game.tanks;
 
 public class Shot {
-	static final char BULLET = '•';
+	static final char BULLET = 2;
 	public static final int SPEED = 1;
 	
 	World world;

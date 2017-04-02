@@ -180,13 +180,13 @@ class World {
 		for(int x = 0; x < getWidth(); x++) {
 			for(int y = 0; y < getHeight(); y++) {
 				if(isWall(x, y))
-					display[y][x] = '#';
+					display[y][x] = 1;
 				else {
 					Tank tank = getTank(x, y);
 					if(tank != null) {
-						display[y][x] = tank.getCharacter();
+						display[y][x] = 3;
 					} else
-						display[y][x] = ' ';
+						display[y][x] = 0;
 				}
 			}
 		}
