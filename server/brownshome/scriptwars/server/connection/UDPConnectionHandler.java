@@ -82,12 +82,16 @@ public class UDPConnectionHandler extends ConnectionHandler {
 		listenerThread.start();
 	}
 
+	public static void stop() {
+		socket.close();
+	}
+	
 	private static void listenLoop() {
 		byte[] buffer = new byte[1024];
 		ByteBuffer passingBuffer = ByteBuffer.wrap(buffer);
 		DatagramPacket packet = new DatagramPacket(buffer, 1024);
 
-		while(true) {
+		while(!Server.shouldStop()) {
 			boolean recieved = false;
 			
 			try {

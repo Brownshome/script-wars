@@ -12,6 +12,7 @@ import brownshome.scriptwars.server.game.tanks.TankGame;
  * This class dispatches the loader and the connection handlers. */
 public class Server {
 	public static final Logger LOG = Logger.getLogger("backendServer");
+	private static volatile boolean stop = false;
 	
 	public static void initialize() {
 		try {
@@ -29,5 +30,14 @@ public class Server {
 
 	public static int getUserID(int gameID) {
 		return Game.getGame(gameID).getConnectionHandler().getID();
+	}
+
+	public static void shutdown() {
+		stop = true;
+		UDPConnectionHandler.stop();
+	}
+	
+	public static boolean shouldStop() {
+		return stop;
 	}
 }

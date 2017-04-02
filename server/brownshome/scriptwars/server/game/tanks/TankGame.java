@@ -33,20 +33,12 @@ public class TankGame extends Game {
 	}
 	
 	public TankGame(GameType type) throws OutOfIDsException {
-		this(generateMap(15), type);
-	}
-	
-	private static boolean[][] generateMap(int size) {
-		boolean[][] map = new boolean[size][size];
-		
-		for(int i = 0; i < size; i++) {
-			map[0][i] = true;
-			map[i][0] = true;
-			map[size - 1][i] = true;
-			map[i][size - 1] = true;
-		}
-		
-		return map;
+		this(
+				MapGenerator.getGenerator()
+					.withSize(20, 20)
+					.generate(),
+				type
+			);
 	}
 
 	@Override
