@@ -22,6 +22,6 @@ public class GameServlet extends HttpServlet {
 		
 		//This needs to be session since it is used by some AJAX requests
 		request.getSession().setAttribute("gametype", type);
-		getServletContext().getRequestDispatcher("/gameTemplate.jsp").forward(request, response);
+		getServletContext().getRequestDispatcher("/static/gameTemplate.jsp").forward(request, response);
 	}
 }

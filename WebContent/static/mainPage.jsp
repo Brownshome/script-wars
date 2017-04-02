@@ -23,7 +23,7 @@
                 
                 <c:forEach items="${staticBean.typeList}" var="gameType">
                 <td>
-                    <a href="games/${gameType.name}"><img title="${gameType.description}" src="${gameType.name}.png" alt="${gameType.name}" style="width:128px;height:128px;"></a>
+                    <a href="games/${gameType.name}"><img title="${gameType.description}" src="static/games/${gameType.name}/icon.png" alt="${gameType.name}" style="width:128px;height:128px;"></a>
                     <br>${gameType.playerCount} player${gameType.playerCount == 1 ? "" : "s"} online.
                 </td>
                 </c:forEach>
