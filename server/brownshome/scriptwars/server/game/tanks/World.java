@@ -78,7 +78,9 @@ class World {
 			return;
 		}
 		
-		shots.add(new Shot(x, y, this, direction));
+		if(tank.removeAmmo()) {
+			shots.add(new Shot(x, y, tank, this, direction));
+		}
 	}
 
 	public void rollBackTanks() {

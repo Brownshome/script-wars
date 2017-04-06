@@ -66,7 +66,7 @@ public class TankGame extends Game {
 	@Override
 	public int getDataSize() {
 		//bytes + worldsize + bulletData
-		return 7 + getMaximumPlayers() * 2 + world.getDataSize() + Math.max(world.getWidth(), world.getHeight()) * getMaximumPlayers() * 3;
+		return 7 + getMaximumPlayers() * 2 + world.getDataSize() + Tank.MAX_AMMO * getMaximumPlayers() * 3;
 	}
 
 	/**

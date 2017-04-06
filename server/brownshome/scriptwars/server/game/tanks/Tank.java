@@ -2,12 +2,15 @@ package brownshome.scriptwars.server.game.tanks;
 
 import brownshome.scriptwars.server.game.Player;
 
-class Tank {
+public class Tank {
+	public final static int MAX_AMMO = 5;
+	
 	Player owner;
 	//the direction of the last move
 	Direction direction;
 	World world;
 	int x;
+	int ammo = MAX_AMMO;
 	int y;
 	boolean hasMoved = false;
 	
@@ -85,5 +88,20 @@ class Tank {
 
 	char getCharacter() {
 		return (char) (hashCode() % 25 + 'A');
+	}
+
+	boolean removeAmmo() {
+		if(ammo > 0) {
+			ammo--;
+			return true;
+		}
+		
+		return false;
+	}
+
+	public void returnAmmo() {
+		if(ammo < MAX_AMMO) {
+			ammo++;
+		}
 	}
 }

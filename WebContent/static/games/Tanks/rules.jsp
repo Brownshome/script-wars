@@ -10,10 +10,13 @@ attempts to shoot and destroy their enemies.
 </p><p>
 Each tick every tank can move in any of the cardinal directions or fire a shot
 in any direction. The tank moves 1 space per turn and each shot moves 
-<c:out value="${staticBean.tankGameShotSpeed}"/> spaces per turn. 
+<c:out value="${staticBean.tankGameShotSpeed}"/> spaces per turn.
 </p><p>
 Each tick tanks move, then shots are moved, then shots are fired. It is not 
 possible to die by moving onto a shot.
+</p><p>
+Each tank may only have <c:out value="${staticBean.tankGameAmmo}"/> shots
+in the world at any one time.
 </p><p>
 Players are only sent if there is straight, grid alligned line from their tank
 to your tank.
