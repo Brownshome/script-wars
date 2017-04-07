@@ -6,7 +6,7 @@ import java.util.List;
 import brownshome.scriptwars.client.Network;
 
 /**
- * This is a wrapper over the Network class that gives an api to control the Tank.
+ * This is a wrapper over the Network class that gives an API to control the Tank.
  * This can be used for controlling the tank without knowing the
  * underlying network implementation.<br />
  * <br />
@@ -22,15 +22,11 @@ public class TankAPI {
 		UP, DOWN, LEFT, RIGHT;
 	}
 
-	/**
-	 * This class stores a cartesian coordinate
-	 *
-	 */
-	public class Coordinate {
+	public class Coordinates {
 		private int _x;
 		private int _y;
 
-		public Coordinate(int x, int y){
+		public Coordinates(int x, int y){
 			_x = x;
 			_y = y;
 		}
@@ -44,74 +40,82 @@ public class TankAPI {
 	}
 
 	public class Tank {
-		private Coordinate _coord;
+		private Coordinates _coord;
 
-		public Tank(Coordinate c){
+		public Tank(Coordinates c){
 			_coord = c;
 		}
 
-		public Coordinate getCoordinates(){
+		public Coordinates getCoordinates(){
 			return _coord;
 		}
 	}
 
 	public class Shot {
-		private Coordinate _coord;
+		private Coordinates _coord;
 		private Direction _direction;
 
-		public Shot(Coordinate c, Direction d){
+		public Shot(Coordinates c, Direction d){
 			_coord = c;
 			_direction = d;
 		}
 
-		public Coordinate getCoordinates(){
+		public Coordinates getCoordinates(){
 			return _coord;
 		}
+		
 		public Direction getDirection(){
 			return _direction;
 		}
 	}
 	
-	public class GameMap {
+	public class Map {
 		
 		public static final boolean SPACE = false;
 		public static final boolean WALL = true;
 		
 		private final boolean[][] _walls;
 		
-		protected GameMap(final boolean[][] walls){
+		protected Map(final boolean[][] walls){
 			_walls = walls;
 		}
 		
-		public boolean isWall(Coordinate c){
-			return _walls[c.getY()][c.getX()] == true;
+		public boolean isWall(int x, int y){
+			return _walls[y][x];
 		}
 		
-		public boolean[][] getRawData(){
-			return _walls;
+		public boolean isWall(Coordinates c){
+			return isWall(c.getY(),c.getX());
+		}
+		
+		public int getHeight(){
+			return _walls.length;
+		}
+		
+		public int getWidth(){
+			return _walls[0].length;
 		}
 	}
 
 	public enum Action {
 		NOACTION, MOVE, SHOOT;
 	}
-
+	
+	private Map _map;
+	
 	private boolean _isAlive;
-	
 	private Tank _me;
-	
-	private GameMap _map;
-
 	private List<Tank> _tanks;
 	private List<Shot> _shots;
-
-	private boolean _send = false;
-
+	
 	private int _actionByte;
 	private int _directionByte;
 
+	private boolean _firstSend;
+
 	public TankAPI(int id, String address, int port, String username){
 		Network.connect(id, address, port, username);
+		_firstSend = true;
 	}
 
 	/**
@@ -119,13 +123,13 @@ public class TankAPI {
 	 * This will cause data for the last tick to be sent to the server.
 	 */
 	private void setSendData(){
-		if(_send){
+		if(!_firstSend){
 
 			Network.sendByte(_actionByte);                    //Action Byte, in this case MOVE
 			Network.sendByte(_directionByte);                    //Direction Byte, in this case DOWN
 
 		}else{
-			_send = true;
+			_firstSend = false;
 		}
 
 		_actionByte = Action.NOACTION.ordinal(); // Default action
@@ -133,10 +137,10 @@ public class TankAPI {
 	}
 
 	/**
-	 * This is the main api loop.
+	 * This is the main API loop.
 	 * This should be called from a while loop inside which is
 	 * the main code of the AI. See the example AI.
-	 * @return
+	 * @return True when we have entered into the next game tick.
 	 */
 	public boolean nextTick(){
 
@@ -151,7 +155,7 @@ public class TankAPI {
 			int x = Network.getByte();              // X position
 			int y = Network.getByte();              // Y position
 			
-			_me = new Tank(new Coordinate(x,y));
+			_me = new Tank(new Coordinates(x,y));
 			
 			int width = Network.getByte();          // game width
 			int height = Network.getByte();         // game height
@@ -161,21 +165,21 @@ public class TankAPI {
 			for(int row = 0; row < walls.length; row++) {
 				for(int column = 0; column < walls[row].length; column++) {
 					if(Network.getBoolean()) {      //Is wall
-						walls[row][column] = GameMap.WALL;
+						walls[row][column] = Map.WALL;
 					} else {
-						walls[row][column] = GameMap.SPACE;
+						walls[row][column] = Map.SPACE;
 					}
 				}
 			}
 			
-			_map = new GameMap(walls);
+			_map = new Map(walls);
 
 			int tanks = Network.getByte();          //Number of tanks
 			_tanks = new ArrayList<Tank>();
 			for(int i = 0; i < tanks; i++) {
 				int tankX = Network.getByte();      //Tank x
 				int tankY = Network.getByte();      //Tank y
-				_tanks.add(new Tank(new Coordinate(tankX,tankY)));
+				_tanks.add(new Tank(new Coordinates(tankX,tankY)));
 			}
 
 			int shots = Network.getByte();          //Number of Shots
@@ -184,7 +188,7 @@ public class TankAPI {
 				int shotX = Network.getByte();      //Shot x
 				int shotY = Network.getByte();      //Shot y
 				//Shot direction
-				_shots.add(new Shot(new Coordinate(shotX,shotY),Direction.values()[Network.getByte()]));
+				_shots.add(new Shot(new Coordinates(shotX,shotY),Direction.values()[Network.getByte()]));
 			}
 
 		} else {
@@ -213,13 +217,12 @@ public class TankAPI {
 		_directionByte = direction.ordinal();
 	}
 	
-	/**
-	 * Returns a list of tank objects which are currently visible.
-	 * At the time of writing this is any tank in line of sight.
-	 * @return
-	 */
 	public List<Tank> getVisibleTanks(){
 		return _tanks;
+	}
+	
+	public List<Shot> getVisibleShots(){
+		return _shots;
 	}
 	
 	/**
@@ -235,7 +238,7 @@ public class TankAPI {
 	 * Raw data can be extracted from here for path finding etc.
 	 * @return
 	 */
-	public GameMap getMap(){
+	public Map getMap(){
 		return _map;
 	}
 	

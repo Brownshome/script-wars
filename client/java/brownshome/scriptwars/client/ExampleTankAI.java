@@ -2,7 +2,6 @@ package brownshome.scriptwars.client;
 
 import brownshome.scriptwars.client.tankapi.TankAPI;
 import brownshome.scriptwars.client.tankapi.TankAPI.Direction;
-import brownshome.scriptwars.client.tankapi.TankAPI.GameMap;
 import brownshome.scriptwars.client.tankapi.TankAPI.Tank;
 
 public class ExampleTankAI {
@@ -12,9 +11,12 @@ public class ExampleTankAI {
 		// args[0] should contain the game id.
 		// You can request one from: http://13.55.154.170/games/Tanks
 		
-		//int id = Integer.valueOf(args[0]);
+		int id = 65559;
+		if(args.length > 0){
+			id = Integer.valueOf(args[0]);
+		}
 
-		TankAPI api = new TankAPI(65559, "13.55.154.170", 35565, "John Smith");
+		TankAPI api = new TankAPI(id, "13.55.154.170", 35565, "John Smith");
 
 		while(api.nextTick()) {
 
@@ -29,7 +31,7 @@ public class ExampleTankAI {
 			}
 			
 			// TODO maybe some path finding?
-			GameMap map = api.getMap();
+			TankAPI.Map map = api.getMap();
 			
 			// If we can see a tank, lets shoot it.
 			if(targetTank != null){
