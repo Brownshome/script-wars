@@ -11,7 +11,7 @@ public class ExampleTankAI {
 		// args[0] should contain the game id.
 		// You can request one from: http://13.55.154.170/games/Tanks
 		
-		int id = 65559;
+		int id = 65760; // Default id if none is passed (for testing)
 		if(args.length > 0){
 			id = Integer.valueOf(args[0]);
 		}
@@ -20,6 +20,7 @@ public class ExampleTankAI {
 
 		while(api.nextTick()) {
 
+			// Move randomly, this will be overwritten if we can see someone.
 			int direction = (int) (Math.random()*4);
 			api.move(TankAPI.Direction.values()[direction]);
 			
@@ -31,15 +32,15 @@ public class ExampleTankAI {
 			}
 			
 			// TODO maybe some path finding?
-			TankAPI.Map map = api.getMap();
+			//TankAPI.Map map = api.getMap();
 			
 			// If we can see a tank, lets shoot it.
 			if(targetTank != null){
 				if(api.me().getCoordinates().getX() == targetTank.getCoordinates().getX()){
 					if(api.me().getCoordinates().getY() > targetTank.getCoordinates().getY()){
-						api.shoot(Direction.DOWN);
-					}else{
 						api.shoot(Direction.UP);
+					}else{
+						api.shoot(Direction.DOWN);
 					}
 				}
 				if(api.me().getCoordinates().getY() == targetTank.getCoordinates().getY()){
@@ -50,6 +51,8 @@ public class ExampleTankAI {
 					}
 				}
 			}
+			
+			System.out.println("Position: "+api.me().getCoordinates().getX()+","+api.me().getCoordinates().getY());
 		}
 	}
 }
