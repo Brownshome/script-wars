@@ -8,8 +8,8 @@ import brownshome.scriptwars.client.Network;
 /**
  * This is a wrapper over the Network class that gives an API to control the Tank.
  * This can be used for controlling the tank without knowing the
- * underlying network implementation.<br />
- * <br />
+ * underlying network implementation.
+ * <br>
  * NOTE: This code is currently in beta.
  *
  * @author Liam T. Brand

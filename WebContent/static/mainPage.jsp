@@ -29,15 +29,8 @@
                 </c:forEach>
             <tr>
         </table>
-        
-        <h2>How To Compete</h2>
-        <p>Download the client library <a href="https://raw.githubusercontent.com/Brownshome/script-wars/master/client/java/brownshome/scriptwars/client/Network.java" download="Network.java">
-        here</a>. It needs to be placed in a <b>brownshome/scriptwars/client</b> folder next to your AI code.
-        Pick a game to play from the list above. Use the functions in the Network class documented 
-        <a href="/doc/brownshome/scriptwars/client/Network.html">here</a> to create an AI. Request an ID from the game page and use it in
-        the connect function as shown in the documentation. Compile your code with javac and run it.</p>
-        
-        <p>Use <code>Network.connect(ID, "13.55.154.170", 35565, "John Smith");</code> to connect to the server.</p>
+    
+        <jsp:include page="/static/howToCompete.html"/>
         
         <h2>How to Contribute</h2>
         <p>This project is in the early stages of it's development and you are encouraged to take an active
