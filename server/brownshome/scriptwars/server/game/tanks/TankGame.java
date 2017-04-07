@@ -27,7 +27,7 @@ public class TankGame extends Game {
 	World world;
 	
 	public TankGame(boolean[][] map, GameType type) throws OutOfIDsException {
-		super(new UDPConnectionHandler(), new DisplayHandler(), type);
+		super(type);
 		
 		this.world = new World(map, this);
 	}
@@ -164,9 +164,6 @@ public class TankGame extends Game {
 		world.displayWorld(handler);
 		handler.print();
 	}
-
-	@Override
-	public void stop() {}
 
 	@Override
 	public void addPlayer(Player player) {

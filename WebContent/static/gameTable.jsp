@@ -17,7 +17,7 @@
 			<tr>
 				<!-- TODO highlight next game to join -->
 				<td><c:out value="${loopStatus.index + 1}" /></td>
-				<td><c:out value="Players ${game.connectionHandler.playerCount}/${game.maximumPlayers}" /></td>
+				<td><c:out value="Players ${game.playerCount}/${game.maximumPlayers}" /></td>
 				<td><button onclick="watchGame(${game.slot})">Watch Game</button></td>
 			</tr>
 		</c:forEach>

@@ -120,7 +120,7 @@ public class UDPConnectionHandler extends ConnectionHandler {
 
 				UDPConnectionHandler connectionHandler;
 				try {
-					connectionHandler = (UDPConnectionHandler) game.getConnectionHandler();
+					connectionHandler = (UDPConnectionHandler) game.getConnectionHandler(UPD_PROTOCOL_BYTE);
 				} catch(ClassCastException cce) {
 					Server.LOG.log(Level.SEVERE, "Incorrect Protcol byte", cce);
 					sendErrorPacket(new ConnectionDetails(packet), "Invalid ID");
@@ -137,6 +137,10 @@ public class UDPConnectionHandler extends ConnectionHandler {
 		}
 	}
 
+	protected UDPConnectionHandler(Game game) {
+		super(game);
+	}
+	
 	private void handlePacket(int playerCode, DatagramPacket packet, ByteBuffer passingBuffer) {
 		//There are faster ways to do this, but this shouldn't be too bad.
 		//The only issue is that slow games could cause fast games to be starved as they are denied access to the Network thread
@@ -153,7 +157,7 @@ public class UDPConnectionHandler extends ConnectionHandler {
 				player.setName(name);
 
 				details[player.getSlot()] = new ConnectionDetails(packet);
-				makePlayerActive(player);
+				game.makePlayerActive(player);
 			} else {
 				ConnectionDetails newDetails = new ConnectionDetails(packet);
 
@@ -165,7 +169,7 @@ public class UDPConnectionHandler extends ConnectionHandler {
 					}
 				}
 
-				incommingData(passingBuffer, player);
+				game.incommingData(passingBuffer, player);
 			}
 		}
 	}
@@ -176,24 +180,24 @@ public class UDPConnectionHandler extends ConnectionHandler {
 	}
 
 	@Override
-	protected void sendData(Player player, ByteBuffer buffer) {
+	public void sendData(Player player, ByteBuffer buffer) {
 		sendPacket(details[player.getSlot()], buffer);
 	}
 
 	@Override
-	protected void timeOutPlayer(Player player) {
+	public void timeOutPlayer(Player player) {
 		sendTimeoutPacket(details[player.getSlot()]);
 		disconnect(player);
 	}
 
 	@Override
-	protected void endGame(Player player) {
+	public void endGame(Player player) {
 		sendDisconnectPacket(details[player.getSlot()]);
 		disconnect(player);
 	}
 
 	@Override
-	protected void sendError(Player player, String message) {
+	public void sendError(Player player, String message) {
 		sendErrorPacket(details[player.getSlot()], message);
 		disconnect(player);
 	}

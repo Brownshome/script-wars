@@ -1,11 +1,12 @@
 package brownshome.scriptwars.server.game;
 
 import java.nio.ByteBuffer;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 
 import brownshome.scriptwars.server.Server;
-import brownshome.scriptwars.server.connection.ConnectionHandler;
+import brownshome.scriptwars.server.connection.*;
 
 /** The interface that all played games must implement. */
 public abstract class Game {
@@ -20,14 +21,17 @@ public abstract class Game {
 	/** The time the game has to close in millis */
 	public static final long CLOSING_GRACE = 30 * 1000l;
 
-	private final ConnectionHandler connectionHandler;
+	private final Map<Integer, ConnectionHandler> connections = new HashMap<>();
 	private final DisplayHandler displayHandler;
 	private int slot = -1;
 	
 	private GameState state = GameState.ACTIVE; //TODO possibility of pre-start phase
 	private long timeClosed;
-	private GameType type;
+	private final GameType type;
 	
+	private Set<Player> activePlayers = new HashSet<>();
+	private Set<Player> outstandingPlayers = new HashSet<>();
+
 	/** 
 	 * @return If the game sends specific data to each player
 	 */
@@ -67,50 +71,106 @@ public abstract class Game {
 	 */
 	public abstract void processData(ByteBuffer data, Player player);
 	
-	/**Called when a player times out from the server
-	 * 
-	 * @param p
-	 */
-	public void removePlayer(Player p) {
-		type.signalListUpdate();
-	}
-	
-	/**
-	 * @return The name of this game to be displayed on the website
-	 */
-	public static String getName() {
-		return "Unnamed Game";
-	}
-	
-	/**
-	 * @return A short description of the game to be displayed on the website.
-	 */
-	public static String getDescription() {
-		return "No description";
-	}
-	
 	/** Called after each tick to get data to display on the website.
 	 * 
 	 * @param handler The {@link brownshome.scriptwars.server.game.DisplayHandler DisplayHandler} that the commands are to be sent to
 	 */
 	protected abstract void displayGame(DisplayHandler handler);
 
+	protected Game(GameType type) {
+		this.displayHandler = new DisplayHandler();
+		
+		this.type = type;
+	}
+
 	/**
-	 * Called when the game is externally told to close down. This is a signal to start the end process.
-	 * The game will have 30 seconds once this is called to call the {@link GameHandler#gameEnded() gameEnded} method.
+	 * Called by the connection implementation when data is recieved from the client. This is
+	 * called once per player per tick.
 	 */
-	protected abstract void stop();
+	public void incommingData(ByteBuffer passingBuffer, Player player) {
+		if(outstandingPlayers.remove(player)) {
+			processData(passingBuffer, player);
+			
+			if(outstandingPlayers.isEmpty())
+				notify(); //Wake the game thread if it is waiting for responses
+		}
+	}
 
 	public void addPlayer(Player player) {
 		type.signalListUpdate();
 	}
 	
-	protected Game(ConnectionHandler connectionHandler, DisplayHandler displayHandler, GameType type) {
-		this.connectionHandler = connectionHandler;
-		connectionHandler.game = this;
-		this.displayHandler = displayHandler;
+	/**Called when a player times out from the server
+	 * 
+	 * @param p
+	 */
+	public void removePlayer(Player p) {
+		activePlayers.remove(p);
+		type.signalListUpdate();
+	}
+
+	public void waitForResponses(long cutoffTime) {
+		while(!outstandingPlayers.isEmpty() && !checkTimeOut(cutoffTime)) {
+			long timeToWait = cutoffTime - System.currentTimeMillis();
+			
+			if(timeToWait > 0)
+				try { wait(timeToWait); } catch (InterruptedException e) {}
+		}
 		
-		this.type = type;
+		outstandingPlayers.addAll(activePlayers);
+	}
+	
+	/**
+	 * @param cutoffTime 
+	 * @return True if the timout has exceeded.
+	 */
+	private boolean checkTimeOut(long cutoffTime) {
+		if(System.currentTimeMillis() - cutoffTime <= 0) {
+			return false;
+		}
+		
+		for(Player p : outstandingPlayers) {
+			p.timeOut();
+			
+			Server.LOG.info("Player " + p.getName() + " timed out.");
+		}
+		
+		outstandingPlayers.clear();
+		
+		return true;
+	}
+
+	/** 
+	 * Sends all data relevant to a game
+	 **/
+	public void sendData() {
+		ByteBuffer buffer = ByteBuffer.wrap(new byte[getDataSize()]);
+		
+		if(!hasPerPlayerData()) {
+			if(getData(null, buffer))
+				return;
+			
+			buffer.flip();
+		}
+		
+		for(Player player : activePlayers) {
+			if(hasPerPlayerData()) {
+				buffer.clear();
+				if(!getData(player, buffer))
+					continue;
+				
+				buffer.flip();
+			}
+			
+			player.sendData(buffer);
+		}
+	}
+	
+	/** Gets the number of active players
+	 * @return The number of active players currently on the server
+	 */
+	public int getPlayerCount() {
+		return activePlayers.size();
 	}
 	
 	/** This must be called inside a write locked block */
@@ -129,22 +189,26 @@ public abstract class Game {
 		}
 	}
 	
-	static ReentrantReadWriteLock getActiveGamesLock() {
-		return activeGamesLock;
-	}
-	
-	public static Game getGame(int gameCode) {
-		activeGamesLock.readLock().lock();
-		try {
-			return activeGames[gameCode];
-		} finally {
-			activeGamesLock.readLock().unlock();
+	/**
+	 * Makes a player active. If the game cannot accept another player the player is set to a non-active state and a new ID is sent to
+	 * them in an error message.
+	 * @param player The player to make active
+	 */
+	public void makePlayerActive(Player player) {
+		if(!hasSpaceForPlayer()) {
+			//Move player to a new game
+			try {
+				player.sendError("That game is full, here is a new ID " + getType().getUserID());
+			} catch (GameCreationException e) {
+				player.sendError("That game is full and we were unable to generate a new ID");
+			}
+			
+			return;
 		}
-	}
-	
-	/** Causes the game loop to exit. This should be called from the tick method */
-	public void gameEnded() {
-		state = GameState.CLOSED;
+		
+		player.setActive(true);
+		activePlayers.add(player);
+		addPlayer(player);
 	}
 	
 	/** This is the main method that is called from the game thread
@@ -163,9 +227,8 @@ public abstract class Game {
 			}
 			
 			displayGame(displayHandler);
-			
-			getConnectionHandler().sendData();
-			getConnectionHandler().waitForResponses(lastTick + getTickRate());
+			sendData();
+			waitForResponses(lastTick + getTickRate());
 			
 			long timeToSleep;
 
@@ -173,8 +236,7 @@ public abstract class Game {
 				try {
 					wait(timeToSleep); //keep this the last line. (wait is used to give up this object's monitor). Posible replace this with sleep and used blocks or locks instead
 				} catch (InterruptedException e) {
-					//Used as a shutdown flag.
-					stop();
+					endGame();
 				}
 			} 
 			
@@ -197,6 +259,12 @@ public abstract class Game {
 		}
 	}
 	
+	private void endGame() {
+		for(Player player : activePlayers) {
+			player.endGame();
+		}
+	}
+
 	public void start() {
 		Thread thread = new Thread(this::gameLoop, getName() + " thread");
 		thread.start();
@@ -211,8 +279,12 @@ public abstract class Game {
 		return slot;
 	}
 
-	public ConnectionHandler getConnectionHandler() {
-		return connectionHandler;
+	public ConnectionHandler getDefaultConnectionHandler() {
+		return getConnectionHandler(UDPConnectionHandler.UPD_PROTOCOL_BYTE);
+	}
+
+	public ConnectionHandler getConnectionHandler(int protocolByte) {
+		return connections.computeIfAbsent(protocolByte, i -> ConnectionHandler.createConnection(i, this));
 	}
 
 	public DisplayHandler getDisplayHandler() {
@@ -220,7 +292,7 @@ public abstract class Game {
 	}
 
 	public boolean hasSpaceForPlayer() {
-		return connectionHandler.getPlayerCount() < getMaximumPlayers();
+		return getPlayerCount() < getMaximumPlayers();
 	}
 
 	public GameType getType() {
@@ -229,5 +301,32 @@ public abstract class Game {
 	
 	public int getSlot() {
 		return slot;
+	}
+
+	/**
+	 * @return The name of this game to be displayed on the website
+	 */
+	public static String getName() {
+		return "Unnamed Game";
+	}
+
+	/**
+	 * @return A short description of the game to be displayed on the website.
+	 */
+	public static String getDescription() {
+		return "No description";
+	}
+
+	static ReentrantReadWriteLock getActiveGamesLock() {
+		return activeGamesLock;
+	}
+
+	public static Game getGame(int gameCode) {
+		activeGamesLock.readLock().lock();
+		try {
+			return activeGames[gameCode];
+		} finally {
+			activeGamesLock.readLock().unlock();
+		}
 	}
 }
