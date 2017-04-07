@@ -7,11 +7,14 @@ import brownshome.scriptwars.server.connection.ConnectionHandler;
 /** Holds the identifying information for each connected member.
  * This class is suitable for using as a key in a Map */
 public class Player {
+	private static final int TIMEOUT = 3;
+	
 	private String name = null;
 	private boolean isActive = false;
 	private int slot;
 	private Game game;
 	private ConnectionHandler connection;
+	private int missedPackets = 0;
 	
 	public Player(int slot, ConnectionHandler connectionHandler, Game game) {
 		this.slot = slot;
@@ -28,6 +31,7 @@ public class Player {
 	}
 
 	public void setActive(boolean isActive) {
+		missedPackets = 0;
 		this.isActive = isActive;
 	}
 
@@ -57,5 +61,15 @@ public class Player {
 		isActive = false;
 		connection.endGame(this);
 		game.removePlayer(this);
+	}
+
+	public void droppedPacket() {
+		if(missPacket()) {
+			timeOut();
+		}
+	}
+	
+	private boolean missPacket() {
+		return ++missedPackets >= TIMEOUT;
 	}
 }

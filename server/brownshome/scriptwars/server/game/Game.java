@@ -130,7 +130,7 @@ public abstract class Game {
 		}
 		
 		for(Player p : outstandingPlayers) {
-			p.timeOut();
+			p.droppedPacket();
 			
 			Server.LOG.info("Player " + p.getName() + " timed out.");
 		}
