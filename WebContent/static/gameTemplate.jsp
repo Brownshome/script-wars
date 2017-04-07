@@ -21,6 +21,8 @@
 	
 	<h2>Active Games</h2>
 
+    <div id="playerTable"></div>
+
 	<div id="gameTable">
 	   <jsp:include page="/static/gameTable.jsp" />
 	</div>
