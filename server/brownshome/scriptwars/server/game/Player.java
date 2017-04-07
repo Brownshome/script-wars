@@ -1,6 +1,9 @@
 package brownshome.scriptwars.server.game;
 
 import java.nio.ByteBuffer;
+import java.time.LocalTime;
+import java.time.temporal.*;
+import java.util.Date;
 
 import brownshome.scriptwars.server.connection.ConnectionHandler;
 
@@ -15,6 +18,8 @@ public class Player {
 	private Game game;
 	private ConnectionHandler connection;
 	private int missedPackets = 0;
+	private LocalTime join;
+	private volatile int score;
 	
 	public Player(int slot, ConnectionHandler connectionHandler, Game game) {
 		this.slot = slot;
@@ -22,6 +27,14 @@ public class Player {
 		this.game = game;
 	}
 
+	public Colour getColour() {
+		return Colour.translateToColour(getName());
+	}
+	
+	public String getTimeJoined() {
+		return join.toString();
+	}
+	
 	public String getName() {
 		return name;
 	}
@@ -30,9 +43,11 @@ public class Player {
 		return isActive;
 	}
 
-	public void setActive(boolean isActive) {
+	public void setActive() {
+		score = 0;
+		join = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
 		missedPackets = 0;
-		this.isActive = isActive;
+		this.isActive = true;
 	}
 
 	public int getSlot() {
@@ -71,5 +86,14 @@ public class Player {
 	
 	private boolean missPacket() {
 		return ++missedPackets >= TIMEOUT;
+	}
+
+	/** Only ever call this from one thread */
+	public void addScore(int i) {
+		score++;
+	}
+	
+	public int getScore() {
+		return score;
 	}
 }

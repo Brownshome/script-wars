@@ -120,6 +120,11 @@ public abstract class Game {
 		outstandingPlayers.addAll(activePlayers);
 	}
 	
+	//called by playerTable.jsp
+	public synchronized List<Player> getActivePlayers() {
+		return new ArrayList<>(activePlayers);
+	}
+	
 	/**
 	 * @param cutoffTime 
 	 * @return True if the timout has exceeded.
@@ -169,7 +174,7 @@ public abstract class Game {
 	/** Gets the number of active players
 	 * @return The number of active players currently on the server
 	 */
-	public int getPlayerCount() {
+	public synchronized int getPlayerCount() {
 		return activePlayers.size();
 	}
 	
@@ -206,7 +211,7 @@ public abstract class Game {
 			return;
 		}
 		
-		player.setActive(true);
+		player.setActive();
 		activePlayers.add(player);
 		addPlayer(player);
 	}

@@ -65,6 +65,7 @@ public class Tank {
 	}
 	
 	void kill() {
+		owner.addScore(-1);
 		world.removeTank(this);
 	}
 

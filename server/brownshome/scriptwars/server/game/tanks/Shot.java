@@ -30,6 +30,7 @@ public class Shot {
 			
 			if(tank != null) {
 				tank.kill();
+				owner.owner.addScore(1);
 				owner.returnAmmo();
 				return true;
 			}

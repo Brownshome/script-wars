@@ -33,7 +33,7 @@ import brownshome.scriptwars.server.game.*;
 @ServerEndpoint("/gameviewer/{gametype}")
 public class GameViewerSocket {
 	Consumer<ByteBuffer> viewer;
-	Runnable update;
+	Runnable updateGameTable;
 	
 	Game game;
 	GameType type;
@@ -69,7 +69,7 @@ public class GameViewerSocket {
 		
 		Basic sender = session.getBasicRemote();
 		
-		update = () -> {
+		updateGameTable = () -> {
 			synchronized(session) {
 				if(session.isOpen()) {
 					try { sender.sendBinary(ByteBuffer.wrap(new byte[] {(byte) 2}));} catch (IOException e) {}
@@ -77,7 +77,7 @@ public class GameViewerSocket {
 			}
 		};
 		
-		type.onListUpdate(update);
+		type.onListUpdate(updateGameTable);
 		
 		viewer = data -> {
 				synchronized(session) {
@@ -93,7 +93,7 @@ public class GameViewerSocket {
 		removeViewer();
 		
 		if(type != null)
-			type.removeOnListUpdate(update);
+			type.removeOnListUpdate(updateGameTable);
 	}
 	
 	private void removeViewer() {
