@@ -13,10 +13,9 @@ public class GameType {
 		Game get() throws GameCreationException;
 	}
 	
-	static Map<String, GameType> publicGames = new HashMap<>();
-	static Map<String, GameType> debugGames = new HashMap<>();
+	private static Map<String, GameType> publicGames = new HashMap<>();
 	
-	public static void addType(Class<TankGame> clazz) throws GameCreationException {
+	public static void addType(Class<? extends Game> clazz) throws GameCreationException {
 		GameType type = new GameType(clazz);
 		publicGames.put(type.getName(), type);
 	}
@@ -25,22 +24,17 @@ public class GameType {
 		return publicGames.values();
 	}
 	
-	public static void addDebugType(Class<TestGame> clazz) throws GameCreationException {
-		GameType type = new GameType(clazz);
-		debugGames.put(type.getName(), type);
-	}
-	
 	public static GameType getGameType(String string) {
 		return publicGames.get(string);
 	}
 	
-	GameCreator constructor;
-	String name;
-	String description;
+	private GameCreator constructor;
+	private String name;
+	private String description;
 	
-	ReentrantReadWriteLock gamesLock = new ReentrantReadWriteLock();
-	Collection<Game> games = new ArrayList<>();
-	Set<Runnable> onListUpdate = new HashSet<>();
+	private ReentrantReadWriteLock gamesLock = new ReentrantReadWriteLock();
+	private Collection<Game> games = new ArrayList<>();
+	private Set<Runnable> onListUpdate = new HashSet<>();
 	
 	public GameType(Class<? extends Game> clazz) throws GameCreationException {
 		Constructor<? extends Game> constructor;
@@ -85,7 +79,7 @@ public class GameType {
 	public int getPlayerCount() {
 		gamesLock.readLock().lock();
 		try {
-			return games.stream().map(Game::getConnectionHandler).mapToInt(ConnectionHandler::getPlayerCount).sum();
+			return games.stream().mapToInt(Game::getPlayerCount).sum();
 		} finally {
 			gamesLock.readLock().unlock();
 		}
@@ -98,7 +92,7 @@ public class GameType {
 	/** generates a new ID 
 	 * @throws GameCreationException if a new game could not be created and the existing one is full */
 	public int getUserID() throws GameCreationException {
-		return getAvailableGame().getConnectionHandler().getID();
+		return getAvailableGame().getDefaultConnectionHandler().getID();
 	}
 	
 	public Game getAvailableGame() throws GameCreationException {
