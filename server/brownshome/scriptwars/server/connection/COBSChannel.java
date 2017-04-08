@@ -1,70 +1,21 @@
 package brownshome.scriptwars.server.connection;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 
-/** This class performs COBS encoding on the underlying channel. This is not
- * threadsafe. */
-public class COBSChannel implements ByteChannel {
-	private final ByteChannel channel;
-	private final ByteBuffer singleByteBuffer = ByteBuffer.allocate(1);
+/** This class performs COBS encoding on the underlying channel. */
+public class COBSChannel {
+	private final SocketChannel channel;
+	private ByteBuffer outputBuffer = ByteBuffer.allocate(64);
+	private final ByteBuffer inputBuffer = ByteBuffer.allocate(1024);
 	
-	public COBSChannel(ByteChannel channel) {
+	public COBSChannel(SocketChannel channel) {
 		this.channel = channel;
+		inputBuffer.flip();
+		outputBuffer.flip();
 	}
 	
-	/**
-	 * This method will read a packet from the socket. If the
-	 * packet is longer than the buffer an exception will be thrown
-	 */
-	@Override
-	public int read(ByteBuffer dst) throws IOException {
-		byte length;
-		int start = dst.position();
-		int limit = dst.limit();
-		while(true) {
-			int raw = read();
-			
-			if(raw == 0)
-				return dst.position() - start;
-			
-			if(raw == -1)
-				return -1;
-			
-			length = (byte) raw;
-			
-			dst.limit(dst.position() + Byte.toUnsignedInt(length) - 1);
-			
-			while(dst.hasRemaining()) {
-				if(channel.read(dst) == -1)
-					return -1;
-			}
-			
-			dst.limit(limit);
-			
-			if(length != (byte) 0xff)
-				dst.put((byte) 0);
-		}
-	}
-
-	private int read() throws IOException {
-		singleByteBuffer.clear();
-		channel.read(singleByteBuffer);
-		return singleByteBuffer.get();
-	}
-	
-	@Override
-	public boolean isOpen() {
-		return channel.isOpen();
-	}
-
-	@Override
-	public void close() throws IOException {
-		channel.close();
-	}
-
-	@Override
 	public int write(ByteBuffer src) throws IOException {
 		//COBS adds at most one byte every 254 bytes
 		int written = src.remaining();
@@ -94,5 +45,66 @@ public class COBSChannel implements ByteChannel {
 			channel.write(output);
 		
 		return written;
+	}
+
+	/** Buffers may be reused 
+	 * @throws IOException */
+	public ByteBuffer getPacket() throws IOException {
+		byte length;
+		int start = outputBuffer.position();
+		int limit = outputBuffer.limit();
+		while(true) {
+			int raw = read();
+			
+			if(raw == 0) {
+				outputBuffer.flip();
+				return outputBuffer;
+			}
+			
+			if(raw == -1)
+				return null;
+			
+			length = (byte) raw;
+			
+			setLimit(outputBuffer.position() + Byte.toUnsignedInt(length) - 1);
+			
+			while(outputBuffer.hasRemaining()) {
+				if(channel.read(outputBuffer) < 1)
+					return null;
+			}
+			
+			setLimit(outputBuffer.position() + 1);
+			
+			if(length != (byte) 0xff)
+				outputBuffer.put((byte) 0);
+		}
+	}
+
+	private void setLimit(int l) {
+		if(l > outputBuffer.capacity()) {
+			ByteBuffer newBuffer = ByteBuffer.allocate(outputBuffer.capacity() * 2);
+			outputBuffer.flip();
+			newBuffer.put(outputBuffer);
+			outputBuffer = newBuffer;
+		}
+		
+		outputBuffer.limit(l);
+	}
+
+	private int read() throws IOException {
+		if(inputBuffer.hasRemaining()) {
+			return Byte.toUnsignedInt(inputBuffer.get());
+		} else {
+			int read = channel.read(inputBuffer);
+			if(read < 1)
+				return -1;
+			
+			inputBuffer.flip();
+			return read();
+		}
+	}
+
+	public boolean isClosed() {
+		return !channel.isOpen();
 	}
 }

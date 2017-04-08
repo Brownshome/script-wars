@@ -59,7 +59,7 @@ public class Network {
 			case 1:
 				try {
 					connection = new UDPConnection(InetAddress.getByName(ip), 35565);
-				} catch (SocketException | UnknownHostException e) {
+				} catch (IOException e) {
 					throw new RuntimeException("Unable to connect to " + ip, e);
 				}
 				break;
@@ -207,22 +207,19 @@ interface Connection {
 }
 
 class UDPConnection implements Connection {
-	byte[] buffer = new byte[1024]; //If you need any larger than this use TCP
-	DatagramSocket socket;
-	InetAddress address;
-	int port;
+	ByteBuffer buffer = ByteBuffer.allocate(1024); //If you need any larger than this use TCP
+	DatagramChannel channel;
 	
-	UDPConnection(InetAddress address, int port) throws SocketException {
-		this.address = address;
-		this.port = port;
-		socket = new DatagramSocket();
-		socket.setSoTimeout(5000);
+	UDPConnection(InetAddress address, int port) throws IOException {
+		channel = DatagramChannel.open();
+		channel.connect(new InetSocketAddress(address, port));
+		channel.socket().setSoTimeout(5000);
 	}
 	
 	@Override
 	public void sendData(ByteBuffer data) {
 		try {
-			socket.send(new DatagramPacket(data.array(), data.position(), data.remaining(), address, port));
+			channel.write(data);
 		} catch (IOException e) {
 			throw new RuntimeException("Error sending data", e);
 		}
@@ -230,15 +227,15 @@ class UDPConnection implements Connection {
 
 	@Override
 	public ByteBuffer waitForData() {
-		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 		try {
-			socket.receive(packet);
+			buffer.clear();
+			channel.read(buffer);
+			buffer.flip();
 		} catch (IOException e) {
 			throw new RuntimeException("Error receiving data", e);
 		}
 		
-		ByteBuffer data = ByteBuffer.wrap(packet.getData(), packet.getOffset(), packet.getLength());
-		int code = data.get();
+		int code = buffer.get();
 		
 		//Error and disconnect handling
 		switch(code) {
@@ -249,12 +246,12 @@ class UDPConnection implements Connection {
 				System.out.println("Failed to keep up with game tick.");
 				return null;
 			case -1:
-				int stringLength = data.getShort();
-				System.out.println("Server error: " + new String(data.array(), data.position() + data.arrayOffset(), stringLength, StandardCharsets.UTF_8));
+				int stringLength = buffer.getShort();
+				System.out.println("Server error: " + new String(buffer.array(), buffer.position() + buffer.arrayOffset(), stringLength, StandardCharsets.UTF_8));
 				return null;
 		}
 		
-		return data;
+		return buffer;
 	}
 }
 

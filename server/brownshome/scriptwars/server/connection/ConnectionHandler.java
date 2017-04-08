@@ -1,6 +1,7 @@
 package brownshome.scriptwars.server.connection;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -18,8 +19,10 @@ import brownshome.scriptwars.server.game.Player;
  * 
  * Booleans are packed, all other data types are byte aligned.
  * Strings have a short prefixed to them representing the length of the string.
+ * 
+ * For outgoing packets the first byte is a purpose code, 0 is game data, 1 is disconnect, 2 is timedOut, -1 is server error.
  */
-public abstract class ConnectionHandler {
+public abstract class ConnectionHandler<PLAYER_ID> {
 	private static final Map<Integer, Function<Game, ? extends ConnectionHandler>> constructors;
 	
 	static {
@@ -59,6 +62,7 @@ public abstract class ConnectionHandler {
 		return player;
 	}
 	
+	private final Map<Player, PLAYER_ID> playerMappings = new HashMap<>();
 	protected final Game game;
 	
 	protected ConnectionHandler(Game game) {
@@ -89,16 +93,39 @@ public abstract class ConnectionHandler {
 		return connectedPlayers[playerCode];
 	}
 
-	public abstract void sendData(Player player, ByteBuffer buffer);
+	public void sendData(Player player, ByteBuffer buffer) {
+		sendRawData(playerMappings.get(player), ByteBuffer.wrap(new byte[] {0}), buffer);
+	}
 
-	public abstract void timeOutPlayer(Player player);
+	public void timeOutPlayer(Player player) {
+		sendRawData(playerMappings.get(player), ByteBuffer.wrap(new byte[] {2}));
+		disconnect(player);
+	}
 
-	public abstract void endGame(Player player);
+	public void endGame(Player player) {
+		sendRawData(playerMappings.get(player), ByteBuffer.wrap(new byte[] {1}));
+		disconnect(player);
+	}
 
+	protected abstract void sendRawData(PLAYER_ID id, ByteBuffer... data);
+	
 	public abstract int getProtocolByte();
 
-	public abstract void sendError(Player player, String message);
+	public void sendError(Player player, String message) {
+		sendRawData(playerMappings.get(player), ByteBuffer.wrap(new byte[] {-1}), stringToBuffer(message));
+		disconnect(player);
+	}
 
+	public static ByteBuffer stringToBuffer(String message) {
+		byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+		ByteBuffer result = ByteBuffer.allocate(bytes.length + Short.BYTES);
+		result.putShort((short) bytes.length);
+		result.put(bytes);
+		result.flip();
+		
+		return result;
+	}
+	
 	private int createPlayer() throws OutOfIDsException {
 		for(int i = 0; i < connectedPlayers.length; i++) {
 			if(connectedPlayers[i] == null) {
@@ -117,5 +144,17 @@ public abstract class ConnectionHandler {
 		}
 		
 		throw new OutOfIDsException();
+	}
+
+	protected void disconnect(Player player) {
+		playerMappings.remove(player);
+	}
+	
+	protected PLAYER_ID getMapping(Player p) {
+		return playerMappings.get(p);
+	}
+	
+	protected void putMapping(PLAYER_ID id, Player p) {
+		playerMappings.put(p, id);
 	}
 }

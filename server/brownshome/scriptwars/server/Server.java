@@ -1,5 +1,6 @@
 package brownshome.scriptwars.server;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,7 +32,9 @@ public class Server {
 
 	public static void shutdown() {
 		stop = true;
-		UDPConnectionHandler.stop();
+		try {
+			UDPConnectionHandler.stop();
+		} catch (IOException e) {}
 	}
 	
 	public static boolean shouldStop() {
