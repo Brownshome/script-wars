@@ -102,32 +102,27 @@ public class UDPConnectionHandler extends ConnectionHandler {
 				passingBuffer.limit(packet.getLength());
 
 				int ID = passingBuffer.getInt();
-				int protocol = (ID >> 16) & 0xff;
-				int playerCode = ID & 0xff;
-				int gameCode = (ID >> 8) & 0xff;
-
-				if(protocol != UPD_PROTOCOL_BYTE) {
-					sendErrorPacket(new ConnectionDetails(packet), "Incorrect Protocol Byte for UDP");
-					continue;
-				}
+				Player player = getPlayerFromID(ID);
 				
-				Game game = Game.getGame(gameCode);
-
-				if(game == null) {
-					sendErrorPacket(new ConnectionDetails(packet), "Invalid ID");
-					continue;
-				}
-
-				UDPConnectionHandler connectionHandler;
-				try {
-					connectionHandler = (UDPConnectionHandler) game.getConnectionHandler(UPD_PROTOCOL_BYTE);
-				} catch(ClassCastException cce) {
-					Server.LOG.log(Level.SEVERE, "Incorrect Protcol byte", cce);
-					sendErrorPacket(new ConnectionDetails(packet), "Invalid ID");
-					continue;
-				}
+				ConnectionDetails newDetails = new ConnectionDetails(packet);
+				UDPConnectionHandler handler = (UDPConnectionHandler) player.getConnectionHander();
 				
-				connectionHandler.handlePacket(playerCode, packet, passingBuffer);
+				synchronized(handler.game) {
+					if(player.isActive()) {
+						if(!newDetails.equals(handler.details[player.getSlot()])) {
+							try {
+								sendErrorPacket(newDetails, "That ID is in use. Please use this one: " + handler.game.getType().getUserID());
+							} catch(GameCreationException e)  {
+								sendErrorPacket(newDetails, "That ID is in use. Unable to create a new game");
+							}
+						} else {
+							player.incommingData(passingBuffer);
+						}
+					} else {
+						player.firstData(passingBuffer);
+						handler.details[player.getSlot()] = newDetails;
+					}
+				}
 			} catch (Exception e) {
 				Server.LOG.log(Level.SEVERE, "Error processing packet", e);
 				
@@ -141,41 +136,8 @@ public class UDPConnectionHandler extends ConnectionHandler {
 		super(game);
 	}
 	
-	private void handlePacket(int playerCode, DatagramPacket packet, ByteBuffer passingBuffer) {
-		//There are faster ways to do this, but this shouldn't be too bad.
-		//The only issue is that slow games could cause fast games to be starved as they are denied access to the Network thread
-		synchronized(game) {
-			Player player = getPlayer(playerCode);
-			if(player == null) {
-				sendErrorPacket(new ConnectionDetails(packet), "Invalid ID");
-				return;
-			}
-
-			if(!player.isActive()) {
-				short length = passingBuffer.getShort();
-				String name = new String(passingBuffer.array(), passingBuffer.arrayOffset() + passingBuffer.position(), length, StandardCharsets.UTF_8); //TODO move to utility function?
-				player.setName(name);
-
-				details[player.getSlot()] = new ConnectionDetails(packet);
-				game.makePlayerActive(player);
-			} else {
-				ConnectionDetails newDetails = new ConnectionDetails(packet);
-
-				if(!newDetails.equals(details[player.getSlot()])) {
-					try {
-						sendErrorPacket(newDetails, "That ID is in use. Please use this one: " + game.getType().getUserID());
-					} catch(GameCreationException e)  {
-						sendErrorPacket(newDetails, "That ID is in use. Unable to create a new game");
-					}
-				}
-
-				game.incommingData(passingBuffer, player);
-			}
-		}
-	}
-
 	@Override
-	protected int getProtocolByte() {
+	public int getProtocolByte() {
 		return UPD_PROTOCOL_BYTE;
 	}
 

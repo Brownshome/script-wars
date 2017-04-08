@@ -1,12 +1,9 @@
 package brownshome.scriptwars.client;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.ByteBuffer;
+import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -43,10 +40,9 @@ public class Network {
 	 * Call this using the ID given to you by the website to connect
 	 * @param ID The ID given to you by the website
 	 * @param ip The ip of the website
-	 * @param port The port the server uses, usually 35565
 	 * @param name The name of your bot
 	 */
-	public static void connect(int ID, String ip, int port, String name) {
+	public static void connect(int ID, String ip, String name) {
 		if(Network.ID != -1) {
 			throw new IllegalStateException("Cannot initialize the connection more than once.");
 		}
@@ -62,9 +58,16 @@ public class Network {
 		switch(protocol) {
 			case 1:
 				try {
-					connection = new UDPConnection(InetAddress.getByName(ip), port);
+					connection = new UDPConnection(InetAddress.getByName(ip), 35565);
 				} catch (SocketException | UnknownHostException e) {
-					throw new RuntimeException("Unable to connect to " + ip + ":" + port, e);
+					throw new RuntimeException("Unable to connect to " + ip, e);
+				}
+				break;
+			case 2:
+				try {
+					connection = new TCPConnection(InetAddress.getByName(ip), 35566);
+				} catch (UnknownHostException e) {
+					throw new RuntimeException("Unable to connect to " + ip, e);
 				}
 				break;
 			default:
@@ -253,4 +256,41 @@ class UDPConnection implements Connection {
 		
 		return data;
 	}
+}
+
+class TCPConnection implements Connection {
+	Socket socket;
+	ByteChannel channel;
+	ByteBuffer buffer = ByteBuffer.allocate(4096);
+	
+	TCPConnection(InetAddress address, int port) {
+		try {
+			socket = new Socket(address, port);
+			channel = null;
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to form TCP connection", e);
+		}
+	}
+	
+	@Override
+	public void sendData(ByteBuffer data) {
+		try {
+			channel.write(data);
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to send data", e);
+		}
+	}
+
+	@Override
+	public ByteBuffer waitForData() {
+		buffer.clear();
+		try {
+			channel.read(buffer);
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to receive data", e);
+		}
+		buffer.flip();
+		return buffer;
+	}
+	
 }

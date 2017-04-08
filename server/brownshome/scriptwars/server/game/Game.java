@@ -77,6 +77,8 @@ public abstract class Game {
 	 */
 	protected abstract void displayGame(DisplayHandler handler);
 
+	public abstract int getPreferedConnectionType();
+
 	protected Game(GameType type) {
 		this.displayHandler = new DisplayHandler();
 		
@@ -285,7 +287,7 @@ public abstract class Game {
 	}
 
 	public ConnectionHandler getDefaultConnectionHandler() {
-		return getConnectionHandler(UDPConnectionHandler.UPD_PROTOCOL_BYTE);
+		return getConnectionHandler(getPreferedConnectionType());
 	}
 
 	public ConnectionHandler getConnectionHandler(int protocolByte) {

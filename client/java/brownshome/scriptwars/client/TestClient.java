@@ -2,7 +2,7 @@ package brownshome.scriptwars.client;
 
 public class TestClient {
 	public static void main(String[] args) throws InterruptedException { 
-		Network.connect(args.length == 0 ? 65536 : Integer.parseInt(args[0]), "localhost", 35565, "TESTING");
+		Network.connect(args.length == 0 ? 65536 : Integer.parseInt(args[0]), "localhost", "TESTING");
 
 		while(Network.nextTick()) {
 			if(Network.getByte() == 0)

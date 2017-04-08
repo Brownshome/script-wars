@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import brownshome.scriptwars.server.connection.UDPConnectionHandler;
+import brownshome.scriptwars.server.connection.*;
 import brownshome.scriptwars.server.game.*;
 import brownshome.scriptwars.server.game.tanks.TankGame;
 
@@ -18,6 +18,7 @@ public class Server {
 	public static void initialize() {
 		try {
 			UDPConnectionHandler.startListenerThread();
+			TCPConnectionHandler.startTCPListener();
 			GameType.addType(TankGame.class);
 		} catch (GameCreationException gce) {
 			Server.LOG.log(Level.SEVERE, "Improperly built game files.", gce);

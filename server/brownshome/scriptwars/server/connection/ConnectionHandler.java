@@ -3,6 +3,7 @@ package brownshome.scriptwars.server.connection;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -15,7 +16,7 @@ import brownshome.scriptwars.server.game.Player;
 /**
  * This class handles the connections to each player and times out players when they take too long.
  * 
- * Booleans are packed, all other data types are byte alligned.
+ * Booleans are packed, all other data types are byte aligned.
  * Strings have a short prefixed to them representing the length of the string.
  */
 public abstract class ConnectionHandler {
@@ -25,6 +26,7 @@ public abstract class ConnectionHandler {
 		Map<Integer, Function<Game, ? extends ConnectionHandler>> innerMap = new HashMap<>();
 		
 		innerMap.put(UDPConnectionHandler.UPD_PROTOCOL_BYTE, UDPConnectionHandler::new);
+		innerMap.put(TCPConnectionHandler.TCP_PROTOCOL_BYTE, TCPConnectionHandler::new);
 		
 		constructors = Collections.unmodifiableMap(innerMap);
 	}
@@ -37,6 +39,26 @@ public abstract class ConnectionHandler {
 		}
 	}
 
+	public static Player getPlayerFromID(int ID) throws ProtocolException {
+		int protocol = (ID >> 16) & 0xff;
+		int playerCode = ID & 0xff;
+		int gameCode = (ID >> 8) & 0xff;
+
+		Game game = Game.getGame(gameCode);
+		if(game == null) {
+			throw new ProtocolException("Invalid ID");
+		}
+
+		ConnectionHandler connectionHandler = game.getConnectionHandler(protocol);
+		Player player = connectionHandler.getPlayer(playerCode);
+		
+		if(player == null || !player.isCorrectProtocol(protocol)) {
+			throw new ProtocolException("Invalid ID");
+		}
+		
+		return player;
+	}
+	
 	protected final Game game;
 	
 	protected ConnectionHandler(Game game) {
@@ -73,7 +95,7 @@ public abstract class ConnectionHandler {
 
 	public abstract void endGame(Player player);
 
-	protected abstract int getProtocolByte();
+	public abstract int getProtocolByte();
 
 	public abstract void sendError(Player player, String message);
 
