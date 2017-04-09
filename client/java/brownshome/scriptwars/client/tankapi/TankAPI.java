@@ -17,6 +17,10 @@ import brownshome.scriptwars.client.Network;
  *
  */
 public class TankAPI {
+	
+	public enum ConnectionStatus{
+		CONNECTED, DROPPED;
+	}
 
 	public enum Direction {
 		UP, DOWN, LEFT, RIGHT;
@@ -112,10 +116,13 @@ public class TankAPI {
 	private int _directionByte;
 
 	private boolean _firstSend;
+	
+	private ConnectionStatus _connStatus;
 
 	public TankAPI(int id, String address, int port, String username){
 		Network.connect(id, address, port, username);
 		_firstSend = true;
+		_connStatus = ConnectionStatus.CONNECTED;
 	}
 
 	/**
@@ -142,12 +149,14 @@ public class TankAPI {
 	 * the main code of the AI. See the example AI.
 	 * @return True when we have entered into the next game tick.
 	 */
-	public boolean nextTick(){
+	public ConnectionStatus nextTick(){
 
 		setSendData();
 
-		while(!Network.nextTick()){
+		if(Network.nextTick()){
 			// Wait for next tick...
+		}else{
+			_connStatus = ConnectionStatus.DROPPED;
 		}
 
 		_isAlive = Network.getByte() == 1;          // Is the player alive
@@ -196,7 +205,7 @@ public class TankAPI {
 			System.out.println("We Are Dead");
 		}
 
-		return true;
+		return _connStatus;
 	}
 
 	/**
