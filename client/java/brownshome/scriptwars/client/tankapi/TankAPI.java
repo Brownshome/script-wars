@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import brownshome.scriptwars.client.Network;
+import brownshome.scriptwars.server.game.tanks.*;
 
 /**
  * This is a wrapper over the Network class that gives an API to control the Tank.
@@ -17,50 +18,28 @@ import brownshome.scriptwars.client.Network;
  *
  */
 public class TankAPI {
-
-	public enum Direction {
-		UP, DOWN, LEFT, RIGHT;
-	}
-
-	public class Coordinates {
-		private int _x;
-		private int _y;
-
-		public Coordinates(int x, int y){
-			_x = x;
-			_y = y;
-		}
-
-		public int getX(){
-			return _x;
-		}
-		public int getY(){
-			return _y;
-		}
-	}
-
 	public class Tank {
-		private Coordinates _coord;
+		private Coordinate _coord;
 
-		public Tank(Coordinates c){
+		public Tank(Coordinate c){
 			_coord = c;
 		}
 
-		public Coordinates getCoordinates(){
+		public Coordinate getCoordinates(){
 			return _coord;
 		}
 	}
 
 	public class Shot {
-		private Coordinates _coord;
+		private Coordinate _coord;
 		private Direction _direction;
 
-		public Shot(Coordinates c, Direction d){
+		public Shot(Coordinate c, Direction d){
 			_coord = c;
 			_direction = d;
 		}
 
-		public Coordinates getCoordinates(){
+		public Coordinate getCoordinates(){
 			return _coord;
 		}
 		
@@ -84,8 +63,8 @@ public class TankAPI {
 			return _walls[y][x];
 		}
 		
-		public boolean isWall(Coordinates c){
-			return isWall(c.getY(),c.getX());
+		public boolean isWall(Coordinate c){
+			return isWall(c.x, c.y);
 		}
 		
 		public int getHeight(){
@@ -97,10 +76,6 @@ public class TankAPI {
 		}
 	}
 
-	public enum Action {
-		NOACTION, MOVE, SHOOT;
-	}
-	
 	private Map _map;
 	
 	private boolean _isAlive;
@@ -132,7 +107,7 @@ public class TankAPI {
 			_firstSend = false;
 		}
 
-		_actionByte = Action.NOACTION.ordinal(); // Default action
+		_actionByte = Action.NOTHING.ordinal(); // Default action
 		_directionByte = Direction.UP.ordinal(); // Default direction //TODO fix
 	}
 
@@ -146,8 +121,8 @@ public class TankAPI {
 
 		setSendData();
 
-		while(!Network.nextTick()){
-			// Wait for next tick...
+		if(!Network.nextTick()) {
+			return false; //We have timed out or been disconnected
 		}
 
 		_isAlive = Network.getByte() == 1;          // Is the player alive
@@ -155,7 +130,7 @@ public class TankAPI {
 			int x = Network.getByte();              // X position
 			int y = Network.getByte();              // Y position
 			
-			_me = new Tank(new Coordinates(x,y));
+			_me = new Tank(new Coordinate(x,y));
 			
 			int width = Network.getByte();          // game width
 			int height = Network.getByte();         // game height
@@ -179,7 +154,7 @@ public class TankAPI {
 			for(int i = 0; i < tanks; i++) {
 				int tankX = Network.getByte();      //Tank x
 				int tankY = Network.getByte();      //Tank y
-				_tanks.add(new Tank(new Coordinates(tankX,tankY)));
+				_tanks.add(new Tank(new Coordinate(tankX,tankY)));
 			}
 
 			int shots = Network.getByte();          //Number of Shots
@@ -188,7 +163,7 @@ public class TankAPI {
 				int shotX = Network.getByte();      //Shot x
 				int shotY = Network.getByte();      //Shot y
 				//Shot direction
-				_shots.add(new Shot(new Coordinates(shotX,shotY),Direction.values()[Network.getByte()]));
+				_shots.add(new Shot(new Coordinate(shotX,shotY),Direction.values()[Network.getByte()]));
 			}
 
 		} else {

@@ -1,5 +1,5 @@
 package brownshome.scriptwars.server.game.tanks;
 
-enum Action {
+public enum Action {
 	NOTHING, MOVE, SHOOT;
 }

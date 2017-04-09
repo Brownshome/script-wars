@@ -5,11 +5,11 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 
 /** This class performs COBS encoding on the underlying channel.
- * 110 -Encode-> 31110
- * 11 -Encode-> 3110
+ * 110 -Encode- 31110
+ * 11 -Encode- 3110
  * 
- * 3110 -Decode-> 110 + EOF -> 11
- * 31110 -Decode-> 110 + 0 + EOF -> 110
+ * 3110 -Decode- 110 + EOF - 11
+ * 31110 -Decode- 110 + 0 + EOF - 110
  * 
  * The byte indicates a run of n-1 bytes followed by a zero. The final zero is removed.
  **/

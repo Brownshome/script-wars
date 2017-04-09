@@ -1,8 +1,8 @@
 package brownshome.scriptwars.client;
 
 import brownshome.scriptwars.client.tankapi.TankAPI;
-import brownshome.scriptwars.client.tankapi.TankAPI.Direction;
 import brownshome.scriptwars.client.tankapi.TankAPI.Tank;
+import brownshome.scriptwars.server.game.tanks.Direction;
 
 public class ExampleTankAI {
 
@@ -22,7 +22,7 @@ public class ExampleTankAI {
 
 			// Move randomly, this will be overwritten if we can see someone.
 			int direction = (int) (Math.random()*4);
-			api.move(TankAPI.Direction.values()[direction]);
+			api.move(Direction.values()[direction]);
 			
 			// See if there is a tank in our field of view,
 			// and if there is select it.
@@ -36,15 +36,15 @@ public class ExampleTankAI {
 			
 			// If we can see a tank, lets shoot it.
 			if(targetTank != null){
-				if(api.me().getCoordinates().getX() == targetTank.getCoordinates().getX()){
-					if(api.me().getCoordinates().getY() > targetTank.getCoordinates().getY()){
+				if(api.me().getCoordinates().x == targetTank.getCoordinates().x){
+					if(api.me().getCoordinates().y > targetTank.getCoordinates().y){
 						api.shoot(Direction.UP);
 					}else{
 						api.shoot(Direction.DOWN);
 					}
 				}
-				if(api.me().getCoordinates().getY() == targetTank.getCoordinates().getY()){
-					if(api.me().getCoordinates().getX() > targetTank.getCoordinates().getX()){
+				if(api.me().getCoordinates().y == targetTank.getCoordinates().y){
+					if(api.me().getCoordinates().x > targetTank.getCoordinates().x){
 						api.shoot(Direction.LEFT);
 					}else{
 						api.shoot(Direction.RIGHT);
@@ -52,7 +52,7 @@ public class ExampleTankAI {
 				}
 			}
 			
-			System.out.println("Position: "+api.me().getCoordinates().getX()+","+api.me().getCoordinates().getY());
+			System.out.println("Position: "+api.me().getCoordinates().x+","+api.me().getCoordinates().y);
 		}
 	}
 }
