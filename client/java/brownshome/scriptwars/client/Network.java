@@ -6,6 +6,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
 
+import brownshome.scriptwars.server.connection.COBSChannel;
+
 /**
  * The main class that clients can use to communicate with the server.
  * 
@@ -83,7 +85,7 @@ public class Network {
 		dataOut.flip();
 		connection.sendData(dataOut);
 		dataOut.clear();
-		dataOut.putInt(ID);
+		connection.putHeader(dataOut);
 		dataIn = connection.waitForData();
 		
 		return dataIn != null;
@@ -203,6 +205,7 @@ public class Network {
 
 interface Connection {
 	void sendData(ByteBuffer data);
+	void putHeader(ByteBuffer putInt);
 	ByteBuffer waitForData();
 }
 
@@ -253,17 +256,19 @@ class UDPConnection implements Connection {
 		
 		return buffer;
 	}
+
+	@Override
+	public void putHeader(ByteBuffer data) {
+		data.putInt(Network.ID);
+	}
 }
 
 class TCPConnection implements Connection {
-	Socket socket;
-	ByteChannel channel;
-	ByteBuffer buffer = ByteBuffer.allocate(4096);
+	COBSChannel channel;
 	
 	TCPConnection(InetAddress address, int port) {
 		try {
-			socket = new Socket(address, port);
-			channel = null;
+			channel = new COBSChannel(SocketChannel.open(new InetSocketAddress(address, port)));
 		} catch (IOException e) {
 			throw new RuntimeException("Unable to form TCP connection", e);
 		}
@@ -280,14 +285,29 @@ class TCPConnection implements Connection {
 
 	@Override
 	public ByteBuffer waitForData() {
-		buffer.clear();
-		try {
-			channel.read(buffer);
-		} catch (IOException e) {
-			throw new RuntimeException("Unable to receive data", e);
+		ByteBuffer buffer = channel.getPacket();
+		if(buffer == null)
+			throw new RuntimeException("Connection Dropped");
+
+		int code = buffer.get();
+
+		//Error and disconnect handling
+		switch(code) {
+		case 1:
+			System.out.println("Disconnected by server.");
+			return null;
+		case 2:
+			System.out.println("Failed to keep up with game tick.");
+			return null;
+		case -1:
+			int stringLength = buffer.getShort();
+			System.out.println("Server error: " + new String(buffer.array(), buffer.position() + buffer.arrayOffset(), stringLength, StandardCharsets.UTF_8));
+			return null;
 		}
-		buffer.flip();
+
 		return buffer;
 	}
-	
+
+	@Override
+	public void putHeader(ByteBuffer putInt) {}
 }

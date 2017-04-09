@@ -56,42 +56,58 @@ public class TCPConnectionHandler extends ConnectionHandler<COBSChannel> {
 					if(key.isAcceptable()) {
 						ServerSocketChannel channel = (ServerSocketChannel) key.channel();
 						SocketChannel clientChannel = channel.accept();
+						if(clientChannel == null)
+							continue;
+						
+						clientChannel.configureBlocking(false);
 						clientChannel.register(incomming, SelectionKey.OP_READ, new Data(clientChannel));
 					}
-					
-					if(key.isReadable()) {
-						
-						Data data = (Data) key.attachment();
-						ByteBuffer packet = data.channel.getPacket();
-						try {
-							if(packet != null) {
-								if(data.player == null) {
-									Player p = createPlayer(packet);
-									if(p.getConnectionHander().getMapping(p) != null) {
-										try {
-											sendErrorPacket(data.channel, "That ID is in use. Please use this one: " + p.getConnectionHander().game.getType().getUserID());
-										} catch(GameCreationException e)  {
-											sendErrorPacket(data.channel, "That ID is in use. Unable to create a new game");
-										}
-										
-										key.cancel();
-									}
-									
-									data.player = p;
-								} else {
-									data.player.incommingData(packet);
-								}
-							} else {
-								if(data.channel.isClosed()) {
-									if(data.player != null)
-										data.player.sendError("Connection closed");
 
-									key.cancel();
+					if(key.isReadable()) {
+						Data data = (Data) key.attachment();
+
+						ByteBuffer packet = data.channel.getPacket();
+
+						if(packet != null) {
+							try {
+								if(data.player == null) {
+									data.player = createPlayer(packet);
+									synchronized(data.player.getConnectionHander().game) {
+										if(data.player.isActive()) {
+											try {
+												sendErrorPacket(data.channel, "That ID is in use. Please use this one: " + data.player.getConnectionHander().game.getType().getUserID());
+											} catch(GameCreationException e)  {
+												sendErrorPacket(data.channel, "That ID is in use. Unable to create a new game");
+											}
+
+											data.channel.close();
+											continue;
+										} else {
+											data.player.firstData(packet);
+											data.player.getConnectionHander().putMapping(data.channel, data.player);
+										}
+									}
+								} else {
+									synchronized(data.player.getConnectionHander().game) {
+										data.player.incommingData(packet);
+									}
 								}
+							} catch(Exception e) {
+								if(key.attachment() != null) {
+									Player player = ((Data) key.attachment()).player;
+									if(player != null)
+										player.sendError("Error processing packet " + e.getMessage());
+								}
+								
+								((SocketChannel) key.channel()).socket().close();
 							}
-						}catch(Exception e) {
-							sendErrorPacket(data.channel, "Error processing packet " + e.getMessage());
+						} else {
+							if(data.channel.isClosed()) {
+								if(data.player != null)
+									data.player.timeOut();
+							}
 						}
+
 					}
 				}
 			} catch(IOException e) {
@@ -114,6 +130,11 @@ public class TCPConnectionHandler extends ConnectionHandler<COBSChannel> {
 		return TCP_PROTOCOL_BYTE;
 	}
 
+	protected void disonnect(Player player) {
+		getMapping(player).close();
+		super.disconnect(player);
+	}
+	
 	private static void sendErrorPacket(COBSChannel channel, String message) {
 		sendPacket(channel, ByteBuffer.wrap(new byte[] {-1}), stringToBuffer(message));
 	}
