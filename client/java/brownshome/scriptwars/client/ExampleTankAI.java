@@ -36,15 +36,15 @@ public class ExampleTankAI {
 			
 			// If we can see a tank, lets shoot it.
 			if(targetTank != null){
-				if(api.me().getCoordinates().x == targetTank.getCoordinates().x){
-					if(api.me().getCoordinates().y > targetTank.getCoordinates().y){
+				if(api.me().getCoordinates().getX() == targetTank.getCoordinates().getX()){
+					if(api.me().getCoordinates().getY() > targetTank.getCoordinates().getY()){
 						api.shoot(Direction.UP);
 					}else{
 						api.shoot(Direction.DOWN);
 					}
 				}
-				if(api.me().getCoordinates().y == targetTank.getCoordinates().y){
-					if(api.me().getCoordinates().x > targetTank.getCoordinates().x){
+				if(api.me().getCoordinates().getY() == targetTank.getCoordinates().getY()){
+					if(api.me().getCoordinates().getX() > targetTank.getCoordinates().getX()){
 						api.shoot(Direction.LEFT);
 					}else{
 						api.shoot(Direction.RIGHT);
@@ -52,7 +52,7 @@ public class ExampleTankAI {
 				}
 			}
 			
-			System.out.println("Position: "+api.me().getCoordinates().x+","+api.me().getCoordinates().y);
+			System.out.println("Position: "+api.me().getCoordinates().getX()+","+api.me().getCoordinates().getY());
 		}
 	}
 }

@@ -1,6 +1,6 @@
 package brownshome.scriptwars.server.game.tanks;
 
-import brownshome.scriptwars.client.tankapi.Coordinate;
+import brownshome.scriptwars.client.tankapi.Coordinates;
 
 public enum Direction {
 	UP(0, -1),
@@ -23,8 +23,8 @@ public enum Direction {
 		return y + dy;
 	}
 	
-	public Coordinate move(Coordinate coord) {
-		return new Coordinate(moveX(coord.x), moveY(coord.y));
+	public Coordinates move(Coordinates coord) {
+		return new Coordinates(moveX(coord.getX()), moveY(coord.getY()));
 	}
 	
 	public Direction opposite() {

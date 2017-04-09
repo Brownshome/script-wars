@@ -19,27 +19,27 @@ import brownshome.scriptwars.server.game.tanks.*;
  */
 public class TankAPI {
 	public class Tank {
-		private Coordinate _coord;
+		private Coordinates _coord;
 
-		public Tank(Coordinate c){
+		public Tank(Coordinates c){
 			_coord = c;
 		}
 
-		public Coordinate getCoordinates(){
+		public Coordinates getCoordinates(){
 			return _coord;
 		}
 	}
 
 	public class Shot {
-		private Coordinate _coord;
+		private Coordinates _coord;
 		private Direction _direction;
 
-		public Shot(Coordinate c, Direction d){
+		public Shot(Coordinates c, Direction d){
 			_coord = c;
 			_direction = d;
 		}
 
-		public Coordinate getCoordinates(){
+		public Coordinates getCoordinates(){
 			return _coord;
 		}
 		
@@ -63,8 +63,8 @@ public class TankAPI {
 			return _walls[y][x];
 		}
 		
-		public boolean isWall(Coordinate c){
-			return isWall(c.x, c.y);
+		public boolean isWall(Coordinates c){
+			return isWall(c.getX(),c.getY());
 		}
 		
 		public int getHeight(){
@@ -130,7 +130,7 @@ public class TankAPI {
 			int x = Network.getByte();              // X position
 			int y = Network.getByte();              // Y position
 			
-			_me = new Tank(new Coordinate(x,y));
+			_me = new Tank(new Coordinates(x,y));
 			
 			int width = Network.getByte();          // game width
 			int height = Network.getByte();         // game height
@@ -154,7 +154,7 @@ public class TankAPI {
 			for(int i = 0; i < tanks; i++) {
 				int tankX = Network.getByte();      //Tank x
 				int tankY = Network.getByte();      //Tank y
-				_tanks.add(new Tank(new Coordinate(tankX,tankY)));
+				_tanks.add(new Tank(new Coordinates(tankX,tankY)));
 			}
 
 			int shots = Network.getByte();          //Number of Shots
@@ -163,7 +163,7 @@ public class TankAPI {
 				int shotX = Network.getByte();      //Shot x
 				int shotY = Network.getByte();      //Shot y
 				//Shot direction
-				_shots.add(new Shot(new Coordinate(shotX,shotY),Direction.values()[Network.getByte()]));
+				_shots.add(new Shot(new Coordinates(shotX,shotY),Direction.values()[Network.getByte()]));
 			}
 
 		} else {
@@ -192,6 +192,13 @@ public class TankAPI {
 		_directionByte = direction.ordinal();
 	}
 	
+	/**
+	 * Sets the tank to do nothing on the tick.
+	 */
+	public void doNothing() {
+		_actionByte = Action.NOTHING.ordinal();
+	}
+	
 	public List<Tank> getVisibleTanks(){
 		return _tanks;
 	}
@@ -215,6 +222,5 @@ public class TankAPI {
 	 */
 	public Map getMap(){
 		return _map;
-	}
-	
+	}	
 }
