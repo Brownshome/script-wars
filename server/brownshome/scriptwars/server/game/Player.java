@@ -1,7 +1,6 @@
 package brownshome.scriptwars.server.game;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.time.temporal.*;
 import java.util.Date;
@@ -55,6 +54,10 @@ public class Player {
 		return slot;
 	}
 
+	public void setName(String name) {
+		this.name = name;
+	}
+
 	public void sendData(ByteBuffer buffer) {
 		connection.sendData(this, buffer);
 	}
@@ -92,23 +95,5 @@ public class Player {
 	
 	public int getScore() {
 		return score;
-	}
-
-	public boolean isCorrectProtocol(int protocol) {
-		return connection.getProtocolByte() == protocol;
-	}
-
-	public void firstData(ByteBuffer passingBuffer) {
-		short length = passingBuffer.getShort();
-		name = new String(passingBuffer.array(), passingBuffer.arrayOffset() + passingBuffer.position(), length, StandardCharsets.UTF_8); //TODO move to utility function?
-		game.makePlayerActive(this);
-	}
-	
-	public void incommingData(ByteBuffer passingBuffer) {
-		game.incommingData(passingBuffer, this);
-	}
-
-	public ConnectionHandler getConnectionHander() {
-		return connection;
 	}
 }
