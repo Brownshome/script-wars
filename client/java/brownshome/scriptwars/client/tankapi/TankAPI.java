@@ -113,8 +113,8 @@ public class TankAPI {
 
 	private boolean _firstSend;
 
-	public TankAPI(int id, String address, int port, String username){
-		Network.connect(id, address, port, username);
+	public TankAPI(int id, String address, String username){
+		Network.connect(id, address, username);
 		_firstSend = true;
 	}
 

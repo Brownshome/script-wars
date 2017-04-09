@@ -6,8 +6,8 @@ apply plugin: 'war'
 project.webAppDirName = 'WebContent'
 
 sourceSets {
-    main.java.srcDirs = ['server']    
-    client.java.srcDirs = ['client/java']
+    main.java.srcDirs = ['server', 'common']    
+    client.java.srcDirs = ['client/java', 'common']
 }
 
 repositories {
