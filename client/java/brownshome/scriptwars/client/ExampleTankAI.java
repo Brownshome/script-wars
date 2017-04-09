@@ -18,7 +18,7 @@ public class ExampleTankAI {
 
 		TankAPI api = new TankAPI(id, "13.55.154.170", "John Smith");
 
-		while(api.nextTick()) {
+		while(api.nextTick() == TankAPI.ConnectionStatus.CONNECTED) {
 
 			// Move randomly, this will be overwritten if we can see someone.
 			int direction = (int) (Math.random()*4);
