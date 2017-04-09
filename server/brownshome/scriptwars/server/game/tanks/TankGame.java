@@ -3,7 +3,7 @@ package brownshome.scriptwars.server.game.tanks;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-import brownshome.scriptwars.server.connection.UDPConnectionHandler;
+import brownshome.scriptwars.server.connection.*;
 import brownshome.scriptwars.server.game.*;
 
 /* Each tick shots are moved x spaces. Then tanks shoot. Then tanks move
@@ -176,5 +176,10 @@ public class TankGame extends Game {
 		super.removePlayer(player);
 		if(world.isAlive(player))
 			world.removeTank(player);
+	}
+
+	@Override
+	public int getPreferedConnectionType() {
+		return UDPConnectionHandler.UPD_PROTOCOL_BYTE;
 	}
 }

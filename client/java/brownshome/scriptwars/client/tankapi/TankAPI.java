@@ -119,8 +119,8 @@ public class TankAPI {
 	
 	private ConnectionStatus _connStatus;
 
-	public TankAPI(int id, String address, int port, String username){
-		Network.connect(id, address, port, username);
+	public TankAPI(int id, String address, String username){
+		Network.connect(id, address, username);
 		_firstSend = true;
 		_connStatus = ConnectionStatus.CONNECTED;
 	}

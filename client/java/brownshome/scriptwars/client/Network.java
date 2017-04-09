@@ -1,13 +1,12 @@
 package brownshome.scriptwars.client;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.ByteBuffer;
+import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
+
+import brownshome.scriptwars.server.connection.COBSChannel;
 
 /**
  * The main class that clients can use to communicate with the server.
@@ -43,10 +42,9 @@ public class Network {
 	 * Call this using the ID given to you by the website to connect
 	 * @param ID The ID given to you by the website
 	 * @param ip The ip of the website
-	 * @param port The port the server uses, usually 35565
 	 * @param name The name of your bot
 	 */
-	public static void connect(int ID, String ip, int port, String name) {
+	public static void connect(int ID, String ip, String name) {
 		if(Network.ID != -1) {
 			throw new IllegalStateException("Cannot initialize the connection more than once.");
 		}
@@ -62,9 +60,16 @@ public class Network {
 		switch(protocol) {
 			case 1:
 				try {
-					connection = new UDPConnection(InetAddress.getByName(ip), port);
-				} catch (SocketException | UnknownHostException e) {
-					throw new RuntimeException("Unable to connect to " + ip + ":" + port, e);
+					connection = new UDPConnection(InetAddress.getByName(ip), 35565);
+				} catch (IOException e) {
+					throw new RuntimeException("Unable to connect to " + ip, e);
+				}
+				break;
+			case 2:
+				try {
+					connection = new TCPConnection(InetAddress.getByName(ip), 35566);
+				} catch (UnknownHostException e) {
+					throw new RuntimeException("Unable to connect to " + ip, e);
 				}
 				break;
 			default:
@@ -80,7 +85,7 @@ public class Network {
 		dataOut.flip();
 		connection.sendData(dataOut);
 		dataOut.clear();
-		dataOut.putInt(ID);
+		connection.putHeader(dataOut);
 		dataIn = connection.waitForData();
 		
 		return dataIn != null;
@@ -200,26 +205,24 @@ public class Network {
 
 interface Connection {
 	void sendData(ByteBuffer data);
+	void putHeader(ByteBuffer putInt);
 	ByteBuffer waitForData();
 }
 
 class UDPConnection implements Connection {
-	byte[] buffer = new byte[1024]; //If you need any larger than this use TCP
-	DatagramSocket socket;
-	InetAddress address;
-	int port;
+	ByteBuffer buffer = ByteBuffer.allocate(1024); //If you need any larger than this use TCP
+	DatagramChannel channel;
 	
-	UDPConnection(InetAddress address, int port) throws SocketException {
-		this.address = address;
-		this.port = port;
-		socket = new DatagramSocket();
-		socket.setSoTimeout(5000);
+	UDPConnection(InetAddress address, int port) throws IOException {
+		channel = DatagramChannel.open();
+		channel.connect(new InetSocketAddress(address, port));
+		channel.socket().setSoTimeout(5000);
 	}
 	
 	@Override
 	public void sendData(ByteBuffer data) {
 		try {
-			socket.send(new DatagramPacket(data.array(), data.position(), data.remaining(), address, port));
+			channel.write(data);
 		} catch (IOException e) {
 			throw new RuntimeException("Error sending data", e);
 		}
@@ -227,15 +230,15 @@ class UDPConnection implements Connection {
 
 	@Override
 	public ByteBuffer waitForData() {
-		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 		try {
-			socket.receive(packet);
+			buffer.clear();
+			channel.read(buffer);
+			buffer.flip();
 		} catch (IOException e) {
 			throw new RuntimeException("Error receiving data", e);
 		}
 		
-		ByteBuffer data = ByteBuffer.wrap(packet.getData(), packet.getOffset(), packet.getLength());
-		int code = data.get();
+		int code = buffer.get();
 		
 		//Error and disconnect handling
 		switch(code) {
@@ -246,11 +249,65 @@ class UDPConnection implements Connection {
 				System.out.println("Failed to keep up with game tick.");
 				return null;
 			case -1:
-				int stringLength = data.getShort();
-				System.out.println("Server error: " + new String(data.array(), data.position() + data.arrayOffset(), stringLength, StandardCharsets.UTF_8));
+				int stringLength = buffer.getShort();
+				System.out.println("Server error: " + new String(buffer.array(), buffer.position() + buffer.arrayOffset(), stringLength, StandardCharsets.UTF_8));
 				return null;
 		}
 		
-		return data;
+		return buffer;
 	}
+
+	@Override
+	public void putHeader(ByteBuffer data) {
+		data.putInt(Network.ID);
+	}
+}
+
+class TCPConnection implements Connection {
+	COBSChannel channel;
+	
+	TCPConnection(InetAddress address, int port) {
+		try {
+			channel = new COBSChannel(SocketChannel.open(new InetSocketAddress(address, port)));
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to form TCP connection", e);
+		}
+	}
+	
+	@Override
+	public void sendData(ByteBuffer data) {
+		try {
+			channel.write(data);
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to send data", e);
+		}
+	}
+
+	@Override
+	public ByteBuffer waitForData() {
+		ByteBuffer buffer = channel.getPacket();
+		if(buffer == null)
+			throw new RuntimeException("Connection Dropped");
+
+		int code = buffer.get();
+
+		//Error and disconnect handling
+		switch(code) {
+		case 1:
+			System.out.println("Disconnected by server.");
+			return null;
+		case 2:
+			System.out.println("Failed to keep up with game tick.");
+			return null;
+		case -1:
+			int stringLength = buffer.getShort();
+			System.out.println("Server error: " + new String(buffer.array(), buffer.position() + buffer.arrayOffset(), stringLength, StandardCharsets.UTF_8));
+			return null;
+		}
+
+		return buffer;
+	}
+
+	@Override
+	public void putHeader(ByteBuffer putInt) {}
 }

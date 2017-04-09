@@ -16,7 +16,7 @@ public class ExampleTankAI {
 			id = Integer.valueOf(args[0]);
 		}
 
-		TankAPI api = new TankAPI(id, "13.55.154.170", 35565, "John Smith");
+		TankAPI api = new TankAPI(id, "13.55.154.170", "John Smith");
 
 		while(api.nextTick() == TankAPI.ConnectionStatus.CONNECTED) {
 
