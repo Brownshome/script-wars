@@ -153,7 +153,7 @@ public class TankAPI {
 
 		setSendData();
 
-		if(!Network.nextTick()){
+		if(Network.nextTick()){
 			// Wait for next tick...
 		}else{
 			_connStatus = ConnectionStatus.DROPPED;
