@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import brownshome.scriptwars.client.Network;
+import brownshome.scriptwars.server.game.tanks.*;
 
 /**
  * This is a wrapper over the Network class that gives an API to control the Tank.
@@ -17,30 +18,8 @@ import brownshome.scriptwars.client.Network;
  *
  */
 public class TankAPI {
-	
 	public enum ConnectionStatus{
 		CONNECTED, DROPPED;
-	}
-
-	public enum Direction {
-		UP, DOWN, LEFT, RIGHT;
-	}
-
-	public class Coordinates {
-		private int _x;
-		private int _y;
-
-		public Coordinates(int x, int y){
-			_x = x;
-			_y = y;
-		}
-
-		public int getX(){
-			return _x;
-		}
-		public int getY(){
-			return _y;
-		}
 	}
 
 	public class Tank {
@@ -89,7 +68,7 @@ public class TankAPI {
 		}
 		
 		public boolean isWall(Coordinates c){
-			return isWall(c.getY(),c.getX());
+			return isWall(c.getX(),c.getY());
 		}
 		
 		public int getHeight(){
@@ -101,10 +80,6 @@ public class TankAPI {
 		}
 	}
 
-	public enum Action {
-		NOACTION, MOVE, SHOOT;
-	}
-	
 	private Map _map;
 	
 	private boolean _isAlive;
@@ -139,7 +114,7 @@ public class TankAPI {
 			_firstSend = false;
 		}
 
-		_actionByte = Action.NOACTION.ordinal(); // Default action
+		_actionByte = Action.NOTHING.ordinal(); // Default action
 		_directionByte = Direction.UP.ordinal(); // Default direction //TODO fix
 	}
 
@@ -226,6 +201,13 @@ public class TankAPI {
 		_directionByte = direction.ordinal();
 	}
 	
+	/**
+	 * Sets the tank to do nothing on the tick.
+	 */
+	public void doNothing() {
+		_actionByte = Action.NOTHING.ordinal();
+	}
+	
 	public List<Tank> getVisibleTanks(){
 		return _tanks;
 	}
@@ -249,6 +231,5 @@ public class TankAPI {
 	 */
 	public Map getMap(){
 		return _map;
-	}
-	
+	}	
 }

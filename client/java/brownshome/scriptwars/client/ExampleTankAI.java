@@ -1,8 +1,8 @@
 package brownshome.scriptwars.client;
 
 import brownshome.scriptwars.client.tankapi.TankAPI;
-import brownshome.scriptwars.client.tankapi.TankAPI.Direction;
 import brownshome.scriptwars.client.tankapi.TankAPI.Tank;
+import brownshome.scriptwars.server.game.tanks.Direction;
 
 public class ExampleTankAI {
 
@@ -22,7 +22,7 @@ public class ExampleTankAI {
 
 			// Move randomly, this will be overwritten if we can see someone.
 			int direction = (int) (Math.random()*4);
-			api.move(TankAPI.Direction.values()[direction]);
+			api.move(Direction.values()[direction]);
 			
 			// See if there is a tank in our field of view,
 			// and if there is select it.
