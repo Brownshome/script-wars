@@ -45,6 +45,10 @@ task startTomcat(dependsOn: copyWar, type: Exec) {
     args 'start'
 }
 
+check {
+	dependsOn war
+}
+
 javadoc {
 	source = [sourceSets.main.allJava, sourceSets.client.allJava]
 	destinationDir = file("$docsDir/doc")
