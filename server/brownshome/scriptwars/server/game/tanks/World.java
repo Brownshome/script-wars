@@ -78,7 +78,9 @@ class World {
 			return;
 		}
 		
-		shots.add(new Shot(x, y, this, direction));
+		if(tank.removeAmmo()) {
+			shots.add(new Shot(x, y, tank, this, direction));
+		}
 	}
 
 	public void rollBackTanks() {
@@ -184,7 +186,7 @@ class World {
 				else {
 					Tank tank = getTank(x, y);
 					if(tank != null) {
-						display[y][x] = (char) (3 + (tank.owner.getName().hashCode() & 0x7fffffff) % 10);
+						display[y][x] = (char) (3 + tank.owner.getColour().ordinal());
 					} else
 						display[y][x] = 0;
 				}

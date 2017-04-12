@@ -1,10 +1,10 @@
 package brownshome.scriptwars.server.connection;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -17,52 +17,59 @@ import brownshome.scriptwars.server.game.Player;
 /**
  * This class handles the connections to each player and times out players when they take too long.
  * 
- * Booleans are packed, all other data types are byte alligned.
+ * Booleans are packed, all other data types are byte aligned.
  * Strings have a short prefixed to them representing the length of the string.
+ * 
+ * For outgoing packets the first byte is a purpose code, 0 is game data, 1 is disconnect, 2 is timedOut, -1 is server error.
  */
-public abstract class ConnectionHandler {
-	public Game game;
+public abstract class ConnectionHandler<PLAYER_ID> {
+	private static final Map<Integer, Function<Game, ? extends ConnectionHandler>> constructors;
 	
-	Player[] connectedPlayers = new Player[256];
-	Set<Player> activePlayers = new HashSet<>();
-	Set<Player> outstandingPlayers = new HashSet<>();
-	
-	public void waitForResponses(long cutoffTime) {
-		while(!outstandingPlayers.isEmpty() && !checkTimeOut(cutoffTime)) {
-			long timeToWait = cutoffTime - System.currentTimeMillis();
-			
-			if(timeToWait > 0)
-				try { game.wait(timeToWait); } catch (InterruptedException e) {}
-		}
+	static {
+		Map<Integer, Function<Game, ? extends ConnectionHandler>> innerMap = new HashMap<>();
 		
-		outstandingPlayers.addAll(activePlayers);
+		innerMap.put(UDPConnectionHandler.UPD_PROTOCOL_BYTE, UDPConnectionHandler::new);
+		innerMap.put(TCPConnectionHandler.TCP_PROTOCOL_BYTE, TCPConnectionHandler::new);
+		
+		constructors = Collections.unmodifiableMap(innerMap);
 	}
 	
-	/** 
-	 * Sends all data relevant to a game
-	 **/
-	public void sendData() {
-		ByteBuffer buffer = ByteBuffer.wrap(new byte[game.getDataSize()]);
-		
-		if(!game.hasPerPlayerData()) {
-			if(game.getData(null, buffer))
-				return;
-			
-			buffer.flip();
-		}
-		
-		for(Player player : activePlayers) {
-			if(game.hasPerPlayerData()) {
-				buffer.clear();
-				if(!game.getData(player, buffer))
-					continue;
-				
-				buffer.flip();
-			}
-			
-			sendData(player, buffer);
+	public static ConnectionHandler createConnection(int ID, Game game) {
+		try {
+			return constructors.get(ID).apply(game);
+		} catch(NullPointerException npe) {
+			throw new IllegalArgumentException("Invalid protocol ID", npe);
 		}
 	}
+
+	public static Player getPlayerFromID(int ID) throws ProtocolException {
+		int protocol = (ID >> 16) & 0xff;
+		int playerCode = ID & 0xff;
+		int gameCode = (ID >> 8) & 0xff;
+
+		Game game = Game.getGame(gameCode);
+		if(game == null) {
+			throw new ProtocolException("Invalid ID");
+		}
+
+		ConnectionHandler connectionHandler = game.getConnectionHandler(protocol);
+		Player player = connectionHandler.getPlayer(playerCode);
+		
+		if(player == null || !player.isCorrectProtocol(protocol)) {
+			throw new ProtocolException("Invalid ID");
+		}
+		
+		return player;
+	}
+	
+	private final Map<Player, PLAYER_ID> playerMappings = new HashMap<>();
+	protected final Game game;
+	
+	protected ConnectionHandler(Game game) {
+		this.game = game;
+	}
+
+	private Player[] connectedPlayers = new Player[256];
 
 	/** Generates an ID for this game, the first byte is a
 	 * protocol identifier, the next byte is the game ID,
@@ -86,85 +93,43 @@ public abstract class ConnectionHandler {
 		return connectedPlayers[playerCode];
 	}
 
-	/** Gets the number of active players
-	 * @return The number of active players currently on the server
-	 */
-	public int getPlayerCount() {
-		return activePlayers.size();
+	public void sendData(Player player, ByteBuffer buffer) {
+		sendRawData(playerMappings.get(player), ByteBuffer.wrap(new byte[] {0}), buffer);
 	}
 
-	protected abstract void timeOutPlayer(Player player);
-
-	protected abstract void endGame(Player player);
-
-	protected abstract int getProtocolByte();
-
-	protected abstract void sendData(Player player, ByteBuffer buffer);
-
-	protected abstract void sendError(Player player, String message);
-
-	/**
-	 * Makes a player active. If the game cannot accept another player the player is set to a non-active state and a new ID is sent to
-	 * them in an error message.
-	 * @param player The player to make active
-	 */
-	protected void makePlayerActive(Player player) {
-		if(!game.hasSpaceForPlayer()) {
-			//Move player to a new game
-			try {
-				sendError(player, "That game is full, here is a new ID " + game.getType().getUserID());
-			} catch (GameCreationException e) {
-				sendError(player, "That game is full and we were unable to generate a new ID");
-			}
-			
-			return;
-		}
-		
-		player.setActive(true);
-		activePlayers.add(player);
-		game.addPlayer(player);
+	public void timeOutPlayer(Player player) {
+		sendRawData(playerMappings.get(player), ByteBuffer.wrap(new byte[] {2}));
+		disconnect(player);
 	}
 
-	/**
-	 * Called by the connection implementation when data is recieved from the client. This is
-	 * called once per player per tick.
-	 */
-	protected void incommingData(ByteBuffer passingBuffer, Player player) {
-		if(outstandingPlayers.remove(player)) {
-			game.processData(passingBuffer, player);
-			
-			if(outstandingPlayers.isEmpty())
-				game.notify(); //Wake the game thread if it is waiting for responses
-		}
+	public void endGame(Player player) {
+		sendRawData(playerMappings.get(player), ByteBuffer.wrap(new byte[] {1}));
+		disconnect(player);
 	}
 
-	/**
-	 * @param cutoffTime 
-	 * @return True if the timout has exceeded.
-	 */
-	private boolean checkTimeOut(long cutoffTime) {
-		if(System.currentTimeMillis() - cutoffTime <= 0) {
-			return false;
-		}
-		
-		for(Player p : outstandingPlayers) {
-			activePlayers.remove(p);
-			p.setActive(false);
-			timeOutPlayer(p);
-			game.removePlayer(p);
-			
-			Server.LOG.info("Player " + p.getName() + " timed out.");
-		}
-		
-		outstandingPlayers.clear();
-		
-		return true;
+	protected abstract void sendRawData(PLAYER_ID id, ByteBuffer... data);
+	
+	public abstract int getProtocolByte();
+
+	public void sendError(Player player, String message) {
+		sendRawData(playerMappings.get(player), ByteBuffer.wrap(new byte[] {-1}), stringToBuffer(message));
+		disconnect(player);
 	}
 
+	public static ByteBuffer stringToBuffer(String message) {
+		byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+		ByteBuffer result = ByteBuffer.allocate(bytes.length + Short.BYTES);
+		result.putShort((short) bytes.length);
+		result.put(bytes);
+		result.flip();
+		
+		return result;
+	}
+	
 	private int createPlayer() throws OutOfIDsException {
 		for(int i = 0; i < connectedPlayers.length; i++) {
 			if(connectedPlayers[i] == null) {
-				connectedPlayers[i] = new Player(i);
+				connectedPlayers[i] = new Player(i, this, game);
 				return i;
 			}
 		}
@@ -179,5 +144,17 @@ public abstract class ConnectionHandler {
 		}
 		
 		throw new OutOfIDsException();
+	}
+
+	protected void disconnect(Player player) {
+		playerMappings.remove(player);
+	}
+	
+	protected PLAYER_ID getMapping(Player p) {
+		return playerMappings.get(p);
+	}
+	
+	protected void putMapping(PLAYER_ID id, Player p) {
+		playerMappings.put(p, id);
 	}
 }

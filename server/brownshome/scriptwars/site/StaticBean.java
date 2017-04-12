@@ -2,21 +2,19 @@ package brownshome.scriptwars.site;
 
 import java.util.Collection;
 
-import com.sun.javafx.scene.traversal.Direction;
-
 import brownshome.scriptwars.server.game.GameType;
-import brownshome.scriptwars.server.game.tanks.Shot;
+import brownshome.scriptwars.server.game.tanks.*;
 
 public class StaticBean {
 	public Collection<GameType> getTypeList() {
 		return GameType.getGameTypes();
 	}
 	
-	public String getTankGameShotSpeed() {
-		return String.valueOf(Shot.SPEED);
+	public String getTankGameAmmo() {
+		return String.valueOf(Tank.MAX_AMMO);
 	}
 	
-	public Direction[] getTankGameDirections() {
-		return Direction.values();
+	public String getTankGameShotSpeed() {
+		return String.valueOf(Shot.SPEED);
 	}
 }

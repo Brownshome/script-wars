@@ -22,7 +22,7 @@ function disconnectWebSocket() {
 	socket.close();
 }
 
-var pixelSize = 1024;
+var pixelSize = 512;
 var width;
 var height;
 
@@ -67,8 +67,27 @@ function AJAXReady() {
 	}
 }
 
+var slot = -1;
+
 function watchGame(gameSlot) {
+	slot = gameSlot;
 	buffer = new ArrayBuffer(1);
 	new DataView(buffer).setUint8(0, gameSlot);
 	socket.send(buffer);
+	updatePlayerList();
+	setInterval(updatePlayerList, 5000);
 }
+
+function updatePlayerList() {
+	var request = new XMLHttpRequest();
+	request.onreadystatechange = playerAJAXReady;
+	request.open("GET", "../playertable/" + slot, true);
+	request.send();
+}
+
+function playerAJAXReady() {
+	if(this.readyState == 4 && this.status == 200) {
+		document.getElementById("playerTable").innerHTML = this.responseText;
+	}
+}
+

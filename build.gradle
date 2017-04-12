@@ -1,11 +1,13 @@
+import org.gradle.internal.os.OperatingSystem;
+
 apply plugin: 'java'
 apply plugin: 'war'
 
 project.webAppDirName = 'WebContent'
 
 sourceSets {
-    main.java.srcDirs = ['server']    
-    client.java.srcDirs = ['client/java']
+    main.java.srcDirs = ['server', 'common']    
+    client.java.srcDirs = ['client/java', 'common']
 }
 
 repositories {
@@ -19,10 +21,45 @@ dependencies {
 	compile group: 'javax.servlet', name: 'jstl', version: '1.2'
 }
 
-task serverJavadoc(type: Javadoc) {
-    source sourceSets.client.allJava
+task clientJar(type: Jar) {
+	archiveName 'script-wars-client.jar'
+
+    from sourceSets.client.output
+	destinationDir = file("$buildDir/war/static")
 }
 
-task clientJar(type: Jar) {
-    from sourceSets.client.output
+task copyWar(dependsOn: war, type: Copy) {
+	from "$buildDir/libs/ROOT.war"
+	into "$System.env.CATALINA_HOME/webapps"
+}
+
+task startTomcat(dependsOn: copyWar, type: Exec) {
+	description 'Starts a tomcat server using $CATALINA_HOME'
+
+    if(OperatingSystem.current().isWindows()) {
+        executable "$System.env.CATALINA_HOME/bin/catalina.bat"
+    } else {
+        executable "$System.env.CATALINA_HOME/bin/catalina.sh"
+    }
+    
+    args 'start'
+}
+
+javadoc {
+	source = [sourceSets.main.allJava, sourceSets.client.allJava]
+	destinationDir = file("$docsDir/doc")
+	
+	configure(options) {
+		links = [ 'http://download.oracle.com/javase/8/docs/api/', 'http://download.oracle.com/javaee/7/api/' ]
+	}
+}
+
+war {
+	dependsOn clientJar
+	dependsOn javadoc
+	
+	archiveName 'ROOT.war'
+	
+	from "$project.docsDir"
+	from "$project.buildDir/war/"
 }

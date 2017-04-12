@@ -3,7 +3,7 @@ package brownshome.scriptwars.server.game.tanks;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-import brownshome.scriptwars.server.connection.UDPConnectionHandler;
+import brownshome.scriptwars.server.connection.*;
 import brownshome.scriptwars.server.game.*;
 
 /* Each tick shots are moved x spaces. Then tanks shoot. Then tanks move
@@ -27,7 +27,7 @@ public class TankGame extends Game {
 	World world;
 	
 	public TankGame(boolean[][] map, GameType type) throws OutOfIDsException {
-		super(new UDPConnectionHandler(), new DisplayHandler(), type);
+		super(type);
 		
 		this.world = new World(map, this);
 	}
@@ -66,7 +66,7 @@ public class TankGame extends Game {
 	@Override
 	public int getDataSize() {
 		//bytes + worldsize + bulletData
-		return 7 + getMaximumPlayers() * 2 + world.getDataSize() + Math.max(world.getWidth(), world.getHeight()) * getMaximumPlayers() * 3;
+		return 7 + getMaximumPlayers() * 2 + world.getDataSize() + Tank.MAX_AMMO * getMaximumPlayers() * 3;
 	}
 
 	/**
@@ -166,9 +166,6 @@ public class TankGame extends Game {
 	}
 
 	@Override
-	public void stop() {}
-
-	@Override
 	public void addPlayer(Player player) {
 		super.addPlayer(player);
 		world.spawnTank(player);
@@ -179,5 +176,10 @@ public class TankGame extends Game {
 		super.removePlayer(player);
 		if(world.isAlive(player))
 			world.removeTank(player);
+	}
+
+	@Override
+	public int getPreferedConnectionType() {
+		return UDPConnectionHandler.UPD_PROTOCOL_BYTE;
 	}
 }

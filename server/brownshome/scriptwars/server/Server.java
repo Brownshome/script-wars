@@ -1,23 +1,25 @@
 package brownshome.scriptwars.server;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import brownshome.scriptwars.server.connection.UDPConnectionHandler;
+import brownshome.scriptwars.server.connection.*;
 import brownshome.scriptwars.server.game.*;
 import brownshome.scriptwars.server.game.tanks.TankGame;
 
 /** Main entrypoint of the server program. 
  * This class dispatches the loader and the connection handlers. */
 public class Server {
-	public static final Logger LOG = Logger.getLogger("backendServer");
+	public static final Logger LOG = Logger.getLogger("brownshome.scriptwars.server");
+	
 	private static volatile boolean stop = false;
 	
 	public static void initialize() {
 		try {
 			UDPConnectionHandler.startListenerThread();
-			GameType.addDebugType(TestGame.class);
+			TCPConnectionHandler.startTCPListener();
 			GameType.addType(TankGame.class);
 		} catch (GameCreationException gce) {
 			Server.LOG.log(Level.SEVERE, "Improperly built game files.", gce);
@@ -28,13 +30,11 @@ public class Server {
 		return GameType.getGameTypes();
 	}
 
-	public static int getUserID(int gameID) {
-		return Game.getGame(gameID).getConnectionHandler().getID();
-	}
-
 	public static void shutdown() {
 		stop = true;
-		UDPConnectionHandler.stop();
+		try {
+			UDPConnectionHandler.stop();
+		} catch (IOException e) {}
 	}
 	
 	public static boolean shouldStop() {

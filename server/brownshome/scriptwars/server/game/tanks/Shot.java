@@ -4,13 +4,15 @@ public class Shot {
 	static final char BULLET = 2;
 	public static final int SPEED = 1;
 	
+	Tank owner;
 	World world;
 	Direction direction;
 	int x;
 	int y;
 	
-	Shot(int x, int y, World world, Direction direction) {
+	Shot(int x, int y, Tank owner, World world, Direction direction) {
 		this.x = x;
+		this.owner = owner;
 		this.y = y;
 		this.world = world;
 		this.direction = direction;
@@ -28,10 +30,13 @@ public class Shot {
 			
 			if(tank != null) {
 				tank.kill();
+				owner.owner.addScore(1);
+				owner.returnAmmo();
 				return true;
 			}
 			
 			if(world.isWall(x, y)) {
+				owner.returnAmmo();
 				return true;
 			}
 		}

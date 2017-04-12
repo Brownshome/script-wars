@@ -15,16 +15,19 @@
         <img src="../static/games/${gametype.name}/icon.png" alt="${gametype.name} icon" style="width:64px;height:64px;">
         Game Type - ${gametype.name}
     </h1>
-    <canvas id="gameCanvas" width="1024" height="1024"></canvas>
+    <canvas id="gameCanvas" width="512" height="512"></canvas>
     
     <p><button id="UserID" onclick="requestID('${gametype.name}')">Request An ID</button></p>
 	
 	<h2>Active Games</h2>
-	
+
+    <div id="playerTable"></div>
+
 	<div id="gameTable">
-	<jsp:include page="/static/gameTable.jsp"/>
+	   <jsp:include page="/static/gameTable.jsp" />
 	</div>
 	
+	<jsp:include page="/static/howToCompete.html"/>
 	<jsp:include page="/static/games/${gametype.name}/rules.jsp" />
     
 </body>
