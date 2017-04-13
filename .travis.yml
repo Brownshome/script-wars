@@ -27,3 +27,4 @@ deploy:
   deployment_group: Deployment
   on:
     repo: Brownshome/script-wars
+    all_branches: true
