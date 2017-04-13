@@ -11,7 +11,7 @@ cache:
 before_deploy:
 - chmod 777 clean.sh
 - mkdir -p dpl_cd_upload
-- mv lib/ROOT.war dpl_cd_upload/ROOT.war
+- mv build/libs/ROOT.war dpl_cd_upload/ROOT.war
 - mv appspec.yml dpl_cd_upload/appspec.yml
 - mv clean.sh dpl_cd_upload/clean.sh
 deploy:
