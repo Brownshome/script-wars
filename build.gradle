@@ -45,8 +45,21 @@ task startTomcat(dependsOn: copyWar, type: Exec) {
     args 'start'
 }
 
+task deploy(type: Zip) {
+	from "$buildDir/libs/ROOT.war"
+	from "clean.sh"
+	from "appspec.yml"
+
+	archiveName "deploy.zip"
+	
+	destinationDir = file("$buildDir/deploy")
+	
+	fileMode = 777
+}
+
 check {
 	dependsOn war
+	dependsOn deploy
 }
 
 javadoc {

@@ -8,18 +8,13 @@ cache:
   directories:
   - "$HOME/.gradle/caches/"
   - "$HOME/.gradle/wrapper/"
-before_deploy:
-- mkdir -p dpl_cd_upload
-- mv build/libs/ROOT.war dpl_cd_upload/ROOT.war
-- mv appspec.yml dpl_cd_upload/appspec.yml
-- mv clean.sh dpl_cd_upload/clean.sh
 deploy:
 - provider: s3
   region: ap-southeast-2
   access_key_id: AKIAJHWLWFYCG5HRFTKQ
   secret_access_key: &1
     secure: mr7nc1V8V0WvbTshkaaHn8P1zPlLz0sQZn8l13Snen9xYjfKHs0FjHn7LZm6paOHHIs816fokFZw1YkoNIODHG+FhnvvyA6CHKrnSrwGXf3VNNma0w1ID7Sw0J+j2oHJdW7vg9/IRA6mRKwoHtaIGCPBI4r/z458hXWycEXUpDx+IxQkDoSson1z1FlsGf3tK/FogG0ZQi9XqWD5IDMd766t5NxuDjVJQsjWFm5shyrHg/1ppqLLmssRMpwV72IH6Vyt1TL3pIrlgHEHxotBcStAuo7aGXB2KdJp79idwqgWnMJ4UfG675nHH4mp7upbr3O10T8fJjnd4mv/OErfWpjoY3jqAYMnt/mW/RHnIuAMaDmremNyUpeHuQgv5jXY0891yrftSXy9yBZgTXfnYPanE6NIPRIyiTvi8RWC2ta1I3bTHI2HrwikThd2tPrJuIvk1ETnDCYWAmluDT+FtP3AgZtpxw3fQ/A8GVM3ysjGGhsPVatVgl1rDySsoKcKU0AsA03dmD8LG9XKX4jve7NKs3KkB49DK+E0Z02Z6VKR3tQ36ko8BmvEihSnrSPGZeft3QcCMwkAb6KE9CGrhdQnPSvUgO0UdvRCrA36Z9wmxkPAcQVtfJXr/jYws5FcHD1hk2fCVXTh9VQnu42qgB0FzPwoJgJayx7i6s7tf5M=
-  local_dir: dpl_cd_upload
+  local_dir: build/deploy
   skip_cleanup: true
   on: &2
     repo: Brownshome/script-wars
