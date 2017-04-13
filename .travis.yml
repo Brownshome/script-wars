@@ -19,6 +19,8 @@ deploy:
   on: &2
     repo: Brownshome/script-wars
     tags: true
+    #This is needed to get tags to build
+    all_branches: true
   bucket: script-wars.code
 - provider: codedeploy
   region: ap-southeast-2
