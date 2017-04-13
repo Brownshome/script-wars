@@ -11,7 +11,9 @@ cache:
 before_deploy:
 - chmod 777 clean.sh
 - mkdir -p dpl_cd_upload
-- mv deploy.war dpl_cd_upload/deploy.war
+- mv lib/ROOT.war dpl_cd_upload/ROOT.war
+- mv appspec.yml dpl_cd_upload/appspec.yml
+- mv clean.sh dpl_cd_upload/clean.sh
 deploy:
   provider: codedeploy
   access_key_id: AKIAJHWLWFYCG5HRFTKQ
