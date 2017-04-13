@@ -9,22 +9,28 @@ cache:
   - "$HOME/.gradle/caches/"
   - "$HOME/.gradle/wrapper/"
 before_deploy:
-- chmod 777 clean.sh
 - mkdir -p dpl_cd_upload
 - mv build/libs/ROOT.war dpl_cd_upload/ROOT.war
 - mv appspec.yml dpl_cd_upload/appspec.yml
 - mv clean.sh dpl_cd_upload/clean.sh
 deploy:
-  provider: codedeploy
+- provider: s3
+  region: ap-southeast-2
   access_key_id: AKIAJHWLWFYCG5HRFTKQ
-  secret_access_key:
-    secure: egtUeoYyptyeat2a2N7NMbRHqAjKVuzhfMOysVM4jxxkrGGvOrt3fHEdgPePecvAWz9OMvYczDwxCtWLpb7bCZP0DCCLWGQ8VY7yqCCk12F8HinG0jrEqmWrDyv78JPE86aqfBNjWr9ucMSllG2yO1k7ElVBBP5BJgMGiKp+L45VDFCgL6JTSPfAuBJlXiFFXzyfi8HdVwpVGFtWhJ2tNfsKamqy0PpgnSsH8yeI3BiM7uqJ6DkJd7e8Xhk5Y3zErkblj3y46uHZI3vxNnWsVnHnX14YdczL97MvXGzaDgFXpDripexZ55ACs4VDx+fzebbrAL2GogtK7kg/+d4GKMuxypQoj4JyJGthpifYMlVxjBhlb+l5eF/U7lSw1MwsdPbncqEMw7FKD5pfclEPFwHpCBeWTvGuLMOdwJy2mKfOLnRy2bsngmYAyf9CJvzNZIi3xFjEnLxB4HfL5c4cGhniIXK0KmCDD9G0Hk5rsyRPTN3BQTX60IF/SYcKa+5YKWsa7W24ubkogNJ3tcd68boGd36dsvlinZ24jxOtSpePvIHiGHoLTHtojNQ34F697+/67fGjOaweyOEvi+8udk5Hoa8Q4uO24+TDipMwntQ4SSooOz7ijvAvDYsCJv6/UHzSFwO6fNVWtocTUQb601qEUFS0NipBUOQ1xxmYxQE=
+  secret_access_key: &1
+    secure: mr7nc1V8V0WvbTshkaaHn8P1zPlLz0sQZn8l13Snen9xYjfKHs0FjHn7LZm6paOHHIs816fokFZw1YkoNIODHG+FhnvvyA6CHKrnSrwGXf3VNNma0w1ID7Sw0J+j2oHJdW7vg9/IRA6mRKwoHtaIGCPBI4r/z458hXWycEXUpDx+IxQkDoSson1z1FlsGf3tK/FogG0ZQi9XqWD5IDMd766t5NxuDjVJQsjWFm5shyrHg/1ppqLLmssRMpwV72IH6Vyt1TL3pIrlgHEHxotBcStAuo7aGXB2KdJp79idwqgWnMJ4UfG675nHH4mp7upbr3O10T8fJjnd4mv/OErfWpjoY3jqAYMnt/mW/RHnIuAMaDmremNyUpeHuQgv5jXY0891yrftSXy9yBZgTXfnYPanE6NIPRIyiTvi8RWC2ta1I3bTHI2HrwikThd2tPrJuIvk1ETnDCYWAmluDT+FtP3AgZtpxw3fQ/A8GVM3ysjGGhsPVatVgl1rDySsoKcKU0AsA03dmD8LG9XKX4jve7NKs3KkB49DK+E0Z02Z6VKR3tQ36ko8BmvEihSnrSPGZeft3QcCMwkAb6KE9CGrhdQnPSvUgO0UdvRCrA36Z9wmxkPAcQVtfJXr/jYws5FcHD1hk2fCVXTh9VQnu42qgB0FzPwoJgJayx7i6s7tf5M=
+  local_dir: dpl_cd_upload
+  skip_cleanup: true
+  on: &2
+    repo: Brownshome/script-wars
+  bucket: script-wars.code
+- provider: codedeploy
+  region: ap-southeast-2
+  access_key_id: AKIAJHWLWFYCG5HRFTKQ
+  secret_access_key: *1
   bucket: script-wars.code
   key: deploy.zip
-  region: ap-southeast-2
   bundle_type: zip
   application: Script-Wars
   deployment_group: Deployment
-  on:
-    repo: Brownshome/script-wars
-    all_branches: true
+  on: *2
