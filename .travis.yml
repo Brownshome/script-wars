@@ -21,9 +21,9 @@ deploy:
     secure: egtUeoYyptyeat2a2N7NMbRHqAjKVuzhfMOysVM4jxxkrGGvOrt3fHEdgPePecvAWz9OMvYczDwxCtWLpb7bCZP0DCCLWGQ8VY7yqCCk12F8HinG0jrEqmWrDyv78JPE86aqfBNjWr9ucMSllG2yO1k7ElVBBP5BJgMGiKp+L45VDFCgL6JTSPfAuBJlXiFFXzyfi8HdVwpVGFtWhJ2tNfsKamqy0PpgnSsH8yeI3BiM7uqJ6DkJd7e8Xhk5Y3zErkblj3y46uHZI3vxNnWsVnHnX14YdczL97MvXGzaDgFXpDripexZ55ACs4VDx+fzebbrAL2GogtK7kg/+d4GKMuxypQoj4JyJGthpifYMlVxjBhlb+l5eF/U7lSw1MwsdPbncqEMw7FKD5pfclEPFwHpCBeWTvGuLMOdwJy2mKfOLnRy2bsngmYAyf9CJvzNZIi3xFjEnLxB4HfL5c4cGhniIXK0KmCDD9G0Hk5rsyRPTN3BQTX60IF/SYcKa+5YKWsa7W24ubkogNJ3tcd68boGd36dsvlinZ24jxOtSpePvIHiGHoLTHtojNQ34F697+/67fGjOaweyOEvi+8udk5Hoa8Q4uO24+TDipMwntQ4SSooOz7ijvAvDYsCJv6/UHzSFwO6fNVWtocTUQb601qEUFS0NipBUOQ1xxmYxQE=
   bucket: script-wars.code
   key: deploy.zip
+  region: ap-southeast-2
   bundle_type: zip
   application: Script-Wars
   deployment_group: Deployment
   on:
     repo: Brownshome/script-wars
-    branch: travis
