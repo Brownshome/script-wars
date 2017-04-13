@@ -9,7 +9,7 @@ cache:
   - "$HOME/.gradle/caches/"
   - "$HOME/.gradle/wrapper/"
 before_deploy:
-- chmod clean.sh 777
+- chmod 777 clean.sh
 - mkdir -p dpl_cd_upload
 - mv deploy.war dpl_cd_upload/deploy.war
 deploy:
