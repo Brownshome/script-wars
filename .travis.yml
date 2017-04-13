@@ -23,6 +23,7 @@ deploy:
   skip_cleanup: true
   on: &2
     repo: Brownshome/script-wars
+    all_branches: true
   bucket: script-wars.code
 - provider: codedeploy
   region: ap-southeast-2
