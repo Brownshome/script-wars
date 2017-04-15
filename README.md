@@ -4,7 +4,7 @@
 Script Wars is a AI design competition designed for university software students. Participants write small AI programs using the supplied library and connect to a competition server. The AIs then compete against each other in simple games for glory.
 
 ## How to take part
-~~At the moment this project is just in the development stage and has no server running at the moment.~~ **There is a running server!! Join [here](http://13.55.154.170) (Still in development). I forgot to note the port needed to connect to the server; it is 35565. This makes the connection line** `Network.connect(ID, "13.55.154.170", 35565, "John Smith")` ~~Despite this you can still write AIs using the client library and run the server youself if you feel the urge to get ahead of the competition.~~
+~~At the moment this project is just in the development stage and has no server running at the moment.~~ **There is a running server!! Join [here](http://52.65.69.217) (Still in development). I forgot to note the port needed to connect to the server; it is 35565. This makes the connection line** `Network.connect(ID, "52.65.69.217", 35565, "John Smith")` ~~Despite this you can still write AIs using the client library and run the server youself if you feel the urge to get ahead of the competition.~~
 
 ## How to contribute
 While I would like to keep the development of the core system to myself there are several opportunities to speed this project along.

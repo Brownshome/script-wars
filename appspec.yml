@@ -1,0 +1,11 @@
+version: 0.0
+
+os: linux 
+
+files:
+  - source: ROOT.war
+    destination: /home/ec2-user/tomcat9/webapps/
+
+hooks:
+  ApplicationStop:
+    - location: clean.sh

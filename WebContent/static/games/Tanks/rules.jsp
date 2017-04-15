@@ -84,7 +84,7 @@ public class AI {
     static final int RIGHT = 3;
     
     public static void main(String[] args) {
-        Network.connect(Integer.parseInt(args[0]), &quot;13.55.154.170&quot;, 35565, &quot;John Smith&quot;);
+        Network.connect(Integer.parseInt(args[0]), &quot;52.65.69.217&quot;, 35565, &quot;John Smith&quot;);
         
         loop:
         while(Network.nextTick()) {
@@ -147,7 +147,7 @@ public class AI {
     <span style='color:#800000; font-weight:bold; '>static</span> <span style='color:#800000; font-weight:bold; '>final</span> <span style='color:#bb7977; '>int</span> RIGHT <span style='color:#808030; '>=</span> <span style='color:#008c00; '>3</span><span style='color:#800080; '>;</span>
     
     <span style='color:#800000; font-weight:bold; '>public</span> <span style='color:#800000; font-weight:bold; '>static</span> <span style='color:#bb7977; '>void</span> main<span style='color:#808030; '>(</span><span style='color:#bb7977; font-weight:bold; '>String</span><span style='color:#808030; '>[</span><span style='color:#808030; '>]</span> args<span style='color:#808030; '>)</span> <span style='color:#800080; '>{</span>
-        Network<span style='color:#808030; '>.</span>connect<span style='color:#808030; '>(</span><span style='color:#bb7977; font-weight:bold; '>Integer</span><span style='color:#808030; '>.</span>parseInt<span style='color:#808030; '>(</span>args<span style='color:#808030; '>[</span><span style='color:#008c00; '>0</span><span style='color:#808030; '>]</span><span style='color:#808030; '>)</span><span style='color:#808030; '>,</span> <span style='color:#0000e6; '>"13.55.154.170"</span><span style='color:#808030; '>,</span> <span style='color:#008c00; '>35565</span><span style='color:#808030; '>,</span> <span style='color:#0000e6; '>"John Smith"</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>
+        Network<span style='color:#808030; '>.</span>connect<span style='color:#808030; '>(</span><span style='color:#bb7977; font-weight:bold; '>Integer</span><span style='color:#808030; '>.</span>parseInt<span style='color:#808030; '>(</span>args<span style='color:#808030; '>[</span><span style='color:#008c00; '>0</span><span style='color:#808030; '>]</span><span style='color:#808030; '>)</span><span style='color:#808030; '>,</span> <span style='color:#0000e6; '>"52.65.69.217"</span><span style='color:#808030; '>,</span> <span style='color:#008c00; '>35565</span><span style='color:#808030; '>,</span> <span style='color:#0000e6; '>"John Smith"</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>
         
         loop<span style='color:#808030; '>:</span>
         <span style='color:#800000; font-weight:bold; '>while</span><span style='color:#808030; '>(</span>Network<span style='color:#808030; '>.</span>nextTick<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#808030; '>)</span> <span style='color:#800080; '>{</span>

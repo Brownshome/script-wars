@@ -18,7 +18,7 @@ import brownshome.scriptwars.server.connection.COBSChannel;
  * <pre>
  * <code>
  * public static main(String[] args) { 
- *  	Network.connect(ID, "13.55.154.170", 35565, "John Smith");
+ *  	Network.connect(ID, "52.65.69.217", 35565, "John Smith");
  *  
  *  	while(Network.nextTick()) {
  *  		//Read data using Network.getX();
