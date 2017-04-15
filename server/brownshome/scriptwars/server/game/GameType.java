@@ -17,7 +17,7 @@ public class GameType {
 	
 	public static void addType(Class<? extends Game> clazz) throws GameCreationException {
 		GameType type = new GameType(clazz);
-		publicGames.put(type.getName(), type);
+		publicGames.put(type.getName() + Math.random(), type);
 	}
 	
 	public static Collection<GameType> getGameTypes() {
