@@ -26,7 +26,7 @@ body > .container {
 
 h1 {
 	font-weight: bold;
-    font-size: 130px;
+    font-size: 100px;
     text-align: center;
     font-family: "Courier New", Courier, monospace;
 }
@@ -42,20 +42,33 @@ h2 {
     line-height: 0;
 }
 
-.thumbnail > a:focus {
-	color: black;
+/* Just double all the values, if we used less this
+could be avoided... */
+.badge {
+	min-width: 20px;
+    padding: 6px 14px;
+    font-size: 24px;
+    border-radius: 20px;
+}
+
+.jumbotron {
+	position:relative;
+}
+
+#jumboclosebutton {
+	position: absolute; 
+	top: 10px; 
+	right: 10px;
 }
 
 h3 {
 	font-weight: bold;
 	font-family: "Courier New", Courier, monospace;
-	color: lightgrey;
-	margin-top: 0px;
-	font-size: 40px;
+	font-size: 36px;
 }
 
 p {
-    font-size:24px;
+    font-size: 18px !important;
     text-align: left;
 }
 

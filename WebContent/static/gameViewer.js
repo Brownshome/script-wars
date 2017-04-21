@@ -29,7 +29,7 @@ var height;
 function updateTable() {
 	var request = new XMLHttpRequest();
 	request.onreadystatechange = tableUpdateReady;
-	request.open("GET", "../static/gameTable.jsp", true);
+	request.open("GET", "../static/fragments/gameTable.jsp", true);
 	request.send();
 }
 

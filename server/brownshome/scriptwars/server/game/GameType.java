@@ -15,9 +15,14 @@ public class GameType {
 	
 	private static Map<String, GameType> publicGames = new HashMap<>();
 	
-	public static void addType(Class<? extends Game> clazz) throws GameCreationException {
-		GameType type = new GameType(clazz);
-		publicGames.put(type.getName() + Math.random(), type);
+	public static void addType(Class<? extends Game> clazz, Difficulty difficulty) throws GameCreationException {
+		GameType type = new GameType(clazz, difficulty);
+		publicGames.put(type.getName(), type);
+	}
+	
+	public static void addBetaType(Class<? extends Game> clazz, Difficulty difficulty) throws GameCreationException {
+		GameType type = new GameType(clazz, true, Language.ANY, difficulty);
+		publicGames.put(type.getName(), type);
 	}
 	
 	public static Collection<GameType> getGameTypes() {
@@ -31,12 +36,23 @@ public class GameType {
 	private GameCreator constructor;
 	private String name;
 	private String description;
+	private boolean isBetaGame;
+	private Language language;
+	private Difficulty difficulty;
 	
 	private ReentrantReadWriteLock gamesLock = new ReentrantReadWriteLock();
 	private Collection<Game> games = new ArrayList<>();
 	private Set<Runnable> onListUpdate = new HashSet<>();
 	
-	public GameType(Class<? extends Game> clazz) throws GameCreationException {
+	public GameType(Class<? extends Game> clazz, Difficulty difficulty) throws GameCreationException {
+		this(clazz, false, Language.ANY, difficulty);
+	}
+	
+	public GameType(Class<? extends Game> clazz, boolean isBeta, Language language, Difficulty difficulty) throws GameCreationException {
+		this.isBetaGame = isBeta;
+		this.difficulty = difficulty;
+		this.language = language;
+		
 		Constructor<? extends Game> constructor;
 		
 		try {
@@ -131,5 +147,17 @@ public class GameType {
 
 	public synchronized void signalListUpdate() {
 		onListUpdate.forEach(Runnable::run);
+	}
+
+	public String getDifficulty() {
+		return difficulty.getName();
+	}
+	
+	public String getLanguage() {
+		return language.getName();
+	}
+	
+	public boolean isBetaGame() {
+		return isBetaGame;
 	}
 }

@@ -1,4 +1,4 @@
-package brownshome.scriptwars.site;
+package brownshome.scriptwars.site.servlet;
 
 import java.io.IOException;
 

@@ -20,11 +20,7 @@ public class Server {
 		try {
 			UDPConnectionHandler.startListenerThread();
 			TCPConnectionHandler.startTCPListener();
-			GameType.addType(TankGame.class);
-			GameType.addType(TankGame.class);
-			GameType.addType(TankGame.class);
-			GameType.addType(TankGame.class);
-			GameType.addType(TankGame.class);
+			GameType.addBetaType(TankGame.class, Difficulty.EASY);
 		} catch (GameCreationException gce) {
 			Server.LOG.log(Level.SEVERE, "Improperly built game files.", gce);
 		}

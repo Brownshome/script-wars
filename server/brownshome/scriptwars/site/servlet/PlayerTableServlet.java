@@ -1,4 +1,4 @@
-package brownshome.scriptwars.site;
+package brownshome.scriptwars.site.servlet;
 
 import java.io.IOException;
 
@@ -16,6 +16,6 @@ public class PlayerTableServlet extends HttpServlet {
 		Game game = Game.getGame(gameCode);
 		
 		request.setAttribute("game", game);
-		getServletContext().getRequestDispatcher("/static/playerTable.jsp").forward(request, response);
+		getServletContext().getRequestDispatcher("/static/fragments/playerTable.jsp").forward(request, response);
 	}
 }
