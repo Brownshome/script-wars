@@ -1,5 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
-	pageEncoding="ISO-8859-1"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <!DOCTYPE html>
@@ -57,8 +56,7 @@
 		<div id="selectedGame"></div>
 
 		<div class="row">
-			<jsp:useBean id="staticBean"
-				class="brownshome.scriptwars.site.StaticBean" />
+			<jsp:useBean id="staticBean" class="brownshome.scriptwars.site.StaticBean" />
 			<c:forEach items="${staticBean.typeList}" var="gameType">
 				<c:choose>
 					<c:when test="${fn:length(staticBean.typeList) == 1}">
@@ -79,31 +77,30 @@
 					style="width: 192px; height: 192px;"
 					onclick="setGameTypeSelected('${gameType.name}')">
 				<span class="badge">${gameType.playerCount}</span>
+			</div>
+			</c:forEach>
 		</div>
-		</c:forEach>
-	</div>
-	<hr>
+		<hr>
 
-	<jsp:include page="/static/fragments/howToCompete.html" />
-	<hr>
+		<jsp:include page="/static/fragments/howToCompete.html" />
+		<hr>
 
-	<h2 id="Contributing">How to Contribute</h2>
+		<h2 id="Contributing">How to Contribute</h2>
 
-	<p>
-		This project is in the early stages of it's development and you are
-		encouraged to take an active role in it's development. The Github page
-		for the site can be found <a
-			href="https://github.com/Brownshome/script-wars">here</a> along with
-		more information about how to contribute to the project. But to sum up
-		the information, the project needs help writing the css pages for the
-		site and creating games other than "Tank Game". Any other changes to
-		the project to benefit ease of use and / or the user experience are
-		also welcome.
-	</p>
-	<p>
+		<p>
+			This project is in the early stages of it's development and you are
+			encouraged to take an active role in it's development. The Github page
+			for the site can be found <a href="https://github.com/Brownshome/script-wars">
+			here</a> along with more information about how to contribute to the project. But to sum up
+			the information, the project needs help writing the css pages for the
+			site and creating games other than "Tank Game". Any other changes to
+			the project to benefit ease of use and / or the user experience are
+			also welcome.
+		</p>
+		<p>
 		Also feel free to document any improvements or feedback <a
 			href="https://github.com/Brownshome/script-wars/issues">here</a>.
-	</p>
+		</p>
 	</div>
 
 	<footer>
@@ -120,6 +117,6 @@
 		src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
 		integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
 		crossorigin="anonymous"></script>
-	<script src="./static/mainPage.js"></script>
+	<script src="./static/script/mainPage.js"></script>
 </body>
 </html>

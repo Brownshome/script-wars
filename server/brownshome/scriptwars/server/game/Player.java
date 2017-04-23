@@ -1,16 +1,33 @@
 package brownshome.scriptwars.server.game;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.time.temporal.*;
 import java.util.Date;
+import java.util.function.Function;
 
 import brownshome.scriptwars.server.connection.ConnectionHandler;
 
 /** Holds the identifying information for each connected member.
  * This class is suitable for using as a key in a Map */
 public class Player {
+	private static final Color[] colours = {
+		Color.RED, 
+		Color.GREEN, 
+		Color.CYAN, 
+		Color.BLUE, 
+		Color.MAGENTA, 
+		Color.PINK, 
+		Color.YELLOW, 
+		Color.BLACK, 
+		Color.DARK_GRAY, 
+		Color.ORANGE
+	};
+	
 	private static final int TIMEOUT = 3;
 	
 	private String name = null;
@@ -28,8 +45,12 @@ public class Player {
 		this.game = game;
 	}
 
-	public Colour getColour() {
-		return Colour.translateToColour(getName());
+	public int getID() {
+		return connection.getProtocolByte() << 16 | game.getSlot() << 8 | slot;
+	}
+	
+	public Color getColour() {
+		return colours[(hashCode() & 0x7fffffff) % colours.length];
 	}
 	
 	public String getTimeJoined() {
@@ -110,5 +131,9 @@ public class Player {
 
 	public ConnectionHandler getConnectionHander() {
 		return connection;
+	}
+
+	public BufferedImage getIcon(Function<String, File> pathTranslator) throws IOException {
+		return game.getIcon(getColour(), s -> pathTranslator.apply(game.getType().getName() + "/" + s));
 	}
 }

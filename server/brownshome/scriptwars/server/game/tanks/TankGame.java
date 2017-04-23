@@ -1,7 +1,13 @@
 package brownshome.scriptwars.server.game.tanks;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.function.Function;
+
+import javax.imageio.ImageIO;
 
 import brownshome.scriptwars.server.connection.*;
 import brownshome.scriptwars.server.game.*;
@@ -181,5 +187,25 @@ public class TankGame extends Game {
 	@Override
 	public int getPreferedConnectionType() {
 		return UDPConnectionHandler.UPD_PROTOCOL_BYTE;
+	}
+
+	@Override
+	public BufferedImage getIcon(Color colour, Function<String, File> pathTranslator) throws IOException {
+		BufferedImage result = ImageIO.read(pathTranslator.apply("icon.png"));
+		for(int x = 0; x < result.getWidth(); x++) {
+			for(int y = 0; y < result.getHeight(); y++) {
+				Color original = new Color(result.getRGB(x, y), true);
+				int r =  blend(original.getRed(), colour.getRed());
+				int g = blend(original.getGreen(), colour.getGreen());
+				int b = blend(original.getBlue(), colour.getBlue());
+				result.setRGB(x, y, original.getAlpha() << 24 | r << 16 | g << 8 | b);
+			}
+		}
+		
+		return result;
+	}
+	
+	private int blend(int a, int b) {
+		return 255 - (255 - a) * (255 - b) / 255;
 	}
 }

@@ -186,7 +186,7 @@ class World {
 				else {
 					Tank tank = getTank(x, y);
 					if(tank != null) {
-						display[y][x] = (char) (3 + tank.owner.getColour().ordinal());
+						display[y][x] = (char) (3 + (hashCode() & 0x7fffffff) % 10); //TODO fix this
 					} else
 						display[y][x] = 0;
 				}

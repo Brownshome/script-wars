@@ -115,7 +115,7 @@ public class GameType {
 		gamesLock.writeLock().lock();
 		try {
 			for(Game game : games) {
-				if(game.hasSpaceForPlayer())
+				if(game.isSpaceForPlayer())
 					return game;
 			}
 

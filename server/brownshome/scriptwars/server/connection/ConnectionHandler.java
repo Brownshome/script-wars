@@ -78,7 +78,7 @@ public abstract class ConnectionHandler<PLAYER_ID> {
 	 * If the number is negative there was no free ID to be generated */
 	public int getID() {
 		try {
-			return getProtocolByte() << 16 | game.getID() << 8 | createPlayer();
+			return getProtocolByte() << 16 | game.getSlot() << 8 | createPlayer();
 		} catch (OutOfIDsException e) {
 			return -1;
 		}

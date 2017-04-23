@@ -5,7 +5,7 @@
 	</button>
 	
 	<div class="row">
-		<div class="col-md-3 text-center">
+		<div class="col-md-3 center-block">
 			<img src="gameicons/${gameType.name}" alt="${gameType.name}" 
 			class="responsiveimg" style="width:192px;height:192px;">
 		</div>

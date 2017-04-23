@@ -1,8 +1,12 @@
 package brownshome.scriptwars.server.game;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 import brownshome.scriptwars.server.Server;
@@ -51,6 +55,16 @@ public abstract class Game {
 	 * Runs the tick for the game
 	 */
 	protected abstract void tick();
+	
+	/**
+	 * Creates an icon of a specific colour
+	 * 
+	 * @param colour The colour to create
+	 * @param pathTranslator The function used to generate files
+	 * @return The final icon
+	 * @throws IOException If the file cannot be found
+	 */
+	public abstract BufferedImage getIcon(Color colour, Function<String, File> pathTranslator) throws IOException;
 	
 	/**
 	 * @return The maximum size of the data to send in bytes per player.
@@ -202,7 +216,7 @@ public abstract class Game {
 	 * @param player The player to make active
 	 */
 	public void makePlayerActive(Player player) {
-		if(!hasSpaceForPlayer()) {
+		if(!isSpaceForPlayer()) {
 			//Move player to a new game
 			try {
 				player.sendError("That game is full, here is a new ID " + getType().getUserID());
@@ -282,7 +296,7 @@ public abstract class Game {
 	}
 
 	/** Returns a byte used to identify this game. */
-	public int getID() {
+	public int getSlot() {
 		return slot;
 	}
 
@@ -298,16 +312,12 @@ public abstract class Game {
 		return displayHandler;
 	}
 
-	public boolean hasSpaceForPlayer() {
+	public boolean isSpaceForPlayer() {
 		return getPlayerCount() < getMaximumPlayers();
 	}
 
 	public GameType getType() {
 		return type;
-	}
-	
-	public int getSlot() {
-		return slot;
 	}
 
 	/**
