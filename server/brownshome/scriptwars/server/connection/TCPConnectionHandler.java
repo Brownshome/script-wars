@@ -84,7 +84,7 @@ public class TCPConnectionHandler extends ConnectionHandler<COBSChannel> {
 											continue;
 										} else {
 											data.player.firstData(packet);
-											data.player.getConnectionHander().putMapping(data.channel, data.player);
+											((TCPConnectionHandler) data.player.getConnectionHander()).putMapping(data.channel, data.player);
 										}
 									}
 								} else {
