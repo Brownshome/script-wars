@@ -23,10 +23,10 @@ import brownshome.scriptwars.server.game.Player;
  * For outgoing packets the first byte is a purpose code, 0 is game data, 1 is disconnect, 2 is timedOut, -1 is server error.
  */
 public abstract class ConnectionHandler<PLAYER_ID> {
-	private static final Map<Integer, Function<Game, ? extends ConnectionHandler>> constructors;
+	private static final Map<Integer, Function<Game, ? extends ConnectionHandler<?>>> constructors;
 	
 	static {
-		Map<Integer, Function<Game, ? extends ConnectionHandler>> innerMap = new HashMap<>();
+		Map<Integer, Function<Game, ? extends ConnectionHandler<?>>> innerMap = new HashMap<>();
 		
 		innerMap.put(UDPConnectionHandler.UPD_PROTOCOL_BYTE, UDPConnectionHandler::new);
 		innerMap.put(TCPConnectionHandler.TCP_PROTOCOL_BYTE, TCPConnectionHandler::new);
@@ -34,7 +34,7 @@ public abstract class ConnectionHandler<PLAYER_ID> {
 		constructors = Collections.unmodifiableMap(innerMap);
 	}
 	
-	public static ConnectionHandler createConnection(int ID, Game game) {
+	public static ConnectionHandler<?> createConnection(int ID, Game game) {
 		try {
 			return constructors.get(ID).apply(game);
 		} catch(NullPointerException npe) {
@@ -52,7 +52,7 @@ public abstract class ConnectionHandler<PLAYER_ID> {
 			throw new ProtocolException("Invalid ID");
 		}
 
-		ConnectionHandler connectionHandler = game.getConnectionHandler(protocol);
+		ConnectionHandler<?> connectionHandler = game.getConnectionHandler(protocol);
 		Player player = connectionHandler.getPlayer(playerCode);
 		
 		if(player == null || !player.isCorrectProtocol(protocol)) {

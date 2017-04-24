@@ -25,7 +25,7 @@ public abstract class Game {
 	/** The time the game has to close in millis */
 	public static final long CLOSING_GRACE = 30 * 1000l;
 
-	private final Map<Integer, ConnectionHandler> connections = new HashMap<>();
+	private final Map<Integer, ConnectionHandler<?>> connections = new HashMap<>();
 	private final DisplayHandler displayHandler;
 	private int slot = -1;
 	
@@ -300,11 +300,11 @@ public abstract class Game {
 		return slot;
 	}
 
-	public ConnectionHandler getDefaultConnectionHandler() {
+	public ConnectionHandler<?> getDefaultConnectionHandler() {
 		return getConnectionHandler(getPreferedConnectionType());
 	}
 
-	public ConnectionHandler getConnectionHandler(int protocolByte) {
+	public ConnectionHandler<?> getConnectionHandler(int protocolByte) {
 		return connections.computeIfAbsent(protocolByte, i -> ConnectionHandler.createConnection(i, this));
 	}
 

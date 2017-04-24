@@ -34,12 +34,12 @@ public class Player {
 	private boolean isActive = false;
 	private int slot;
 	private Game game;
-	private ConnectionHandler connection;
+	private ConnectionHandler<?> connection;
 	private int missedPackets = 0;
 	private LocalTime join;
 	private volatile int score;
 	
-	public Player(int slot, ConnectionHandler connectionHandler, Game game) {
+	public Player(int slot, ConnectionHandler<?> connectionHandler, Game game) {
 		this.slot = slot;
 		connection = connectionHandler;
 		this.game = game;
@@ -129,7 +129,7 @@ public class Player {
 		game.incommingData(passingBuffer, this);
 	}
 
-	public ConnectionHandler getConnectionHander() {
+	public ConnectionHandler<?> getConnectionHander() {
 		return connection;
 	}
 
