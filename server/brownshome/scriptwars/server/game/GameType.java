@@ -10,17 +10,17 @@ import brownshome.scriptwars.server.game.tanks.TankGame;
 
 public class GameType {
 	static interface GameCreator {
-		Game get() throws GameCreationException;
+		Game<?> get() throws GameCreationException;
 	}
 	
 	private static Map<String, GameType> publicGames = new HashMap<>();
 	
-	public static void addType(Class<? extends Game> clazz, Difficulty difficulty) throws GameCreationException {
+	public static void addType(Class<? extends Game<?>> clazz, Difficulty difficulty) throws GameCreationException {
 		GameType type = new GameType(clazz, difficulty);
 		publicGames.put(type.getName(), type);
 	}
 	
-	public static void addBetaType(Class<? extends Game> clazz, Difficulty difficulty) throws GameCreationException {
+	public static void addBetaType(Class<? extends Game<?>> clazz, Difficulty difficulty) throws GameCreationException {
 		GameType type = new GameType(clazz, true, Language.ANY, difficulty);
 		publicGames.put(type.getName(), type);
 	}
@@ -41,19 +41,19 @@ public class GameType {
 	private Difficulty difficulty;
 	
 	private ReentrantReadWriteLock gamesLock = new ReentrantReadWriteLock();
-	private Collection<Game> games = new ArrayList<>();
+	private Collection<Game<?>> games = new ArrayList<>();
 	private Set<Runnable> onListUpdate = new HashSet<>();
 	
-	public GameType(Class<? extends Game> clazz, Difficulty difficulty) throws GameCreationException {
+	public GameType(Class<? extends Game<?>> clazz, Difficulty difficulty) throws GameCreationException {
 		this(clazz, false, Language.ANY, difficulty);
 	}
 	
-	public GameType(Class<? extends Game> clazz, boolean isBeta, Language language, Difficulty difficulty) throws GameCreationException {
+	public GameType(Class<? extends Game<?>> clazz, boolean isBeta, Language language, Difficulty difficulty) throws GameCreationException {
 		this.isBetaGame = isBeta;
 		this.difficulty = difficulty;
 		this.language = language;
 		
-		Constructor<? extends Game> constructor;
+		Constructor<? extends Game<?>> constructor;
 		
 		try {
 			constructor = clazz.getConstructor(GameType.class);
@@ -64,7 +64,7 @@ public class GameType {
 		this.constructor = () -> {
 			try {
 				Game.getActiveGamesLock().writeLock().lock();
-				Game game = constructor.newInstance(this);
+				Game<?> game = constructor.newInstance(this);
 				game.addToSlot();
 				game.start();
 				return game;
@@ -111,15 +111,15 @@ public class GameType {
 		return getAvailableGame().getDefaultConnectionHandler().getID();
 	}
 	
-	public Game getAvailableGame() throws GameCreationException {
+	public Game<?> getAvailableGame() throws GameCreationException {
 		gamesLock.writeLock().lock();
 		try {
-			for(Game game : games) {
+			for(Game<?> game : games) {
 				if(game.isSpaceForPlayer())
 					return game;
 			}
 
-			Game availableGame = constructor.get();
+			Game<?> availableGame = constructor.get();
 			games.add(availableGame);
 			signalListUpdate();
 			return availableGame;
@@ -128,7 +128,7 @@ public class GameType {
 		}
 	}
 	
-	public Collection<Game> getGames() {
+	public Collection<Game<?>> getGames() {
 		gamesLock.readLock().lock();
 		try {
 			return new ArrayList<>(games); //return a copy for thread safety

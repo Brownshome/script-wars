@@ -90,7 +90,7 @@ public class UDPConnectionHandler extends ConnectionHandler<SocketAddress> {
 		}
 	}
 
-	protected UDPConnectionHandler(Game game) {
+	protected UDPConnectionHandler(Game<?> game) {
 		super(game);
 	}
 	

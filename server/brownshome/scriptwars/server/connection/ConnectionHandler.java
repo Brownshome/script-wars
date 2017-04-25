@@ -23,10 +23,10 @@ import brownshome.scriptwars.server.game.Player;
  * For outgoing packets the first byte is a purpose code, 0 is game data, 1 is disconnect, 2 is timedOut, -1 is server error.
  */
 public abstract class ConnectionHandler<PLAYER_ID> {
-	private static final Map<Integer, Function<Game, ? extends ConnectionHandler<?>>> constructors;
+	private static final Map<Integer, Function<Game<?>, ? extends ConnectionHandler<?>>> constructors;
 	
 	static {
-		Map<Integer, Function<Game, ? extends ConnectionHandler<?>>> innerMap = new HashMap<>();
+		Map<Integer, Function<Game<?>, ? extends ConnectionHandler<?>>> innerMap = new HashMap<>();
 		
 		innerMap.put(UDPConnectionHandler.UPD_PROTOCOL_BYTE, UDPConnectionHandler::new);
 		innerMap.put(TCPConnectionHandler.TCP_PROTOCOL_BYTE, TCPConnectionHandler::new);
@@ -34,7 +34,7 @@ public abstract class ConnectionHandler<PLAYER_ID> {
 		constructors = Collections.unmodifiableMap(innerMap);
 	}
 	
-	public static ConnectionHandler<?> createConnection(int ID, Game game) {
+	public static ConnectionHandler<?> createConnection(int ID, Game<?> game) {
 		try {
 			return constructors.get(ID).apply(game);
 		} catch(NullPointerException npe) {
@@ -47,7 +47,7 @@ public abstract class ConnectionHandler<PLAYER_ID> {
 		int playerCode = ID & 0xff;
 		int gameCode = (ID >> 8) & 0xff;
 
-		Game game = Game.getGame(gameCode);
+		Game<?> game = Game.getGame(gameCode);
 		if(game == null) {
 			throw new ProtocolException("Invalid ID");
 		}
@@ -63,9 +63,9 @@ public abstract class ConnectionHandler<PLAYER_ID> {
 	}
 	
 	private final Map<Player, PLAYER_ID> playerMappings = new HashMap<>();
-	protected final Game game;
+	protected final Game<?> game;
 	
-	protected ConnectionHandler(Game game) {
+	protected ConnectionHandler(Game<?> game) {
 		this.game = game;
 	}
 

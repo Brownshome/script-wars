@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.util.Collection;
+import java.util.*;
 import java.util.function.Function;
 
 import javax.imageio.ImageIO;
@@ -29,12 +29,16 @@ import brownshome.scriptwars.server.game.*;
   
  */
 
-public class TankGame extends Game {
+public class TankGame extends Game<GridDisplayHandler> {
+	static final int PLAYER_COUNT = 8;
+	volatile boolean updatePlayerLists;
+	final List<Player> players = Arrays.asList(new Player[PLAYER_COUNT]);
 	World world;
 	
+	
 	public TankGame(boolean[][] map, GameType type) throws OutOfIDsException {
-		super(type);
-		
+		super(type, new GridDisplayHandler());
+		getDisplayHandler().setPlayerList(players);
 		this.world = new World(map, this);
 	}
 	
@@ -48,13 +52,19 @@ public class TankGame extends Game {
 	}
 
 	@Override
+	protected void onPlayerChange() {
+		super.onPlayerChange();
+		updatePlayerLists = true;
+	}
+	
+	@Override
 	public boolean hasPerPlayerData() {
 		return true;
 	}
 
 	@Override
 	public int getMaximumPlayers() {
-		return 8;
+		return PLAYER_COUNT;
 	}
 
 	@Override
@@ -166,19 +176,56 @@ public class TankGame extends Game {
 	}
 
 	@Override
-	public void displayGame(DisplayHandler handler) {
+	public void displayGame(GridDisplayHandler handler) {
 		world.displayWorld(handler);
+		
+		if(updatePlayerLists) {
+			updatePlayerLists = false;
+			handler.sendPlayerIDs();	
+		}
+		
 		handler.print();
 	}
 
 	@Override
 	public void addPlayer(Player player) {
+		task: {
+			for(int i = 0; i < PLAYER_COUNT; i++) {
+				if(players.get(i) == null) {
+					players.set(i, player);
+					break task;
+				}
+			}
+			
+			throw new RuntimeException("Too many players");
+		}
+		
 		super.addPlayer(player);
 		world.spawnTank(player);
 	}
 
+	public int getIndex(Player owner) {
+		for(int i = 0; i < players.size(); i++) {
+			if(players.get(i) == owner)
+				return i;
+		}
+		
+		throw new RuntimeException("Player not found");
+	}
+	
 	@Override
 	public void removePlayer(Player player) {
+		task: {
+			for(int i = 0; i < players.size(); i++) {
+				if(players.get(i) == player) {
+					players.set(i, null);
+					break task;
+				}
+			}
+			
+			throw new RuntimeException("That player does not exist");
+		}
+		
 		super.removePlayer(player);
 		if(world.isAlive(player))
 			world.removeTank(player);
@@ -190,7 +237,9 @@ public class TankGame extends Game {
 	}
 
 	@Override
-	public BufferedImage getIcon(Color colour, Function<String, File> pathTranslator) throws IOException {
+	public BufferedImage getIcon(Player player, Function<String, File> pathTranslator) throws IOException {
+		Color colour = Player.colours[this.getIndex(player)];
+		
 		BufferedImage result = ImageIO.read(pathTranslator.apply("icon.png"));
 		for(int x = 0; x < result.getWidth(); x++) {
 			for(int y = 0; y < result.getHeight(); y++) {

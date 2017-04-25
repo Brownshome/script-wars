@@ -13,27 +13,27 @@ import brownshome.scriptwars.server.Server;
 import brownshome.scriptwars.server.connection.*;
 
 /** The interface that all played games must implement. */
-public abstract class Game {
+public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	private enum GameState {
 		ACTIVE, CLOSING, CLOSED
 	}
 
 	private static final ReentrantReadWriteLock activeGamesLock = new ReentrantReadWriteLock();
 	/** This may be read and written to from all three threads. All access must use {@link #activeGamesLock} except from single reads */
-	private static final Game[] activeGames = new Game[256];
+	private static final Game<?>[] activeGames = new Game<?>[256];
 
 	/** The time the game has to close in millis */
 	public static final long CLOSING_GRACE = 30 * 1000l;
 
 	private final Map<Integer, ConnectionHandler<?>> connections = new HashMap<>();
-	private final DisplayHandler displayHandler;
+	private final DISPLAY_HANDLER displayHandler;
 	private int slot = -1;
 	
 	private GameState state = GameState.ACTIVE; //TODO possibility of pre-start phase
 	private long timeClosed;
 	private final GameType type;
 	
-	private Set<Player> activePlayers = new HashSet<>();
+	private Set<Player> activePlayers = new LinkedHashSet<>();
 	private Set<Player> outstandingPlayers = new HashSet<>();
 
 	/** 
@@ -59,12 +59,12 @@ public abstract class Game {
 	/**
 	 * Creates an icon of a specific colour
 	 * 
-	 * @param colour The colour to create
+	 * @param player The player to get them for
 	 * @param pathTranslator The function used to generate files
 	 * @return The final icon
 	 * @throws IOException If the file cannot be found
 	 */
-	public abstract BufferedImage getIcon(Color colour, Function<String, File> pathTranslator) throws IOException;
+	public abstract BufferedImage getIcon(Player player, Function<String, File> pathTranslator) throws IOException;
 	
 	/**
 	 * @return The maximum size of the data to send in bytes per player.
@@ -89,13 +89,12 @@ public abstract class Game {
 	 * 
 	 * @param handler The {@link brownshome.scriptwars.server.game.DisplayHandler DisplayHandler} that the commands are to be sent to
 	 */
-	protected abstract void displayGame(DisplayHandler handler);
+	protected abstract void displayGame(DISPLAY_HANDLER handler);
 
 	public abstract int getPreferedConnectionType();
 
-	protected Game(GameType type) {
-		this.displayHandler = new DisplayHandler();
-		
+	protected Game(GameType type, DISPLAY_HANDLER displayHandler) {
+		this.displayHandler = displayHandler;
 		this.type = type;
 	}
 
@@ -112,8 +111,12 @@ public abstract class Game {
 		}
 	}
 
-	public void addPlayer(Player player) {
+	protected void onPlayerChange() {
 		type.signalListUpdate();
+	}
+	
+	public void addPlayer(Player player) {
+		onPlayerChange();
 	}
 	
 	/**Called when a player times out from the server
@@ -122,7 +125,7 @@ public abstract class Game {
 	 */
 	public void removePlayer(Player p) {
 		activePlayers.remove(p);
-		type.signalListUpdate();
+		onPlayerChange();
 	}
 
 	public void waitForResponses(long cutoffTime) {
@@ -308,7 +311,7 @@ public abstract class Game {
 		return connections.computeIfAbsent(protocolByte, i -> ConnectionHandler.createConnection(i, this));
 	}
 
-	public DisplayHandler getDisplayHandler() {
+	public DISPLAY_HANDLER getDisplayHandler() {
 		return displayHandler;
 	}
 
@@ -338,7 +341,7 @@ public abstract class Game {
 		return activeGamesLock;
 	}
 
-	public static Game getGame(int gameCode) {
+	public static Game<?> getGame(int gameCode) {
 		activeGamesLock.readLock().lock();
 		try {
 			return activeGames[gameCode];

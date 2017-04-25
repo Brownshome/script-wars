@@ -121,7 +121,7 @@ public class TCPConnectionHandler extends ConnectionHandler<COBSChannel> {
 		return getPlayerFromID(ID);
 	}
 
-	protected TCPConnectionHandler(Game game) {
+	protected TCPConnectionHandler(Game<?> game) {
 		super(game);
 	}
 

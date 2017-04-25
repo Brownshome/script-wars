@@ -25,7 +25,7 @@ public class IDRequestServlet extends HttpServlet {
 			}
 			
 			int slot = Integer.parseInt(rawGameSlot);
-			Game game;
+			Game<?> game;
 			
 			try {
 				id = Game.getGame(slot).getDefaultConnectionHandler().getID();

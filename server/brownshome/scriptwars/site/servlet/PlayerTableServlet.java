@@ -13,7 +13,7 @@ public class PlayerTableServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		int gameCode = Integer.parseInt(request.getServletMapping().getMatchValue());
-		Game game = Game.getGame(gameCode);
+		Game<?> game = Game.getGame(gameCode);
 		
 		request.setAttribute("game", game);
 		getServletContext().getRequestDispatcher("/static/fragments/playerTable.jsp").forward(request, response);

@@ -24,9 +24,7 @@ function disconnectWebSocket() {
 	socket.close();
 }
 
-var pixelSize = 512;
-var width;
-var height;
+var pixelSize = document.getElementById("gameCanvas").width;
 
 function displayMessage(message) {
 	canvas.clearRect(0, 0, pixelSize, pixelSize);

@@ -39,7 +39,7 @@
 	
 		<div class="row">
 			<div class="col-md-7">
-				<canvas id="gameCanvas" width="512" height="512"></canvas>
+				<canvas id="gameCanvas" width="1024" height="1024" style="width:512px;height:512px"></canvas>
 			</div>
 			
 			<div id="playerTable" class="col-md-5"></div>

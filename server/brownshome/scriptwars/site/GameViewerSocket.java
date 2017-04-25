@@ -5,12 +5,8 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
-import javax.websocket.CloseReason;
-import javax.websocket.OnClose;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
+import javax.websocket.*;
 import javax.websocket.RemoteEndpoint.Basic;
-import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
@@ -35,7 +31,7 @@ public class GameViewerSocket {
 	Consumer<ByteBuffer> viewer;
 	Runnable updateGameTable;
 	
-	Game game;
+	Game<?> game;
 	GameType type;
 	
 	@OnMessage
@@ -90,6 +86,16 @@ public class GameViewerSocket {
 	//TODO find out if session.close causes this to fire
 	@OnClose
 	public void close() {
+		removeViewer();
+		
+		if(type != null)
+			type.removeOnListUpdate(updateGameTable);
+	}
+	
+	@OnError
+	public void error(Throwable t) {
+		//This will only be low down errors, nothing we can really do here, just ignore
+		
 		removeViewer();
 		
 		if(type != null)

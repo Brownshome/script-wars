@@ -15,17 +15,17 @@ import brownshome.scriptwars.server.connection.ConnectionHandler;
 /** Holds the identifying information for each connected member.
  * This class is suitable for using as a key in a Map */
 public class Player {
-	private static final Color[] colours = {
+	public static final Color[] colours = {
 		Color.RED, 
 		Color.GREEN, 
 		Color.CYAN, 
 		Color.BLUE, 
 		Color.MAGENTA, 
 		Color.PINK, 
-		Color.YELLOW, 
+		Color.YELLOW.darker(), 
 		Color.BLACK, 
 		Color.DARK_GRAY, 
-		Color.ORANGE
+		Color.ORANGE.darker()
 	};
 	
 	private static final int TIMEOUT = 3;
@@ -33,13 +33,13 @@ public class Player {
 	private String name = null;
 	private boolean isActive = false;
 	private int slot;
-	private Game game;
+	private Game<?> game;
 	private ConnectionHandler<?> connection;
 	private int missedPackets = 0;
 	private LocalTime join;
 	private volatile int score;
 	
-	public Player(int slot, ConnectionHandler<?> connectionHandler, Game game) {
+	public Player(int slot, ConnectionHandler<?> connectionHandler, Game<?> game) {
 		this.slot = slot;
 		connection = connectionHandler;
 		this.game = game;
@@ -47,10 +47,6 @@ public class Player {
 
 	public int getID() {
 		return connection.getProtocolByte() << 16 | game.getSlot() << 8 | slot;
-	}
-	
-	public Color getColour() {
-		return colours[(hashCode() & 0x7fffffff) % colours.length];
 	}
 	
 	public String getTimeJoined() {
@@ -134,6 +130,6 @@ public class Player {
 	}
 
 	public BufferedImage getIcon(Function<String, File> pathTranslator) throws IOException {
-		return game.getIcon(getColour(), s -> pathTranslator.apply(game.getType().getName() + "/" + s));
+		return game.getIcon(this, s -> pathTranslator.apply(game.getType().getName() + "/" + s));
 	}
 }

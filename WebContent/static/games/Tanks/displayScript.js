@@ -3,39 +3,48 @@
  */
 
 var images = {};
+var idList = null;
 
 //Called on page load
 function onLoad(gameID) {
 	displayMessage("Loading Sprites");
-	var sprites = {
-			bullet: "../static/games/Tanks/bullet.png", 
-			tank: "../static/games/Tanks/icon.png"
+	let sprites = {
+		bullet: "../static/games/Tanks/bullet.png", 
 	};
+	
 	loadSprites(sprites, gameID);
 }
 
 function loadSprites(sprites, gameID) {
-	var numImages = 0;
+	let numImages = 0;
 	// get num of sources
-	for(var src in sprites) {
+	for(name in sprites) {
 		numImages++;
 	}
 
-	for(var src in sprites) {
-		images[src] = new Image();
-		images[src].onload = function() {
+	for(name in sprites) {
+		images[name] = new Image();
+		images[name].onload = function() {
 			if(--numImages <= 0) {
 				connectWebSocket(gameID);
 			}
 		};
 		
-		images[src].src = sprites[src];
+		images[name].src = sprites[name];
 	}
 }
 
+/*
+ * 4: Player ID list
+ * 0: Bulk update
+ * 1: Delta update
+ * 
+ * 2: Update game table
+ * 3: Update player table
+ */
 function onMessage(message) {
-	var dataView = new DataView(message.data);
-	var header = dataView.getUint8(0);
+	let dataView = new DataView(message.data);
+	let header = dataView.getUint8(0);
 	
 	switch(header) {
 	case 1: //delta
@@ -45,10 +54,32 @@ function onMessage(message) {
 		handleBulkData(dataView);
 		break;
 	case 2:
-		updateTable();
+		updateGameTable();
 		break;
+	case 4:
+		updateIDMap(dataView);
+		break;
+	case 3:
+		updatePlayerList();
 	default:
 		canvasError();
+	}
+}
+
+function updateIDMap(dataView) {
+	idList = [];
+	let length = dataView.getUint8(1);
+	
+	for(index = 0; index < length; index++) {
+		let id = dataView.getUint32(index * 4 + 2).toString();
+		idList.push(id);
+		
+		if(id == "0") {
+			images[id] = null;
+		} else {
+			images[id] = new Image();
+			images[id].src = "/playericon/" + id;
+		}
 	}
 }
 
@@ -56,11 +87,12 @@ function handleBulkData(dataView) {
 	canvas.clearRect(0, 0, pixelSize, pixelSize);
 	
 	width = dataView.getUint8(1);
+	
 	height = dataView.getUint8(2);
 	
 	for(y = 0; y < height; y++) {
 		for(x = 0; x < width; x++) {
-			var c = dataView.getUint16(3 + (x + y * width) * 2);
+			let c = dataView.getUint16(3 + (x + y * width) * 2);
 			paintItem(x, y, c);
 		}
 	}
@@ -78,21 +110,17 @@ function paintItem(x, y, c) {
 		shot(x, y);
 		break;
 	default:
-		if(c - 3 < 10) {
-			tank(x, y, c - 3);
-		} else {
-			canvasError();
-		}
+		tank(x, y, c - 3);
 	}
 }
 
 function handleDeltaData(dataView) {
-	var offset = 1;
+	let offset = 1;
 	
 	while(offset <= dataView.byteLength - 4) {
-		var c = dataView.getUint16(offset);
-		var x = dataView.getUint8(offset + 2);
-		var y = dataView.getUint8(offset + 3);
+		let c = dataView.getUint16(offset);
+		let x = dataView.getUint8(offset + 2);
+		let y = dataView.getUint8(offset + 3);
 		
 		paintItem(x, y, c);
 		
@@ -100,31 +128,19 @@ function handleDeltaData(dataView) {
 	}
 }
 
-var colours = [
-	[255, 99, 71], //red
-	[0, 128, 0], //green
-	[64, 224, 208], //cyan
-	[0, 0, 255], //blue
-	[148, 0, 211], //violet
-	[255, 20, 147], //pink
-	[128, 128, 0], //yellow
-	[0, 0, 0], //black
-	[75, 0, 130], //indigo
-	[255, 165, 0] //orange
-];
-
-function tank(x, y, k) {
-	canvas.drawImage(images.tank, x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
-	var imageData = canvas.getImageData(x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
-	for(var i = 0; i < imageData.data.length; i += 4) {
-		if(imageData.data[i] < 100) {
-			imageData.data[i] = colours[k][0];
-			imageData.data[i + 1] = colours[k][1];
-			imageData.data[i + 2] = colours[k][2];
-		}
+function tank(x, y, index) {
+	if(idList == null)
+		return;
+	
+	if(idList.length <= index) {
+		return; //we haven't been sent that ID yet
 	}
 	
-	canvas.putImageData(imageData, x * pixelSize / width, y * pixelSize / height);
+	let image = images[idList[index]];
+	
+	if(image != null && image.complete) {
+		canvas.drawImage(image, x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
+	}
 }
 
 function wall(x, y) {

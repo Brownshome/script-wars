@@ -10,8 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import brownshome.scriptwars.server.game.DisplayHandler;
-import brownshome.scriptwars.server.game.Player;
+import brownshome.scriptwars.server.game.*;
 
 class World {
 	List<Shot> shots = new ArrayList<>();
@@ -176,7 +175,7 @@ class World {
 		tankMap[y][x] = tank;
 	}
 
-	void displayWorld(DisplayHandler handler) {
+	void displayWorld(GridDisplayHandler handler) {
 		char[][] display = new char[getHeight()][getWidth()];
 		
 		for(int x = 0; x < getWidth(); x++) {
@@ -186,7 +185,7 @@ class World {
 				else {
 					Tank tank = getTank(x, y);
 					if(tank != null) {
-						display[y][x] = (char) (3 + (hashCode() & 0x7fffffff) % 10); //TODO fix this
+						display[y][x] = (char) (3 + game.getIndex(tank.getOwner())); //TODO fix this
 					} else
 						display[y][x] = 0;
 				}
