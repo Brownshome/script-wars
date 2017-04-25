@@ -129,6 +129,8 @@ function handleDeltaData(dataView) {
 }
 
 function tank(x, y, index) {
+	clear(x, y);
+	
 	if(idList == null)
 		return;
 	
