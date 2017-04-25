@@ -6,7 +6,7 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
-import brownshome.scriptwars.server.game.*;
+import brownshome.scriptwars.game.*;
 
 @WebServlet("/playertable/*")
 public class PlayerTableServlet extends HttpServlet {

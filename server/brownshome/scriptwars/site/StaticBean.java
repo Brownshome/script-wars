@@ -2,8 +2,8 @@ package brownshome.scriptwars.site;
 
 import java.util.Collection;
 
-import brownshome.scriptwars.server.game.GameType;
-import brownshome.scriptwars.server.game.tanks.*;
+import brownshome.scriptwars.game.GameType;
+import brownshome.scriptwars.game.tanks.*;
 
 public class StaticBean {
 	public Collection<GameType> getTypeList() {

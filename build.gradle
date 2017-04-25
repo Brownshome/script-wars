@@ -6,8 +6,9 @@ apply plugin: 'war'
 project.webAppDirName = 'WebContent'
 
 sourceSets {
-    main.java.srcDirs = ['server', 'common']    
+	main.java.srcDirs = ['server', 'common']    
     client.java.srcDirs = ['client/java', 'common']
+	all.java.srcDirs = ['server', 'client/java', 'common']
 }
 
 repositories {
@@ -18,7 +19,14 @@ dependencies {
     //idk why both of these are needed or why my code uses non-documented tomcat only API, I'll fix it later
     providedCompile group: 'org.apache.tomcat', name: 'tomcat-catalina', version: '9.0.0.M18'
     providedCompile group: 'org.apache.tomcat', name: 'tomcat-websocket', version: '9.0.0.M18'
+	
 	compile group: 'javax.servlet', name: 'jstl', version: '1.2'
+	
+	allCompile group: 'org.apache.tomcat', name: 'tomcat-catalina', version: '9.0.0.M18'
+    allCompile group: 'org.apache.tomcat', name: 'tomcat-websocket', version: '9.0.0.M18'
+	
+	compileOnly sourceSets.all.output
+	clientCompileOnly sourceSets.all.output
 }
 
 task clientJar(type: Jar) {

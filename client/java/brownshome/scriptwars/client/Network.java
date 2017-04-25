@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
 
-import brownshome.scriptwars.server.connection.COBSChannel;
+import brownshome.scriptwars.connection.COBSChannel;
 
 /**
  * The main class that clients can use to communicate with the server.
@@ -33,23 +33,26 @@ import brownshome.scriptwars.server.connection.COBSChannel;
 public class Network {
 	static final int MAX_OUTPUT_SIZE = 1024;
 	
-	static Connection connection;
-	static ByteBuffer dataOut = ByteBuffer.wrap(new byte[MAX_OUTPUT_SIZE]);
-	static ByteBuffer dataIn;
-	static int ID = -1;
+	private Connection connection;
+	private ConnectionStatus connectionStatus = ConnectionStatus.NOT_CONNECTED;
+	private ByteBuffer dataOut = ByteBuffer.wrap(new byte[MAX_OUTPUT_SIZE]);
+	private ByteBuffer dataIn;
+	private int ID = -1;
 	
+	//Bit packing variables
+	private int bit = 0x100;
+
+	private int positionOfByte;
+
 	/**
 	 * Call this using the ID given to you by the website to connect
 	 * @param ID The ID given to you by the website
 	 * @param ip The ip of the website
 	 * @param name The name of your bot
+	 * @throws IOException If for some reason the site cannot be reached
 	 */
-	public static void connect(int ID, String ip, String name) {
-		if(Network.ID != -1) {
-			throw new IllegalStateException("Cannot initialize the connection more than once.");
-		}
-		
-		Network.ID = ID;
+	public Network(int ID, String ip, String name) throws IOException {
+		this.ID = ID;
 		
 		dataOut.clear();
 		dataOut.putInt(ID);
@@ -59,36 +62,36 @@ public class Network {
 		
 		switch(protocol) {
 			case 1:
-				try {
-					connection = new UDPConnection(InetAddress.getByName(ip), 35565);
-				} catch (IOException e) {
-					throw new RuntimeException("Unable to connect to " + ip, e);
-				}
+				connection = new UDPConnection(InetAddress.getByName(ip), 35565);
 				break;
 			case 2:
-				try {
-					connection = new TCPConnection(InetAddress.getByName(ip), 35566);
-				} catch (UnknownHostException e) {
-					throw new RuntimeException("Unable to connect to " + ip, e);
-				}
+				connection = new TCPConnection(InetAddress.getByName(ip), 35566);
 				break;
 			default:
-				throw new RuntimeException("Invalid ID");
+				throw new IllegalArgumentException("Invalid ID");
 		}
 	}
 	
 	/** Waits until all the players have made their moves and sends the data and retrieved a new set of data
 	 * from the server. This method returns false if the game is over or you have timed out. 
-	 * @return If the client was disconnected or timed out.
+	 * @return False if the client was disconnected or timed out. The exact cause can be found by calling
+	 *         {@link #getConnectionStatus}. Once this method returns false please make attempt to re-use the
+	 *         connection.
 	 **/
-	public static boolean nextTick() {
-		dataOut.flip();
-		connection.sendData(dataOut);
-		dataOut.clear();
-		connection.putHeader(dataOut);
-		dataIn = connection.waitForData();
+	public boolean nextTick() {
+		try {
+			connectionStatus = ConnectionStatus.CONNECTED;
+			dataOut.flip();
+			connection.sendData(dataOut);
+			dataOut.clear();
+			connection.putHeader(dataOut);
+			dataIn = connection.waitForData();
+		} catch(ConnectionException ce) {
+			connectionStatus = ce.getConnectionStatus();
+			return false;
+		}
 		
-		return dataIn != null;
+		return true;
 	}
 	
 	/**
@@ -97,15 +100,25 @@ public class Network {
 	 * in the buffer.
 	 * @return true if there is at least one byte left to be read
 	 */
-	public static boolean hasData() {
+	public boolean hasData() {
 		return dataIn.hasRemaining();
+	}
+	
+	/**
+	 * Queries the connection status. Anything other than {@link ConnectionStatus#CONNECTED}
+	 * means that we are not connected to the server.
+	 * 
+	 * @return The connection status.
+	 */
+	public ConnectionStatus getConnectionStatus() {
+		return connectionStatus;
 	}
 	
 	/**
 	 * Gets a single integer from the data.
 	 * @return An integer from the data
 	 */
-	public static int getInt() {
+	public int getInt() {
 		return dataIn.getInt();
 	}
 	
@@ -114,18 +127,14 @@ public class Network {
 	 * range 0-255
 	 * @return An integer containing the read byte.
 	 */
-	public static int getByte() {
+	public int getByte() {
 		return dataIn.get();
 	}
-	
-	//Bit packing variables
-	static int bit = 0x100;
-	static int positionOfByte;
 	
 	/** Gets a true or false value from the data. 
 	 * @return A boolean read from the data.
 	 **/
-	public static boolean getBoolean() {
+	public boolean getBoolean() {
 		if(bit == 0x100 || positionOfByte != dataIn.position() - 1) {
 			bit = 1;
 			positionOfByte = dataIn.position();
@@ -142,7 +151,7 @@ public class Network {
 	/** Gets a string from the data.
 	 * @return The decoded String object
 	 **/
-	public static String getString() {
+	public String getString() {
 		int length = dataIn.getShort();
 		String result = new String(dataIn.array(), dataIn.arrayOffset() + dataIn.position(), length, StandardCharsets.UTF_8);
 		dataIn.position(dataIn.position() + length);
@@ -155,14 +164,14 @@ public class Network {
 	 * getX() will update the position pointer in the buffer.
 	 * @return The ByteBuffer containing the raw data sent by the server.
 	 **/
-	public static ByteBuffer getData() {
+	public ByteBuffer getData() {
 		return dataIn;
 	}
 	
 	/** Gets a floating point number from the data 
 	 * @return The decoded floating point value 
 	 **/
-	public static float getFloat() {
+	public float getFloat() {
 		return dataIn.getFloat();
 	}
 	
@@ -170,7 +179,7 @@ public class Network {
 	 * Sends a single integer to the server.
 	 * @param i The integer to send.
 	 **/
-	public static void sendInt(int i) { 
+	public void sendInt(int i) { 
 		dataOut.putInt(i); 
 	}
 	
@@ -179,14 +188,19 @@ public class Network {
 	 * integer contains values larger that that the lowest 8 bits will be taken.
 	 * @param i An integer containing a value from 0-255.
 	 */
-	public static void sendByte(int i) { dataOut.put((byte) (i & 0xff)); }
-	public static void sendFloat(float f) { dataOut.putFloat(f); }
+	public void sendByte(int i) { dataOut.put((byte) (i & 0xff)); }
+	
+	/**
+	 * Sends a single float to the server.
+	 * @param f The floating point value
+	 */
+	public void sendFloat(float f) { dataOut.putFloat(f); }
 	
 	/** Sends raw data to the server. Only use this if you know what you are doing.
 	 * Ensure that the limit and position are set properly.
 	 * @param data A byte array holding the data to send.
 	 **/
-	public static void sendData(byte[] data) { 
+	public void sendData(byte[] data) { 
 		dataOut.put(data); 
 	}
 	
@@ -194,120 +208,102 @@ public class Network {
 	 * Sends a String to the server.
 	 * @param s The string to send to the server.
 	 */
-	public static void sendString(String s) { 
+	public void sendString(String s) { 
 		byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
 		dataOut.putShort((short) bytes.length);
 		dataOut.put(bytes);
 	}
-}
-
-//******************* INTERNAL USE ONLY BELOW THIS LINE ***********************************//
-
-interface Connection {
-	void sendData(ByteBuffer data);
-	void putHeader(ByteBuffer putInt);
-	ByteBuffer waitForData();
-}
-
-class UDPConnection implements Connection {
-	ByteBuffer buffer = ByteBuffer.allocate(1024); //If you need any larger than this use TCP
-	DatagramChannel channel;
 	
-	UDPConnection(InetAddress address, int port) throws IOException {
-		channel = DatagramChannel.open();
-		channel.connect(new InetSocketAddress(address, port));
-		channel.socket().setSoTimeout(5000);
-	}
-	
-	@Override
-	public void sendData(ByteBuffer data) {
-		try {
-			channel.write(data);
-		} catch (IOException e) {
-			throw new RuntimeException("Error sending data", e);
-		}
-	}
-
-	@Override
-	public ByteBuffer waitForData() {
-		try {
-			buffer.clear();
-			channel.read(buffer);
-			buffer.flip();
-		} catch (IOException e) {
-			throw new RuntimeException("Error receiving data", e);
+	class UDPConnection implements Connection {
+		ByteBuffer buffer = ByteBuffer.allocate(1024); //If you need any larger than this use TCP
+		DatagramChannel channel;
+		
+		UDPConnection(InetAddress address, int port) throws IOException {
+			channel = DatagramChannel.open();
+			channel.connect(new InetSocketAddress(address, port));
+			channel.socket().setSoTimeout(5000);
 		}
 		
-		int code = buffer.get();
+		@Override
+		public void sendData(ByteBuffer data) throws ConnectionException {
+			try {
+				channel.write(data);
+			} catch (IOException e) {
+				throw new ConnectionException(ConnectionStatus.DROPPED, e);
+			}
+		}
+
+		@Override
+		public ByteBuffer waitForData() throws ConnectionException {
+			try {
+				buffer.clear();
+				channel.read(buffer);
+				buffer.flip();
+			} catch (IOException e) {
+				throw new ConnectionException(ConnectionStatus.DROPPED, e);
+			}
+			
+			int code = buffer.get();
+			
+			//Error and disconnect handling
+			switch(code) {
+				case 1:
+					throw new ConnectionException(ConnectionStatus.DISCONNECTED);
+				case 2:
+					throw new ConnectionException(ConnectionStatus.FAILED_TO_KEEP_UP);
+				case -1:
+					int stringLength = buffer.getShort();
+					throw new ConnectionException(ConnectionStatus.ERROR(new String(buffer.array(), buffer.position() + buffer.arrayOffset(), stringLength, StandardCharsets.UTF_8)));
+			}
+			
+			return buffer;
+		}
+
+		@Override
+		public void putHeader(ByteBuffer data) {
+			data.putInt(ID);
+		}
+	}
+	
+	class TCPConnection implements Connection {
+		COBSChannel channel;
 		
-		//Error and disconnect handling
-		switch(code) {
+		TCPConnection(InetAddress address, int port) throws IOException {
+			channel = new COBSChannel(SocketChannel.open(new InetSocketAddress(address, port)));
+		}
+		
+		@Override
+		public void sendData(ByteBuffer data) throws ConnectionException {
+			try {
+				channel.write(data);
+			} catch (IOException e) {
+				throw new ConnectionException(ConnectionStatus.DROPPED, e);
+			}
+		}
+
+		@Override
+		public ByteBuffer waitForData() throws ConnectionException {
+			ByteBuffer buffer = channel.getPacket();
+			if(buffer == null)
+				throw new ConnectionException(ConnectionStatus.DROPPED);
+
+			int code = buffer.get();
+
+			//Error and disconnect handling
+			switch(code) {
 			case 1:
-				System.out.println("Disconnected by server.");
-				return null;
+				throw new ConnectionException(ConnectionStatus.DISCONNECTED);
 			case 2:
-				System.out.println("Failed to keep up with game tick.");
-				return null;
+				throw new ConnectionException(ConnectionStatus.FAILED_TO_KEEP_UP);
 			case -1:
 				int stringLength = buffer.getShort();
-				System.out.println("Server error: " + new String(buffer.array(), buffer.position() + buffer.arrayOffset(), stringLength, StandardCharsets.UTF_8));
-				return null;
-		}
-		
-		return buffer;
-	}
+				throw new ConnectionException(ConnectionStatus.ERROR(new String(buffer.array(), buffer.position() + buffer.arrayOffset(), stringLength, StandardCharsets.UTF_8)));
+			}
 
-	@Override
-	public void putHeader(ByteBuffer data) {
-		data.putInt(Network.ID);
-	}
-}
-
-class TCPConnection implements Connection {
-	COBSChannel channel;
-	
-	TCPConnection(InetAddress address, int port) {
-		try {
-			channel = new COBSChannel(SocketChannel.open(new InetSocketAddress(address, port)));
-		} catch (IOException e) {
-			throw new RuntimeException("Unable to form TCP connection", e);
-		}
-	}
-	
-	@Override
-	public void sendData(ByteBuffer data) {
-		try {
-			channel.write(data);
-		} catch (IOException e) {
-			throw new RuntimeException("Unable to send data", e);
-		}
-	}
-
-	@Override
-	public ByteBuffer waitForData() {
-		ByteBuffer buffer = channel.getPacket();
-		if(buffer == null)
-			throw new RuntimeException("Connection Dropped");
-
-		int code = buffer.get();
-
-		//Error and disconnect handling
-		switch(code) {
-		case 1:
-			System.out.println("Disconnected by server.");
-			return null;
-		case 2:
-			System.out.println("Failed to keep up with game tick.");
-			return null;
-		case -1:
-			int stringLength = buffer.getShort();
-			System.out.println("Server error: " + new String(buffer.array(), buffer.position() + buffer.arrayOffset(), stringLength, StandardCharsets.UTF_8));
-			return null;
+			return buffer;
 		}
 
-		return buffer;
+		@Override
+		public void putHeader(ByteBuffer putInt) {}
 	}
-
-	@Override
-	public void putHeader(ByteBuffer putInt) {}
 }

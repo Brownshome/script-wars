@@ -10,7 +10,7 @@ import javax.websocket.RemoteEndpoint.Basic;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
-import brownshome.scriptwars.server.game.*;
+import brownshome.scriptwars.game.*;
 
 /**
  * The websocket sends binary data to the web page on every game tick.

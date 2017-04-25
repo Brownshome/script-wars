@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import brownshome.scriptwars.server.game.*;
+import brownshome.scriptwars.game.*;
 
 @WebServlet("/requestID")
 public class IDRequestServlet extends HttpServlet {

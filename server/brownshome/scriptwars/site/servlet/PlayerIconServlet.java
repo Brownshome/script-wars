@@ -9,8 +9,8 @@ import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
-import brownshome.scriptwars.server.connection.*;
-import brownshome.scriptwars.server.game.*;
+import brownshome.scriptwars.connection.*;
+import brownshome.scriptwars.game.*;
 
 @WebServlet("/playericon/*")
 public class PlayerIconServlet extends HttpServlet {
