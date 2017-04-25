@@ -9,10 +9,10 @@ cache:
   - "$HOME/.gradle/caches/"
   - "$HOME/.gradle/wrapper/"
 before_script:
-  - wget http://services.gradle.org/distributions/gradle-3.5-bin.zip
-  - unzip gradle-3.5-bin.zip
-  - export GRADLE_HOME=$PWD/gradle-3.5
-  - export PATH=$GRADLE_HOME/bin:$PATH
+- wget http://services.gradle.org/distributions/gradle-3.5-bin.zip
+- unzip gradle-3.5-bin.zip
+- export GRADLE_HOME=$PWD/gradle-3.5
+- export PATH=$GRADLE_HOME/bin:$PATH
 deploy:
 - provider: s3
   region: ap-southeast-2
