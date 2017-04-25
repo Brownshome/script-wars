@@ -16,4 +16,9 @@ public final class ConnectionStatus {
 	private ConnectionStatus(String msg) {
 		this.msg = msg;
 	}
+	
+	@Override
+	public String toString() {
+		return msg;
+	}
 }
