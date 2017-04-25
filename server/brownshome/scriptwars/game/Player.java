@@ -104,7 +104,7 @@ public class Player {
 
 	/** Only ever call this from one thread */
 	public void addScore(int i) {
-		score++;
+		score = score + i;
 	}
 	
 	public int getScore() {
