@@ -17,4 +17,8 @@ public class StaticBean {
 	public String getTankGameShotSpeed() {
 		return String.valueOf(Shot.SPEED);
 	}
+	
+	public String getTankGameRegen() {
+		return "TODO";
+	}
 }

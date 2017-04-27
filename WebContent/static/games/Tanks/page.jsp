@@ -2,25 +2,71 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <jsp:useBean id="staticBean" class="brownshome.scriptwars.site.StaticBean"/>
 
-<h2>Rules</h2>
-<h3>Gameplay</h3>
+<h2>About</h2>
 <p>
-Tank game is a 2D tactical stealth game where each player controls a tank that
-attempts to shoot and destroy their enemies.
+Tanks is a simple game of stealth and tactics. You move around the map trying to 
+find the enemy tanks and shoot them while avoiding getting shot. You are only sent 
+the positions of tanks that you can see but are sent bullets at all times. This 
+means that shooting will let the other tanks know where you are.
 </p><p>
-Each tick every tank can move in any of the cardinal directions or fire a shot
+This game is classed as easy because there is not much data to handle and an 
+effective bot can be made with less than one hundred lines of code. This does not 
+mean that complex bots are not possible. There are many tricks and strategies that
+a tank can use to outsmart their opponent.
+</p>
+<hr>
+
+<h2>Rules</h2>
+<p>
+Each tick every tank can move in any direction or fire a shot
 in any direction. The tank moves 1 space per turn and each shot moves 
 <c:out value="${staticBean.tankGameShotSpeed}"/> spaces per turn.
 </p><p>
-Each tick tanks move, then shots are moved, then shots are fired. It is not 
-possible to die by moving onto a shot.
+You can see an enemy is there is a rectangle that can be drawn that contains both 
+you and the other tanks that contains no walls.
+<br>
+INSERT PICS
 </p><p>
-Each tank may only have <c:out value="${staticBean.tankGameAmmo}"/> shots
-in the world at any one time.
+Tanks have an ammo restraint to make trigger happy tanks less effective. Each 
+tank has a maximum of ${staticBean.tankGameAmmo} ammo that is
+regenerated once every ${staticBean.tankGameRegen} three ticks. This means overall
+you can only fire once every three ticks.
 </p><p>
-Players are only sent if there is straight, grid alligned line from their tank
-to your tank.
+On death, you will be sent one set of data with the <code>isAlive</code> byte set to
+zero. <strong>There will be no other data in this dataset so do not attempt to read
+any, seriously, we are NOT hiding anything in this data.</strong>
+</p><p>
+One point is gained for every kill and one point is lost for every death. I know it is
+cruel, but a zero sum game is the only way to avoid exploitation by you clever people.
 </p>
+<hr>
+
+<h2>Game Tick</h2>
+<div class="media">
+	<div class="media-left"><h1>1.</h1></div>
+	<div class="media-body media-middle"><p>
+	The tanks are moved by each player. If two tanks try to move into the same spot
+	they neither of them will move. Keep a look out for this to avoid getting your 
+	tank stuck in loops.
+	</p></div>
+</div>
+<div class="media">
+	<div class="media-left"><h1>2.</h1></div>
+	<div class="media-body media-middle"><p>
+	Shots move X spaces. Any tanks on spaces that the shot moves into will be 
+	destroyed and lose a point while the tank than shot the shot will gain a point. 
+	Shots can pass through each other and can be in the same space.
+	</p></div>
+</div>
+<div class="media">
+	<div class="media-left"><h1>3.</h1></div>
+	<div class="media-body media-middle"><p>
+	Tanks fire shots. The shot appears in the space in-front of the tank killing 
+	any tank that is in that spot instantly. All tanks fire at the same time, so
+	two tanks next to each other shooting will both die instantly.
+	</p></div>
+</div>
+
 <h3>Data protocol</h3>
 <p>Each tick the following data is sent:</p>
 <ul>

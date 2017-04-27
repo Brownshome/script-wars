@@ -51,11 +51,8 @@
 			<jsp:include page="/static/fragments/gameTable.jsp" />
 		</div>
 		<hr>
-	
-		<jsp:include page="/static/fragments/howToCompete.html"/>
-		<hr>
 		
-		<jsp:include page="/static/games/${gametype.name}/rules.jsp" />
+		<jsp:include page="/static/games/${gametype.name}/page.jsp" />
 	</div>
 	
 	<footer>
