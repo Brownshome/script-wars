@@ -3,6 +3,7 @@ package brownshome.scriptwars.client.tanks;
 import java.io.IOException;
 
 import brownshome.scriptwars.game.tanks.*;
+import brownshome.scriptwars.client.tanks.ExampleTankAI;
 
 public class ExampleTankAI {
 	/**
@@ -32,9 +33,12 @@ public class ExampleTankAI {
 		TankAPI api = new TankAPI(id, "www.script-wars.com", "John Smith");
 
 		while(api.nextTick()) {
+			if(!api.isAlive()) {
+				continue;
+			}
 
 			// Move randomly, this will be overwritten if we can see someone.
-			int direction = (int) (Math.random()*4);
+			int direction = (int) (Math.random() * 4);
 			api.move(Direction.values()[direction]);
 			
 			// See if there is a tank in our field of view,
@@ -44,9 +48,6 @@ public class ExampleTankAI {
 				targetTank = tank;
 			}
 			
-			// TODO maybe some path finding?
-			//TankAPI.Map map = api.getMap();
-			
 			// If we can see a tank, lets shoot it.
 			if(targetTank != null){
 				Coordinates targetPosition = targetTank.getPosition();
@@ -54,7 +55,7 @@ public class ExampleTankAI {
 				
 				Direction targetDirection = Direction.getDirection(targetPosition, myPosition);
 				if(targetDirection != null) {
-					//Impossible for targetDirection to be null in the current rule-set but just in case.
+					//We have a clear shot on the target
 					api.shoot(targetDirection);
 				}
 			}

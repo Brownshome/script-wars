@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
 <jsp:useBean id="staticBean" class="brownshome.scriptwars.site.StaticBean"/>
 
 <h2>About</h2>
@@ -38,10 +40,13 @@ any, seriously, we are NOT hiding anything in this data.</strong>
 </p><p>
 One point is gained for every kill and one point is lost for every death. I know it is
 cruel, but a zero sum game is the only way to avoid exploitation by you clever people.
+</p><p>
+The coordinate system is defined so that (0, 0) is at the top left of the game board. So
+to move UP subtract one from your y coordinate.
 </p>
 <hr>
 
-<h2>Game Tick</h2>
+<h2>On Each Game Tick</h2>
 <div class="media">
 	<div class="media-left"><h1>1.</h1></div>
 	<div class="media-body media-middle"><p>
@@ -66,180 +71,370 @@ cruel, but a zero sum game is the only way to avoid exploitation by you clever p
 	two tanks next to each other shooting will both die instantly.
 	</p></div>
 </div>
+<hr>
 
-<h3>Data protocol</h3>
-<p>Each tick the following data is sent:</p>
-<ul>
-	<li><p>A byte indicating if the player is alive. A value of 1 indicates alive
-	and a value of 0 indicates that the player is dead. If the player is dead
-	the following data is omitted.</p></li>
-	<li><p>Two bytes containing the position of the player in the format (x, y)</p></li>
-	<li><p>Two bytes containing the width and then the height of the game grid</p></li>
-	<li><p>X * Y booleans containing the game world. Sent row by row with the first
-	boolean being the top left corner and the last boolean being the bottom right
-	corner. A value of true means that there is a wall in that grid cell.</p></li>
-	<li><p>A single byte containing the number of visible players followed by an 
-	x byte and a y byte for each player.</p></li>
-	<li><p>A single byte  containing the number of shots on the grid followed by
-	an x, a y and an byte representing a direction for each shot.</p></li>
+<h2>Example Situations</h2>
+
+<h2>Data protocol</h2>
+<p>There are two different ways to connect to the game. The first is to use the custom
+made Java API kindly written by <a href="https://github.com/liamtbrand">Liam</a> to connect to the game. 
+The second is to use the Network class to connect to the game, this is the lower level API that
+all games use and allows access to the raw data sent from the server. The first option is more 
+recommended for general use, but if you are using a language other than Java or know 
+what you are doing the second approach may be more applicable.</p>
+
+<div class="panel panel-default"><div class="panel-body">
+<ul class="nav nav-tabs">
+	<li class="active">
+		<a href="#custom" data-toggle="tab">
+			<strong>High Level / Java</strong>
+		</a>
+	</li>
+	<li>
+		<a href="#basic" data-toggle="tab">
+			<strong>Low Level / Cross Code</strong>
+		</a>
+	</li>
 </ul>
-<p>The response is expected to be 2 bytes. The first byte is the action and the second
-byte is the direction value.</p>
-<table class="table table-compact">
-	<tr>
-		<th>Value</th>
-		<th>Meaning</th>
-	</tr><tr>
-		<td>0</td><td>No action (No direction required)</td>
-	</tr><tr>
-		<td>1</td><td>Move</td>
-	</tr><tr>	
-		<td>2</td><td>Shoot</td>
-	</tr>
-</table>
-<p>The direction values are as follows</p>
-<table class="table table-compact">
-	<tr>
-		<th>Value</th>
-		<th>Meaning</th>
-	</tr><tr>
-		<td>0</td><td>UP</td>
-	</tr><tr>
-		<td>1</td><td>DOWN</td>
-	</tr><tr>
-		<td>2</td><td>LEFT</td>
-	</tr><tr>
-		<td>3</td><td>RIGHT</td>
-	</tr>
-</table>
-<h3>Example Script</h3>
-<p>This is an example AI script with the code for reading data from the server filled in. It has
-the AI logic missing. Feel free to use your own method of reading the data if you see fit.</p>
 
-<!-- Formatted using https://tohtml.com/java/ -->
-<!-- 
+<div class="tab-content">
+	<div class="tab-pane active" id="custom">
+		<h3>High Level API</h3>
+	
+		<p>This is an API written by <a href="https://github.com/liamtbrand">Liam</a> to 
+		make the creation of Tank bots quicker. It handles the reading of the data 
+		and several common tasks for you to allow you to concentrate more on the 
+		more important things such as <strong>beating your opponents into submission.</strong></p>
+		
+		<p>There are several classes that you will need to pay attention to in order to use
+		this API:</p>
+		
+		<p>The <code>brownshome.scriptwars.game.tanks.Direction</code> class contains constants
+		for each direction and methods for manipulating coordinates and directions.
+		<br>The <code>brownshome.scriptwars.game.tanks.Shot</code> class describes a shot on the game
+		grid. 
+		<br>The <code>brownshome.scriptwars.game.tanks.Tank</code> class describes a tank in the game
+		world. 
+		<br>The <code>brownshome.scriptwars.game.tanks.Action</code> class contains constants for
+		all the actions a tank can make. 
+		<br>The <code>brownshome.scriptwars.game.tanks.Coordinates</code>
+		class is an immutable (it cannot be edited) object containing the methods <code>int getX()</code>
+		and <code>int getY()</code> that represents a position on the game world. 
+		<br>Finally, the <code>brownshome.scriptwars.client.tanks.TankAPI</code> contains all the functions needed to interact
+		with the game server.</p>
+		
+		<p>First call the constructor <code>TankAPI(int id, String ip, String name)
+		</code> to create a <code>TankAPI</code> object to communicate with. At the start
+		of each loop call <code>nextTick()</code>. This method gets data from the server and sends any
+		actions you have set, it returns a boolean which will be false if the connection has failed for
+		some reason. The get data from the server using the functions in the API and use it to decide what
+		to do. Some useful functions are <code>getVisibleShots()</code>, <code>getVisibleTanks()</code>,
+		<code>isWall(Coordinates coordinate)</code> and <code>getTank(Coordinates coordinate)</code>. There
+		are other functions that may be useful; a link to the documentation is provided at the bottom of this section.
+		<br>
+		Once you have decided what action to take call either <code>move(Direction direction)</code>, 
+		<code>shoot(Direction direction)</code> or <code>doNothing()</code>. This will set what action
+		your tank will do when <code>nextTick()</code> is called.<p>
+		
+		<p class="text-center"><a class="btn btn-primary btn-lg" href="/doc/brownshome/scriptwars/client/tanks/TankAPI.html">Documentation</a></p>
+		
+		<h3>Example Code</h3>
+		<p>This is a basic AI showing how to use the classes. This AI will move randomly while shooting at 
+		any enemies it can see. The command to compile this AI is <code>javac -cp &quot;script-wars-client.jar&quot; 
+		ExampleTankAI.java</code> and the command to run this AI is <code>java -cp &quot;.;script-wars-client.jar&quot;
+		ExampleTankAI INSERT-ID-HERE</code></p>
+		
+<pre><code>
+import java.io.IOException;
+import brownshome.scriptwars.game.tanks.*;import brownshome.scriptwars.client.tanks.TankAPI;
+public class ExampleTankAI {	/**	 * The main method to start the AI and connect to the server.	 * 	 * args[0] should contain the game id.	 * You can request one from: http://script-wars.com/games/Tanks	 * by clicking the 'Join' button.	 * 	 * @param args The input arguments containing the ID allocated by the server	 * @throws IOException If we failed to connect to the server	 */	public static void main(String[] args) throws IOException {		// args[0] should contain the game id.		// You can request one from: http://script-wars.com/games/Tanks		// by clicking the 'Join' button				int id;		if(args.length &gt; 0){			id = Integer.valueOf(args[0]);		} else {			System.out.println(&quot;Usage: JAVACOMMAND serverid&quot;);			System.exit(1);			return;		}
+		TankAPI api = new TankAPI(id, &quot;www.script-wars.com&quot;, &quot;Example AI 1&quot;);
+		while(api.nextTick()) {
+			if(!api.isAlive()) {
+				continue;
+			}			// Move randomly, this will be overwritten if we can see someone.			int direction = (int) (Math.random() * 4);			api.move(Direction.values()[direction]);				// See if there is a tank in our field of view,			// and if there is select it.			Tank targetTank = null;			for(Tank tank : api.getVisibleTanks()){				targetTank = tank;			}				// If we can see a tank, lets shoot it.			if(targetTank != null){				Coordinates targetPosition = targetTank.getPosition();				Coordinates myPosition = api.me().getPosition();						Direction targetDirection = Direction.getDirection(targetPosition, myPosition);				if(targetDirection != null) {					//We have a clear shot on the target					api.shoot(targetDirection);				}			}				System.out.println(&quot;Position: &quot; + api.me().getPosition());		}				System.out.println(&quot;Disconnected from server:\n\t&quot; + api.getConnectionStatus());	}}
+</code></pre>
+	</div>
+	<div class="tab-pane" id="basic">
+		<h3>Low Level API</h3>
+		<p>This is a simpler API that is used internally by all games and all
+		high level APIs. Due to it's simplicity it is sometimes the only API
+		that can be used if the game is new or you are not writing your AI in Java.</p>
+		
+		<p>To use this API you create a <code>brownshome.scriptwars.client.Network</code> object using the <code>Network(int ID, String ip, String name)</code>
+		constructor. Then, in your loop, call <code>nextTick()</code> to get a new set of data from the server and send queued data.
+		This function will return false if there is a problem with the connection. Then extract data from the server using
+		this <code>getX()</code> family of functions, where X is the data type you want. And send data using the <code>sendX()</code> family
+		of functions.</p>
+		
+		<p class="text-center"><a class="btn btn-primary btn-lg" href="/doc/brownshome/scriptwars/client/Network.html">Documentation</a></p>
+		
+		<p>For the tank game in particular the data received from the server is laid out in the table below.</p>
+		<table class="table">
+			<tr>
+				<th>Name</th>
+				<th>Amount</th>
+				<th>Type</th>
+				<th>Meaning</th>
+			</tr>
+			<tr>
+				<td>isAlive</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>0 if the player is dead, 1 if the player is dead. There will be no more data to follow if this value is 0.</td>
+			</tr>
+			<tr>
+				<td>xPos</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The x coordinate of the player.</td>
+			</tr>
+			<tr>
+				<td>yPos</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The y coordinate of the player.</td>
+			</tr>
+			<tr>
+				<td>gridWidth</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The width of the game grid.</td>
+			</tr>
+			<tr>
+				<td>gridHeight</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The height of the game grid.</td>
+			</tr>
+			<tr>
+				<td>isWall</td>
+				<td>gridWidth * gridHeight</td>
+				<td>Boolean</td>
+				<td>true if there is a wall, false otherwise. The values are from top to bottom, left to right, row by row.
+				e.g. (0, 0) to (gridWidth - 1, 0) then (1, 0) ...</td>
+			</tr>
+			<tr>
+				<td>numberOfTanks</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The number of tanks that can be seen by the player.</td>
+			</tr>
+			<tr>
+				<td>tankData</td>
+				<td>numberOfTanks</td>
+				<td>(Byte, Byte)</td>
+				<td>The x and y coordinates of a tank that can be seen. No guarantees are made about the order of the tanks.</td>
+			</tr>
+			<tr>
+				<td>numberOfShots</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The number of shots in the game</td>
+			</tr>
+			<tr>
+				<td>shotData</td>
+				<td>numberOfShots</td>
+				<td>(Byte, Byte, Byte)</td>
+				<td>The x and y coordinates followed by the direction of the shot. The values for
+				specific directions are shown below.</td>
+			</tr>
+		</table>
+		
+		<p>Each turn two bytes must be sent to the server.</p>
+		<table class="table">
+			<tr>
+				<th>Name</th>
+				<th>Amount</th>
+				<th>Type</th>
+				<th>Meaning</th>
+			</tr>
+			<tr>
+				<td>action</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The value given in the action table. If the action is nothing then there doesn't need to be a direction
+				byte send.</td>
+			</tr>
+			<tr>
+				<td>direction</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The direction that the action is to take place in.</td>
+			</tr>
+		</table>
+		
+		<p>The values of the direction and action bytes are given below.</p>
+		<div class="row"><div class="col-md-6">
+		<h4>Action Byte</h4>
+		<table class="table">
+			<tr>
+				<th>Value</th>
+				<th>Meaning</th>
+			</tr><tr>
+				<td>0</td><td>No action (No direction required)</td>
+			</tr><tr>
+				<td>1</td><td>Move</td>
+			</tr><tr>	
+				<td>2</td><td>Shoot</td>
+			</tr>
+		</table>
+		</div><div class="col-md-6">
+		<h4>Direction Byte</h4>
+		<table class="table">
+			<tr>
+				<th>Value</th>
+				<th>Meaning</th>
+			</tr><tr>
+				<td>0</td><td>Up</td>
+			</tr><tr>
+				<td>1</td><td>Left</td>
+			</tr><tr>	
+				<td>2</td><td>Down</td>
+			</tr><tr>	
+				<td>3</td><td>Right</td>
+			</tr>
+		</table>
+		</div></div>
+		
+		<h3>Example Code</h3>
+		<pre><code>
+import java.io.IOException;
+
 import brownshome.scriptwars.client.Network;
 
-public class AI {
-    static final int TANK = -3;
-    static final int SPACE = -2;
-    static final int WALL = -1;
-    static final int UP = 0;
-    static final int DOWN = 1;
-    static final int LEFT = 2;
-    static final int RIGHT = 3;
-    
-    public static void main(String[] args) {
-        Network.connect(Integer.parseInt(args[0]), &quot;52.65.69.217&quot;, 35565, &quot;John Smith&quot;);
-        
-        loop:
-        while(Network.nextTick()) {
-            boolean isAlive = Network.getByte() == 1;   //Is the player alive
-            if(isAlive) {
-                int x = Network.getByte();              //X position
-                int y = Network.getByte();              //Y position
-                int width = Network.getByte();          //game width
-                int height = Network.getByte();         //game height
-                
-                int[][] grid = new int[height][width];
-                
-                for(int row = 0; row &lt; grid.length; row++) {
-                    for(int column = 0; column &lt; grid[row].length; column++) {
-                        if(Network.getBoolean()) {      //Is wall
-                            grid[row][column] = WALL;
-                        } else {
-                            grid[row][column] = SPACE;
-                        }
-                    }
-                }
-                
-                int tanks = Network.getByte();          //Number of tanks
-                for(int i = 0; i &lt; tanks; i++) {
-                    int tankX = Network.getByte();      //Tank x
-                    int tankY = Network.getByte();      //Tank y
-                    grid[tankY][tankX] = TANK;
-                }
-                
-                int shots = Network.getByte();          //Number of Shots
-                for(int i = 0; i &lt; shots; i++) {
-                    int shotX = Network.getByte();      //Shot x
-                    int shotY = Network.getByte();      //Shot y
-                                                        //Shot direction
-                    grid[shotX][shotY] = Network.getByte();
-                }
-                
-                //INSERT AI CODE HERE
-                
-                Network.sendByte(1);                    //Action Byte, in this case MOVE
-                Network.sendByte(1);                    //Direction Byte, in this case DOWN
-            } else {
-                Network.sendByte(0);                    //Send stuff always, or get dropped
-                System.out.println(&quot;We Are Dead&quot;);
-            }
-        }
-    }
+/**
+ * This is an example of reading data from the server. We avoid using the pre-built Tank and
+ * Shot classes as they would not be available in languages other than Java. The actual processing
+ * of the data is left to the reader. But structs or classes would be useful.
+ * 
+ * @author James
+ */
+public class ExampleTankAIBasic {
+	private static Network network;
+	
+	/**
+	 * The main method to start the AI and connect to the server.
+	 * 
+	 * args[0] should contain the game id.
+	 * You can request one from: http://script-wars.com/games/Tanks
+	 * by clicking the 'Join' button.
+	 * 
+	 * @param args The input arguments containing the ID allocated by the server
+	 * @throws IOException If we failed to connect to the server
+	 */
+	public static void main(String[] args) throws IOException {
+		// args[0] should contain the game id.
+		// You can request one from: http://script-wars.com/games/Tanks
+		// by clicking the 'Join' button
+
+		int id;
+		if(args.length &gt; 0){
+			id = Integer.valueOf(args[0]);
+		} else {
+			System.out.println(&quot;Usage: JAVACOMMAND serverid&quot;);
+			System.exit(1);
+			return;
+		}
+
+		network = new Network(id, &quot;www.script-wars.com&quot;, &quot;John Smith Low Level&quot;);
+		int direction = 0; //The initial direction, UP
+		boolean hasHitWall = false;
+
+		while(network.nextTick()) {
+			boolean isAlive = network.getByte() == 1;
+			if(!isAlive) {
+				network.sendByte(0);
+				System.out.println(&quot;We are dead, not big surprise&quot;);
+				continue;
+			}
+			
+			int xPos = network.getByte();
+			int yPos = network.getByte();
+			
+			int width = network.getByte();
+			int height = network.getByte();
+			
+			boolean[][] map = new boolean[width][height];
+			for(int y = 0; y &lt; height; y++) {
+				for(int x = 0; x &lt; width; x++) {
+					map[y][x] = network.getBoolean();
+				}
+			}
+			
+			int noTanks = network.getByte();
+			
+			int[][] tanks = new int[noTanks][2]; //An array holding the X and Y positions of each tank
+			for(int i = 0; i &lt; noTanks; i++) {
+				tanks[i][0] = network.getByte();
+				tanks[i][1] = network.getByte();
+			}
+			
+			int noShots = network.getByte();
+			
+			int[][] shots = new int[noShots][3]; //An array holding the X, Y and direction of each shot
+			for(int i = 0; i &lt; noShots; i++) {
+				shots[i][0] = network.getByte();
+				shots[i][1] = network.getByte();
+				shots[i][2] = network.getByte();
+			}
+			
+			//For the actual AI, we shall hug the left wall and keep moving around, should keep things interesting
+			//Check the anti-clockwise direction, then the straight, then the clockwise direction, then the reverse
+			int antiClock = (direction + 1) % 4; //Cool right : D
+			int clockwise = (direction + 3) % 4;
+			int reverse = (direction + 2) % 4;
+			
+			if(isWall(direction, xPos, yPos, map)) {
+				hasHitWall = true;
+			}
+			
+			if(hasHitWall) {
+				if(!isWall(antiClock, xPos, yPos, map)) {
+					direction = antiClock;
+				} else if(!isWall(direction, xPos, yPos, map)){
+					//Don't change the direction
+				} else if(!isWall(clockwise, xPos, yPos, map)) {
+					direction = clockwise;
+				} else if(!isWall(reverse, xPos, yPos, map)) {
+					direction = reverse;
+				} else {
+					//We are trapped in a box, time to panic, and panic hard
+				}
+			}
+			
+			network.sendByte(1); //Move
+			network.sendByte(direction);
+		}
+		
+		System.out.println(network.getConnectionStatus()); //This function may not be available on some languages.
+	}
+	
+	/**
+	 * Check if there is a wall in the direction we are trying to go.
+	 */
+	private static boolean isWall(int direction, int xPos, int yPos, boolean[][] map) {
+		switch(direction) {
+			case 0: //UP
+				yPos--;
+				break;
+			case 1: //LEFT
+				xPos--;
+				break;
+			case 2: //DOWN
+				yPos++;
+				break;
+			case 3: //RIGHT
+				xPos++;
+				break;
+		}
+		
+		//x and yPos are now the next space.
+		return map[yPos][xPos];
+	}
 }
- -->
-
-<pre style='color:#000000;background:#ffffff;'><span style='color:#800000; font-weight:bold; '>import</span><span style='color:#004a43; '> brownshome</span><span style='color:#808030; '>.</span><span style='color:#004a43; '>scriptwars</span><span style='color:#808030; '>.</span><span style='color:#004a43; '>client</span><span style='color:#808030; '>.</span><span style='color:#004a43; '>Network</span><span style='color:#800080; '>;</span>
-
-<span style='color:#800000; font-weight:bold; '>public</span> <span style='color:#800000; font-weight:bold; '>class</span> AI <span style='color:#800080; '>{</span>
-    <span style='color:#800000; font-weight:bold; '>static</span> <span style='color:#800000; font-weight:bold; '>final</span> <span style='color:#bb7977; '>int</span> TANK <span style='color:#808030; '>=</span> <span style='color:#808030; '>-</span><span style='color:#008c00; '>3</span><span style='color:#800080; '>;</span>
-    <span style='color:#800000; font-weight:bold; '>static</span> <span style='color:#800000; font-weight:bold; '>final</span> <span style='color:#bb7977; '>int</span> SPACE <span style='color:#808030; '>=</span> <span style='color:#808030; '>-</span><span style='color:#008c00; '>2</span><span style='color:#800080; '>;</span>
-    <span style='color:#800000; font-weight:bold; '>static</span> <span style='color:#800000; font-weight:bold; '>final</span> <span style='color:#bb7977; '>int</span> WALL <span style='color:#808030; '>=</span> <span style='color:#808030; '>-</span><span style='color:#008c00; '>1</span><span style='color:#800080; '>;</span>
-    <span style='color:#800000; font-weight:bold; '>static</span> <span style='color:#800000; font-weight:bold; '>final</span> <span style='color:#bb7977; '>int</span> UP <span style='color:#808030; '>=</span> <span style='color:#008c00; '>0</span><span style='color:#800080; '>;</span>
-    <span style='color:#800000; font-weight:bold; '>static</span> <span style='color:#800000; font-weight:bold; '>final</span> <span style='color:#bb7977; '>int</span> DOWN <span style='color:#808030; '>=</span> <span style='color:#008c00; '>1</span><span style='color:#800080; '>;</span>
-    <span style='color:#800000; font-weight:bold; '>static</span> <span style='color:#800000; font-weight:bold; '>final</span> <span style='color:#bb7977; '>int</span> LEFT <span style='color:#808030; '>=</span> <span style='color:#008c00; '>2</span><span style='color:#800080; '>;</span>
-    <span style='color:#800000; font-weight:bold; '>static</span> <span style='color:#800000; font-weight:bold; '>final</span> <span style='color:#bb7977; '>int</span> RIGHT <span style='color:#808030; '>=</span> <span style='color:#008c00; '>3</span><span style='color:#800080; '>;</span>
-    
-    <span style='color:#800000; font-weight:bold; '>public</span> <span style='color:#800000; font-weight:bold; '>static</span> <span style='color:#bb7977; '>void</span> main<span style='color:#808030; '>(</span><span style='color:#bb7977; font-weight:bold; '>String</span><span style='color:#808030; '>[</span><span style='color:#808030; '>]</span> args<span style='color:#808030; '>)</span> <span style='color:#800080; '>{</span>
-        Network<span style='color:#808030; '>.</span>connect<span style='color:#808030; '>(</span><span style='color:#bb7977; font-weight:bold; '>Integer</span><span style='color:#808030; '>.</span>parseInt<span style='color:#808030; '>(</span>args<span style='color:#808030; '>[</span><span style='color:#008c00; '>0</span><span style='color:#808030; '>]</span><span style='color:#808030; '>)</span><span style='color:#808030; '>,</span> <span style='color:#0000e6; '>"52.65.69.217"</span><span style='color:#808030; '>,</span> <span style='color:#008c00; '>35565</span><span style='color:#808030; '>,</span> <span style='color:#0000e6; '>"John Smith"</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>
-        
-        loop<span style='color:#808030; '>:</span>
-        <span style='color:#800000; font-weight:bold; '>while</span><span style='color:#808030; '>(</span>Network<span style='color:#808030; '>.</span>nextTick<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#808030; '>)</span> <span style='color:#800080; '>{</span>
-            <span style='color:#bb7977; '>boolean</span> isAlive <span style='color:#808030; '>=</span> Network<span style='color:#808030; '>.</span>getByte<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span> <span style='color:#808030; '>=</span><span style='color:#808030; '>=</span> <span style='color:#008c00; '>1</span><span style='color:#800080; '>;</span>   <span style='color:#696969; '>//Is the player alive</span>
-            <span style='color:#800000; font-weight:bold; '>if</span><span style='color:#808030; '>(</span>isAlive<span style='color:#808030; '>)</span> <span style='color:#800080; '>{</span>
-                <span style='color:#bb7977; '>int</span> x <span style='color:#808030; '>=</span> Network<span style='color:#808030; '>.</span>getByte<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>              <span style='color:#696969; '>//X position</span>
-                <span style='color:#bb7977; '>int</span> y <span style='color:#808030; '>=</span> Network<span style='color:#808030; '>.</span>getByte<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>              <span style='color:#696969; '>//Y position</span>
-                <span style='color:#bb7977; '>int</span> width <span style='color:#808030; '>=</span> Network<span style='color:#808030; '>.</span>getByte<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>          <span style='color:#696969; '>//game width</span>
-                <span style='color:#bb7977; '>int</span> height <span style='color:#808030; '>=</span> Network<span style='color:#808030; '>.</span>getByte<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>         <span style='color:#696969; '>//game height</span>
-                
-                <span style='color:#bb7977; '>int</span><span style='color:#808030; '>[</span><span style='color:#808030; '>]</span><span style='color:#808030; '>[</span><span style='color:#808030; '>]</span> grid <span style='color:#808030; '>=</span> <span style='color:#800000; font-weight:bold; '>new</span> <span style='color:#bb7977; '>int</span><span style='color:#808030; '>[</span>height<span style='color:#808030; '>]</span><span style='color:#808030; '>[</span>width<span style='color:#808030; '>]</span><span style='color:#800080; '>;</span>
-                
-                <span style='color:#800000; font-weight:bold; '>for</span><span style='color:#808030; '>(</span><span style='color:#bb7977; '>int</span> row <span style='color:#808030; '>=</span> <span style='color:#008c00; '>0</span><span style='color:#800080; '>;</span> row <span style='color:#808030; '>&lt;</span> grid<span style='color:#808030; '>.</span>length<span style='color:#800080; '>;</span> row<span style='color:#808030; '>+</span><span style='color:#808030; '>+</span><span style='color:#808030; '>)</span> <span style='color:#800080; '>{</span>
-                    <span style='color:#800000; font-weight:bold; '>for</span><span style='color:#808030; '>(</span><span style='color:#bb7977; '>int</span> column <span style='color:#808030; '>=</span> <span style='color:#008c00; '>0</span><span style='color:#800080; '>;</span> column <span style='color:#808030; '>&lt;</span> grid<span style='color:#808030; '>[</span>row<span style='color:#808030; '>]</span><span style='color:#808030; '>.</span>length<span style='color:#800080; '>;</span> column<span style='color:#808030; '>+</span><span style='color:#808030; '>+</span><span style='color:#808030; '>)</span> <span style='color:#800080; '>{</span>
-                        <span style='color:#800000; font-weight:bold; '>if</span><span style='color:#808030; '>(</span>Network<span style='color:#808030; '>.</span>getBoolean<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#808030; '>)</span> <span style='color:#800080; '>{</span>      <span style='color:#696969; '>//Is wall</span>
-                            grid<span style='color:#808030; '>[</span>row<span style='color:#808030; '>]</span><span style='color:#808030; '>[</span>column<span style='color:#808030; '>]</span> <span style='color:#808030; '>=</span> WALL<span style='color:#800080; '>;</span>
-                        <span style='color:#800080; '>}</span> <span style='color:#800000; font-weight:bold; '>else</span> <span style='color:#800080; '>{</span>
-                            grid<span style='color:#808030; '>[</span>row<span style='color:#808030; '>]</span><span style='color:#808030; '>[</span>column<span style='color:#808030; '>]</span> <span style='color:#808030; '>=</span> SPACE<span style='color:#800080; '>;</span>
-                        <span style='color:#800080; '>}</span>
-                    <span style='color:#800080; '>}</span>
-                <span style='color:#800080; '>}</span>
-                
-                <span style='color:#bb7977; '>int</span> tanks <span style='color:#808030; '>=</span> Network<span style='color:#808030; '>.</span>getByte<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>          <span style='color:#696969; '>//Number of tanks</span>
-                <span style='color:#800000; font-weight:bold; '>for</span><span style='color:#808030; '>(</span><span style='color:#bb7977; '>int</span> i <span style='color:#808030; '>=</span> <span style='color:#008c00; '>0</span><span style='color:#800080; '>;</span> i <span style='color:#808030; '>&lt;</span> tanks<span style='color:#800080; '>;</span> i<span style='color:#808030; '>+</span><span style='color:#808030; '>+</span><span style='color:#808030; '>)</span> <span style='color:#800080; '>{</span>
-                    <span style='color:#bb7977; '>int</span> tankX <span style='color:#808030; '>=</span> Network<span style='color:#808030; '>.</span>getByte<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>      <span style='color:#696969; '>//Tank x</span>
-                    <span style='color:#bb7977; '>int</span> tankY <span style='color:#808030; '>=</span> Network<span style='color:#808030; '>.</span>getByte<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>      <span style='color:#696969; '>//Tank y</span>
-                    grid<span style='color:#808030; '>[</span>tankY<span style='color:#808030; '>]</span><span style='color:#808030; '>[</span>tankX<span style='color:#808030; '>]</span> <span style='color:#808030; '>=</span> TANK<span style='color:#800080; '>;</span>
-                <span style='color:#800080; '>}</span>
-                
-                <span style='color:#bb7977; '>int</span> shots <span style='color:#808030; '>=</span> Network<span style='color:#808030; '>.</span>getByte<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>          <span style='color:#696969; '>//Number of Shots</span>
-                <span style='color:#800000; font-weight:bold; '>for</span><span style='color:#808030; '>(</span><span style='color:#bb7977; '>int</span> i <span style='color:#808030; '>=</span> <span style='color:#008c00; '>0</span><span style='color:#800080; '>;</span> i <span style='color:#808030; '>&lt;</span> shots<span style='color:#800080; '>;</span> i<span style='color:#808030; '>+</span><span style='color:#808030; '>+</span><span style='color:#808030; '>)</span> <span style='color:#800080; '>{</span>
-                    <span style='color:#bb7977; '>int</span> shotX <span style='color:#808030; '>=</span> Network<span style='color:#808030; '>.</span>getByte<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>      <span style='color:#696969; '>//Shot x</span>
-                    <span style='color:#bb7977; '>int</span> shotY <span style='color:#808030; '>=</span> Network<span style='color:#808030; '>.</span>getByte<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>      <span style='color:#696969; '>//Shot y</span>
-                                                        <span style='color:#696969; '>//Shot direction</span>
-                    grid<span style='color:#808030; '>[</span>shotX<span style='color:#808030; '>]</span><span style='color:#808030; '>[</span>shotY<span style='color:#808030; '>]</span> <span style='color:#808030; '>=</span> Network<span style='color:#808030; '>.</span>getByte<span style='color:#808030; '>(</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>
-                <span style='color:#800080; '>}</span>
-                
-                <span style='color:#696969; '>//INSERT AI CODE HERE</span>
-                
-                Network<span style='color:#808030; '>.</span>sendByte<span style='color:#808030; '>(</span><span style='color:#008c00; '>1</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>                    <span style='color:#696969; '>//Action Byte, in this case MOVE</span>
-                Network<span style='color:#808030; '>.</span>sendByte<span style='color:#808030; '>(</span><span style='color:#008c00; '>1</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>                    <span style='color:#696969; '>//Direction Byte, in this case DOWN</span>
-            <span style='color:#800080; '>}</span> <span style='color:#800000; font-weight:bold; '>else</span> <span style='color:#800080; '>{</span>
-                Network<span style='color:#808030; '>.</span>sendByte<span style='color:#808030; '>(</span><span style='color:#008c00; '>0</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>                    <span style='color:#696969; '>//Send stuff always, or get dropped</span>
-                <span style='color:#bb7977; font-weight:bold; '>System</span><span style='color:#808030; '>.</span>out<span style='color:#808030; '>.</span>println<span style='color:#808030; '>(</span><span style='color:#0000e6; '>"We Are Dead"</span><span style='color:#808030; '>)</span><span style='color:#800080; '>;</span>
-            <span style='color:#800080; '>}</span>
-        <span style='color:#800080; '>}</span>
-    <span style='color:#800080; '>}</span>
-<span style='color:#800080; '>}</span>
-</pre>
+		</code></pre>
+	</div>
+</div>
+</div>
+</div>

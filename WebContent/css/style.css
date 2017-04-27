@@ -52,6 +52,15 @@ could be avoided... */
     border-radius: 20px;
 }
 
+pre {
+	background-color: #ffffff;
+	border-style: none;
+}
+
+.hljs {
+	background-color: #ffffff !important;
+}
+
 .jumbotron {
 	position:relative;
 }
