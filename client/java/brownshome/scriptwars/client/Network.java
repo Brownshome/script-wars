@@ -216,18 +216,18 @@ public class Network {
 	
 	class UDPConnection implements Connection {
 		ByteBuffer buffer = ByteBuffer.allocate(1024); //If you need any larger than this use TCP
-		DatagramChannel channel;
+		DatagramSocket socket;
 		
-		UDPConnection(InetAddress address, int port) throws IOException {
-			channel = DatagramChannel.open();
-			channel.connect(new InetSocketAddress(address, port));
-			channel.socket().setSoTimeout(5000);
+		UDPConnection(InetAddress ip, int port) throws IOException {
+			socket = new DatagramSocket();
+			socket.connect(new InetSocketAddress(ip, port));
+			socket.setSoTimeout(1500);
 		}
 		
 		@Override
 		public void sendData(ByteBuffer data) throws ConnectionException {
 			try {
-				channel.write(data);
+				socket.send(new DatagramPacket(data.array(), data.arrayOffset() + data.position(), data.remaining(), socket.getRemoteSocketAddress()));
 			} catch (IOException e) {
 				throw new ConnectionException(ConnectionStatus.DROPPED, e);
 			}
@@ -237,8 +237,10 @@ public class Network {
 		public ByteBuffer waitForData() throws ConnectionException {
 			try {
 				buffer.clear();
-				channel.read(buffer);
-				buffer.flip();
+				DatagramPacket packet = new DatagramPacket(buffer.array(), buffer.capacity());
+				socket.receive(packet);
+				buffer.position(packet.getOffset());
+				buffer.limit(packet.getLength() + packet.getOffset());
 			} catch (IOException e) {
 				throw new ConnectionException(ConnectionStatus.DROPPED, e);
 			}
