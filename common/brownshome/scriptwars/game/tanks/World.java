@@ -9,10 +9,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import brownshome.scriptwars.client.*;
 import brownshome.scriptwars.game.*;
 import brownshome.scriptwars.game.tanks.Direction;
+import brownshome.scriptwars.server.Server;
 
 public class World {
 	private List<Shot> shots = new ArrayList<>();
@@ -23,7 +26,7 @@ public class World {
 	private TankGame game;
 	
 	private Set<Tank> tanksToFire = new HashSet<>();
-	private Set<Tank> tanksToRollBack = new HashSet<>();
+	private Set<Player> playersToSpawn = new HashSet<>();
 	
 	protected World(boolean[][] map, TankGame game) {
 		assert map.length > 0 && map[0].length > 0;
@@ -76,6 +79,10 @@ public class World {
 		return getTank(c.getX(), c.getY());
 	}
 
+	private void setTank(Coordinates c, Tank tank) {
+		tankMap[c.getY()][c.getX()] = tank;
+	}
+
 	public boolean isWall(Coordinates c) {
 		return isWall(c.getX(), c.getY());
 	}
@@ -100,9 +107,8 @@ public class World {
 		Tank tank = tanks.get(player);
 		tank.getPosition();
 		
-		tankMap[tank.getPosition().getY()][tank.getPosition().getX()] = null;
 		tank.move(direction);
-		tankMap[tank.getPosition().getY()][tank.getPosition().getX()] = tank;
+		setTank(tank.getPosition(), tank);
 	}
 
 	protected void fireTank(Tank tank) {
@@ -137,20 +143,45 @@ public class World {
 		tanksToFire.add(getTank(player));
 	}
 
-	protected void rollBackTanks() {
-		for(Tank t : tanksToRollBack) {
-			tankMap[t.getPosition().getY()][t.getPosition().getX()] = null;
-			t.rollBack();
-			tankMap[t.getPosition().getY()][t.getPosition().getX()] = t;
+	//Check if every tank is in the spot they think they are. For any tanks that
+	//are overwrote roll them back as well as the tank overriding them. Then repeat.
+	protected void finalizeMovement() {
+		Set<Tank> tanksToRollBack = new HashSet<>();
+		
+		for(Tank tank : tanks.values()) {
+			Tank other = getTank(tank.getPosition());
+			if(other != tank) {
+				if(other != null)
+					tanksToRollBack.add(other);
+				
+				tanksToRollBack.add(tank);
+			}
 		}
 		
-		tanksToRollBack.clear();
+		//clear tankMap
+		tankMap = new Tank[getHeight()][getWidth()];		
 		
-		for(Tank t : tanks.values()) {
-			t.clearHasMoved();
+		if(tanksToRollBack.isEmpty()) {
+			for(Tank tank : tanks.values()) {
+				tank.clearHasMoved();
+				setTank(tank.getPosition(), tank);
+			}
+			
+			return;
 		}
+		
+		for(Tank tank : tanksToRollBack) {
+			tank.rollBack();
+		}
+		
+		for(Tank tank : tanks.values()) {
+			setTank(tank.getPosition(), tank);
+		}
+		
+		//at most we recurse MAX_PLAYERS times. No risk of stack overflow
+		finalizeMovement();
 	}
-
+	
 	protected void fireTanks() {
 		while(!tanksToFire.isEmpty()) {
 			fireTank(tanksToFire.iterator().next()); //not exactly efficient but it avoids concurrent mod exceptions
@@ -169,22 +200,12 @@ public class World {
 	}
 
 	protected Collection<Tank> getVisibleTanks(Player player) {
-		Collection<Tank> visibleTanks = new ArrayList<>();
+		Tank tank = getTank(player);
 		
-		Tank tank = tanks.get(player);
-		
-		for(Direction direction : Direction.values()) {
-			Coordinates coord = tank.getPosition();
-			
-			while(!isWall(coord = direction.move(coord))) {
-				Tank spottedTank = getTank(coord);
-				if(spottedTank != null) {
-					visibleTanks.add(spottedTank);
-				}
-			}
-		}
-		
-		return visibleTanks;
+		return tanks.values().stream()
+				.filter(otherTank -> otherTank != tank)
+				.filter(otherTank -> canSee(tank.getPosition(), otherTank.getPosition()))
+				.collect(Collectors.toList());
 	}
 
 	protected void writeWorld(ByteBuffer data) {
@@ -208,18 +229,147 @@ public class World {
 	}
 
 	protected void spawnTank(Player player) {
-		Coordinates coord;
-		
-		//it's lazy but if there are enough tanks to make a difference then something crazy is happening anyway
-		do {
-			coord = Coordinates.getRandom(getWidth(), getHeight());
-		} while(isWall(coord) || getTank(coord) != null);
-		
-		Tank tank = new Tank(coord, player, this);
-		tanks.put(player, tank);
-		tankMap[coord.getY()][coord.getX()] = tank;
+		playersToSpawn.add(player);
+	}
+	
+	protected void spawnPlayers() {
+		Player player;
+		for(Iterator<Player> iterator = playersToSpawn.iterator(); iterator.hasNext(); ) {
+			player = iterator.next();
+			Coordinates coord = getSpawningCoordinate();
+			if(coord == null) {
+				Server.LOG.log(Level.INFO, "Unable to spawn all players");
+				continue;
+			}
+				
+			iterator.remove();
+			Tank tank = new Tank(coord, player, this);
+			tanks.put(player, tank);
+			setTank(coord, tank);
+		}
 	}
 
+	private Coordinates getSpawningCoordinate() {
+		//spawn tanks in the farthest position away from players, weighting more towards open spaces.
+		
+		Coordinates bestCoordinate = null;
+		float bestRank = Float.NEGATIVE_INFINITY;
+		
+		for(int x = 0; x < getWidth(); x++) {
+			for(int y = 0; y < getHeight(); y++) {
+				Coordinates coord = new Coordinates(x, y);
+				
+				if(!isWall(coord) && getTank(coord) == null) {
+					float rank = rankCoordinate(coord);
+					if(bestRank < rank) {
+						bestCoordinate = coord;
+						bestRank = rank;
+					}
+				}
+			}
+		}
+		
+		return bestCoordinate;
+	}
+	
+	private float rankCoordinate(Coordinates coord) {
+		final float UNSAFE_RANK = -2f; //The rank lost for every turn under 10 that the space might be safe for.
+		final float IS_CORNER = .5f; //The rank gained for being a corner
+		final float IS_SEEN = 2f; //The rank gained for not being seen
+		final float DISTANCE = .125f; //The rank gained for being far away from the nearest tank
+		
+		float rank = 0;
+		
+		for(Shot shot : shots) {
+			Coordinates shotCoord = shot.getPosition();
+			if(Direction.getDirection(coord, shotCoord) == shot.getDirection()) {
+				int timeSurvived = 10;
+				for(; !isWall(shotCoord); shotCoord = shot.getDirection().move(shotCoord)) {
+					timeSurvived--;
+					
+					if(timeSurvived == 0) {
+						break;
+					}
+					
+					if(shotCoord.equals(coord)) {
+						rank += UNSAFE_RANK * timeSurvived;
+						break;
+					}
+				}
+			}
+		}
+		
+		for(Direction dir : Direction.values()) {
+			if(!isWall(dir.move(coord)) && !isWall(dir.clockwise().move(coord))) {
+				rank += IS_CORNER;
+				break;
+			}
+		}
+		
+		boolean isSeen = false;
+		int closestDistance = -1;
+		for(Tank tank : tanks.values()) {
+			if(!isSeen && canSee(tank.getPosition(), coord)) {
+				rank -= IS_SEEN;
+				isSeen = true;
+			}
+			
+			int distance = distance(coord, tank.getPosition());
+			if(closestDistance == -1 || distance < closestDistance) {
+				closestDistance = distance;
+			}
+		}
+		
+		rank += DISTANCE * closestDistance;
+		
+		return rank;
+	}
+	
+	private int distance(Coordinates a, Coordinates b) {
+		return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY());
+	}
+	
+	private boolean canSee(Coordinates a, Coordinates b) {
+		int dx = 0;
+		if(a.getX() < b.getX()) dx = 1;
+		if(a.getX() > b.getX()) dx = -1;
+		
+		int dy = 0;
+		if(a.getY() < b.getY()) dy = 1;
+		if(a.getY() > b.getY()) dy = -1;
+		
+		if(dx == 0) {
+			if(dy == 0) {
+				return isWall(a);
+			}
+			
+			for(int y = a.getY(); y != b.getY() + dy; y += dy) {
+				if(isWall(a.getX(), y))
+					return false;
+			}
+			
+			return true;
+		}
+		
+		if(dy == 0) {
+			for(int x = a.getX(); x != b.getX() + dx; x += dx) {
+				if(isWall(x, a.getY()))
+					return false;
+			}
+			
+			return true;
+		}
+		
+		for(int x = a.getX(); x != b.getX() + dx; x += dx) {
+			for(int y = a.getY(); y != b.getY() + dy; y += dy) {
+				if(isWall(x, y))
+					return false;
+			}
+		}
+		
+		return true;
+	}
+	
 	protected void displayWorld(GridDisplayHandler handler) {
 		char[][] display = new char[getHeight()][getWidth()];
 		
@@ -249,10 +399,6 @@ public class World {
 		removeTank(tank.getOwner());
 	}
 
-	protected void addToRewindList(Tank tank) {
-		tanksToRollBack.add(tank);
-	}
-
 	protected Tank getTank(Player player) {
 		return tanks.get(player);
 	}
@@ -263,7 +409,7 @@ public class World {
 
 	protected void removeTank(Player player) {
 		Tank tank = tanks.remove(player);
-		tankMap[tank.getPosition().getY()][tank.getPosition().getX()] = null;
+		setTank(tank.getPosition(), null);
 	}
 
 	/**

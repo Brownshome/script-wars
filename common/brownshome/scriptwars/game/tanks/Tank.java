@@ -44,15 +44,6 @@ public class Tank {
 		
 		Coordinates newCoord = direction.move(position);
 		
-		Tank tank = world.getTank(newCoord);
-		if(tank != null) {
-			if(tank.hasMoved) {
-				world.addToRewindList(tank);
-			}
-			
-			return false;
-		}
-		
 		if(world.isWall(newCoord)) {
 			return false;
 		}
@@ -78,7 +69,11 @@ public class Tank {
 	}
 
 	protected void rollBack() {
+		if(!hasMoved)
+			return;
+		
 		position = direction.opposite().move(position);
+		hasMoved = false;
 		return;
 	}
 

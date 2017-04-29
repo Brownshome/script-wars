@@ -47,7 +47,7 @@ public class TankGame extends Game<GridDisplayHandler> {
 	public TankGame(GameType type) throws OutOfIDsException {
 		this(
 				MapGenerator.getGenerator()
-					.withSize(20, 20)
+					.withSize(25, 25)
 					.generate(),
 				type
 			);
@@ -76,9 +76,10 @@ public class TankGame extends Game<GridDisplayHandler> {
 
 	@Override
 	public void tick() {
-		world.rollBackTanks();
+		world.finalizeMovement();
 		world.moveShots();
 		world.fireTanks();
+		world.spawnPlayers();
 	}
 
 	@Override
