@@ -128,8 +128,10 @@ public class World {
 			}
 			
 			//Needed to avoid strange circular gun chains
-			if(isAlive(otherTank.getOwner()))
+			if(isAlive(otherTank.getOwner())) {
+				tank.getOwner().addScore(1);
 				otherTank.kill();
+			}
 			
 			return;
 		}
