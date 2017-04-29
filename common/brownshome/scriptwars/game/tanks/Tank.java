@@ -103,4 +103,8 @@ public class Tank {
 	protected void clearHasMoved() {
 		hasMoved = false;
 	}
+
+	protected boolean hasMoved() {
+		return hasMoved;
+	}
 }

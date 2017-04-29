@@ -164,12 +164,36 @@ public class World {
 		tankMap = new Tank[getHeight()][getWidth()];		
 		
 		if(tanksToRollBack.isEmpty()) {
-			for(Tank tank : tanks.values()) {
-				tank.clearHasMoved();
+			//CHECK FOR TANKS SWAPPING POSITIONS
+			//For each tank, if it moved. Check if there is a tank on it's old space
+			//that just moved from it's space.
+			
+			for(Tank tank : tanks.values())
 				setTank(tank.getPosition(), tank);
+			
+			for(Tank tank : tanks.values()) {
+				if(tank.hasMoved()) {
+					Coordinates space = tank.getPosition();
+					Coordinates oldSpace = tank.getDirection().opposite().move(tank.getPosition());
+
+					Tank otherTank = getTank(oldSpace);
+					if(
+							otherTank != null
+							&& otherTank.hasMoved()
+							&& otherTank.getDirection().opposite() == tank.getDirection()
+					) {
+						tanksToRollBack.add(tank);
+						tanksToRollBack.add(otherTank);
+					}
+				}
 			}
 			
-			return;
+			if(tanksToRollBack.isEmpty()) {
+				for(Tank tank : tanks.values())
+					tank.clearHasMoved();
+					
+				return;
+			}
 		}
 		
 		for(Tank tank : tanksToRollBack) {
@@ -382,7 +406,7 @@ public class World {
 				else {
 					Tank tank = getTank(x, y);
 					if(tank != null) {
-						display[y][x] = (char) (3 + game.getIndex(tank.getOwner())); //TODO fix this
+						display[y][x] = (char) (3 + game.getIndex(tank.getOwner()));
 					} else
 						display[y][x] = 0;
 				}
