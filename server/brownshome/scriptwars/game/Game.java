@@ -265,7 +265,7 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 			} 
 			
 			//Give it 20ms of leeway
-			if(timeToSleep < -20) {
+			if(timeToSleep < -100) {
 				Server.LOG.log(Level.WARNING, "Game \'" + getName() + "\' is ticking too slowly.");
 			}
 		}
