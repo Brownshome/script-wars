@@ -5,7 +5,7 @@ import brownshome.scriptwars.game.tanks.Direction;
 
 public class Shot {
 	public static final char BULLET = 2;
-	public static final int SPEED = 1;
+	public static final int SPEED = 3;
 	
 	private Tank owner;
 	private World world;
