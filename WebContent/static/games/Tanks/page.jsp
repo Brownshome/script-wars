@@ -24,10 +24,8 @@ Each tick every tank can move in any direction or fire a shot
 in any direction. The tank moves 1 space per turn and each shot moves 
 <c:out value="${staticBean.tankGameShotSpeed}"/> spaces per turn.
 </p><p>
-You can see an enemy is there is a rectangle that can be drawn that contains both 
+You can see an enemy if there is a rectangle that can be drawn that contains both 
 you and the other tanks that contains no walls.
-<br>
-INSERT PICS
 </p><p>
 Tanks have an ammo restraint to make trigger happy tanks less effective. Each 
 tank has a maximum of ${staticBean.tankGameAmmo} ammo that is
@@ -74,6 +72,36 @@ to move UP subtract one from your y coordinate.
 <hr>
 
 <h2>Example Situations</h2>
+<div class="media"><div class="media-left">
+		<img class="media-object" src="/static/games/Tanks/eg1.png" alt="Example 1" style="width:128px;height:128px;border:5px solid black">
+	</div><div class="media-body">
+		<p>If both tanks fire towards each other they will both be killed as all tanks fire instantly. If
+		one tank shoots and one tank moves up no tank will die as the tanks are moved each tick before shots
+		are fired.</p>
+</div></div>
+
+<div class="media"><div class="media-left">
+		<img class="media-object" src="/static/games/Tanks/eg2.png" alt="Example 2" style="width:128px;height:128px;border:5px solid black">
+	</div><div class="media-body">
+		<p>The bullet is moving upwards. If the tank moves onto the bullet it will not be killed
+		and the bullet will continue on its way. This is because tanks are only killed if a bullet moves
+		onto the space that they occupy.</p>
+</div></div>
+
+<div class="media"><div class="media-left">
+		<img class="media-object" src="/static/games/Tanks/eg3.png" alt="Example 3" style="width:128px;height:128px;border:5px solid black">
+	</div><div class="media-body">
+		<p>Both tanks try to move into the central space at the same time. They are both cannot move as two tanks cannot
+		occupy the same space. Neither tank can see the other one so make sure to check if your moves succeed to avoid
+		getting stuck.</p>
+</div></div>
+
+<div class="media"><div class="media-left">
+		<img class="media-object" src="/static/games/Tanks/eg4.png" alt="Example 4" style="width:128px;height:128px;border:5px solid black">
+	</div><div class="media-body">
+		<p>The bullet is moving upwards. If the tank moves to the side it will not be killed as tanks are moved before shots
+		are moved in each game tick.</p>
+</div></div>
 
 <h2>Data protocol</h2>
 <p>There are two different ways to connect to the game. The first is to use the custom
