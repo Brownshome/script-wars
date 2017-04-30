@@ -39,6 +39,6 @@ At the moment there is a UDP listener thread, one thread per game, and the tomca
 
 The Game loop / Network system is synchronized through the game object monitor.
 The Game - ID mapping is synchronized through a ReentantReadWriteLock.
-The Display Viewer list (web clients) is synchronized through the display object monitor.
+The Display Viewer list (web clients) is synchronized through a ReentrantLock
 The Game Type list is synchronized through the a ReentrantReadWriteLock.
 The Game Type table listeners are synchronized through the gameType object monitor.
