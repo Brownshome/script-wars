@@ -18,27 +18,34 @@ public class GridDisplayHandler extends DisplayHandler {
 	 * For send format see GameViewerSocket.
 	 */
 	@Override
-	public synchronized void print() {
+	public void print() {
 		ByteBuffer buffer = getBulkSyncBuffer();
 		
-		if(!newViewers.isEmpty()) {
-			ByteBuffer idUpdateBuffer = getPlayerIDListBuffer();
-			
-			for(Consumer<ByteBuffer> viewer : newViewers) {
-				viewer.accept(idUpdateBuffer.duplicate());
-				viewer.accept(buffer.duplicate()); //send bulk update
+		getLock().lock();
+		{
+			if(!newViewers.isEmpty()) {
+				ByteBuffer idUpdateBuffer = getPlayerIDListBuffer();
+
+				for(Consumer<ByteBuffer> viewer : newViewers) {
+					viewer.accept(idUpdateBuffer.duplicate());
+					viewer.accept(buffer.duplicate()); //send bulk update
+				}
 			}
+
+			if(!shouldBulkSync()) {
+				ByteBuffer delta = getDeltaBuffer();
+				if(delta.remaining() < buffer.remaining())
+					buffer = delta;
+			}
+
+			for(Consumer<ByteBuffer> viewer : viewers) {
+				viewer.accept(buffer.duplicate()); //duplicating for thread safety and async uploads
+			}
+
+			viewers.addAll(newViewers);
+			newViewers.clear();
 		}
-		
-		if(!shouldBulkSync()) {
-			ByteBuffer delta = getDeltaBuffer();
-			if(delta.remaining() < buffer.remaining())
-				buffer = delta;
-		}
-		
-		for(Consumer<ByteBuffer> viewer : viewers) {
-			viewer.accept(buffer.duplicate()); //duplicating for thread safety and async uploads
-		}
+		getLock().unlock();
 		
 		if(oldGrid == null)
 			oldGrid = new char[getHeight()][getWidth()];
@@ -46,9 +53,6 @@ public class GridDisplayHandler extends DisplayHandler {
 		for(int row = 0; row < grid.length; row++) {
 			System.arraycopy(grid[row], 0, oldGrid[row], 0, grid[row].length);
 		}
-		
-		viewers.addAll(newViewers);
-		newViewers.clear();
 	}
 
 	private ByteBuffer getPlayerIDListBuffer() {
