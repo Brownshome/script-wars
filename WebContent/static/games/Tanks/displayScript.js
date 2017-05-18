@@ -140,8 +140,16 @@ function tank(x, y, index) {
 	
 	let image = images[idList[index]];
 	
-	if(image != null && image.complete) {
+	if(image == null) {
+		return;
+	}
+	
+	if(image.complete) {
 		canvas.drawImage(image, x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
+	} else {
+		image.onload = function() {
+			tank(x, y, index);
+		};
 	}
 }
 

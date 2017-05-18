@@ -180,14 +180,12 @@ public class TankGame extends Game<GridDisplayHandler> {
 
 	@Override
 	public void displayGame(GridDisplayHandler handler) {
-		world.displayWorld(handler);
-		
 		if(updatePlayerLists) {
 			updatePlayerLists = false;
 			handler.sendPlayerIDs();	
 		}
 		
-		handler.print();
+		world.displayWorld(handler);
 	}
 
 	@Override
