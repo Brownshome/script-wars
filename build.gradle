@@ -29,6 +29,13 @@ dependencies {
 	clientCompileOnly sourceSets.all.output
 }
 
+task clientPython(type: Zip) {
+	archiveName 'script-wars-python.zip'
+	
+	from "client/python";
+	destinationDir = file("$buildDir/war/static")
+}
+
 task clientJar(type: Jar) {
 	archiveName 'script-wars-client.jar'
 
@@ -81,6 +88,7 @@ javadoc {
 
 war {
 	dependsOn clientJar
+	dependsOn clientPython
 	dependsOn javadoc
 	
 	archiveName 'ROOT.war'

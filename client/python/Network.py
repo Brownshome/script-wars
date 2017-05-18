@@ -13,7 +13,7 @@ dataIn = []
 ID = 0
 bit = 0x100
 positionOfByte = 0
-IP = '52.65.69.217'
+IP = 'www.script-wars.com'
 def connect(netID, ip, name):
     global ID
     global sock
@@ -67,8 +67,7 @@ def nextTick():
         print("Error: {}".format(errors[headerByte]))
         return False
     elif headerByte == 255:
-        print("Error: ", end = '')
-        print(getString())
+        print("Error: {}".format(getString()))
         return False
     elif headerByte == 0:
         return True
