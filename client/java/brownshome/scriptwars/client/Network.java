@@ -18,12 +18,12 @@ import brownshome.scriptwars.connection.COBSChannel;
  * <pre>
  * <code>
  * public static main(String[] args) { 
- *  	Network.connect(ID, "52.65.69.217", 35565, "John Smith");
+ *  	Network network = new Network(ID, "www.script-wars.com", "John Smith");
  *  
- *  	while(Network.nextTick()) {
- *  		//Read data using Network.getX();
+ *  	while(network.nextTick()) {
+ *  		//Read data using network.getX();
  *  
- *  		//Send data using Network.sendX();
+ *  		//Send data using network.sendX();
  *  	}
  * }
  *  </code>

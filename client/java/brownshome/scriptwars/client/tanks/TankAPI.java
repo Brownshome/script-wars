@@ -51,8 +51,11 @@ public class TankAPI {
 	}
 
 	/**
-	 * @return true if we are alive. Use this to avoid null pointer
-	 *         exceptions when getting data.
+	 * Checks if we are alive.
+	 * When this is false all other functions other than
+	 * {@link #nextTick()} will have undefined results, usually null pointer exceptions. 
+	 * Use this to avoid unwanted behaviour when getting data.
+	 * @return true if we are alive. 
 	 */
 	public boolean isAlive() {
 		return _isAlive;
@@ -97,7 +100,7 @@ public class TankAPI {
 	
 	/**
 	 * Gets the relevant direction for the action next tick.
-	 * If the next action is Action.NOTHING then null will be returned.
+	 * If the next action is {@link brownshome.scriptwars.game.tanks.Action#NOTHING} then null will be returned.
 	 * @return The direction of the next action, or null if not applicable.
 	 */
 	public Direction getDirection() {
@@ -131,10 +134,20 @@ public class TankAPI {
 		_direction = null;
 	}
 	
+	/**
+	 * Returns the collection of tanks that are visible. This collection should not be edited and might be
+	 * invalidated on the next tick.
+	 * @return A collection of tanks.
+	 */
 	public Collection<Tank> getVisibleTanks(){
 		return _map.getTanks();
 	}
 	
+	/**
+	 * Returns the collection of shots that are visible. This collection should not be edited and might be
+	 * invalidated on the next tick.
+	 * @return A collection of shots.
+	 */
 	public Collection<Shot> getVisibleShots(){
 		return _map.getShots();
 	}

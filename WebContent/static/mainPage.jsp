@@ -14,48 +14,34 @@
 </head>
 <body>
 	<div id="Top" class="container">
-		<nav class="navbar navbar-default navbar-fixed-top">
-			<div class="container">
-				<div class="navbar-header">
-					<button type="button" class="navbar-toggle collapsed"
-						data-toggle="collapse" data-target="#id-navbar-collapse"
-						aria-expanded="false">
-						<span class="sr-only">Toggle navigation</span> <span
-							class="icon-bar"></span> <span class="icon-bar"></span> <span
-							class="icon-bar"></span>
-					</button>
-					<a class="navbar-brand" href="#Top">{S}</a>
-				</div>
-
-				<div class="collapse navbar-collapse" id="id-navbar-collapse">
-					<ul class="nav navbar-nav">
-						<li><a href="#Description">About</a></li>
-						<li><a href="#Games">Games</a></li>
-						<li><a href="#Contributing">Contribute</a></li>
-						<li><a href="./doc/index.html">Javadocs</a></li>
-					</ul>
-				</div>
-			</div>
-		</nav>
+		<jsp:include page="/static/fragments/navbar.jsp" />
 
 		<div class="page-header">
 			<h1>Script Wars</h1>
 		</div>
 
-		<h2 id="Description">Description</h2>
-		<p>
-			Script Wars is a AI design competition designed for university
-			software students. <br> Participants write small AI programs
-			using the supplied library and connect to a competition server. The
-			AIs then compete against each other in simple games for glory.
-		</p>
+		<h2>Description</h2>
+		
+		<p>Script wars is a site where you can write small scripts, in any language you want. These scripts
+		then play simple games against the creations of other like-minded people, or if you are feeling
+		brave, my own personal concoctions, for honour and glory (and also the chance to replace the top AI).</p>
+			
+		<p>The games are designed to have simple rule-sets and yet have potential for innovation and deep 
+		tactics if you are feeling up to it. So while you can make something functional within 100 lines,
+		you will need to put in some real elbow grease if you are looking for world domination.</p>
+		
+		<p>This site was designed to help my fellow software students hone their coding skills so some
+		knowledge of at least one programming language is assumed. That being said there are fully functional
+		coded examples given for every game, so feel free to copy paste and see what happens.</p>
+		
+		<p><em>~ James Brown</em></p>
 		<hr>
 
-		<h2 id="Games">Available Games</h2>
+		<h2>Available Games</h2>
 		<div id="selectedGame"></div>
 
+		<jsp:useBean id="staticBean" class="brownshome.scriptwars.site.StaticBean" />
 		<div class="row">
-			<jsp:useBean id="staticBean" class="brownshome.scriptwars.site.StaticBean" />
 			<c:forEach items="${staticBean.typeList}" var="gameType">
 				<c:choose>
 					<c:when test="${fn:length(staticBean.typeList) == 1}">
@@ -71,35 +57,72 @@
 						<div class="col-md-3 col-sm-6 text-center">
 					</c:otherwise>
 				</c:choose>
-				<img title="${gameType.name}" src="gameicons/${gameType.name}"
+				<a href="#"><img title="${gameType.name}" src="gameicons/${gameType.name}"
 					alt="${gameType.name}" class="responsiveimg"
 					style="width: 192px; height: 192px;"
-					onclick="setGameTypeSelected('${gameType.name}')">
+					onclick="setGameTypeSelected('${gameType.name}')"></a>
 				<span class="badge">${gameType.playerCount}</span>
-			</div>
+				</div>
 			</c:forEach>
+			</div>
+		<hr>
+
+		<h2>How To Compete</h2>
+		<div class="row">
+			<div class="col-md-3">
+			<div class="panel panel-primary">
+				<div class="panel-heading">Library downloads, more coming soon!</div>
+				<div class="list-group">
+					<a class="list-group-item" href="/static/script-wars-client.jar">Java library</a>
+					<a class="list-group-item" href="/static/script-wars-python.zip">Python library</a>
+				</div>
+			</div>
+			</div>
+			<div class="col-md-9">
+				<p>To take part, first download the library of your choice from the list on the left and include
+				it in the project. For example in java this can be done by adding <code>script-wars-client.jar</code>
+				to your classpath. This can be done by clicking <code>Properties/Java Build Path/Libraries/Add External JARs...</code> in
+				eclipse or using the <code>-classpath .;script-wars-client.jar</code> flag on the command line tools.</p>
+				
+				<p>Once you have grabbed your library of choice select a game from the section above and use the examples, information and
+				documentation there to make a world conquering AI. Press the join button and use the ID given to you to connect
+				to the site by passing it to the library you downloaded. For example the low level Java library asks for the ID
+				in the constructor as follows <code>network = new Network(ID, &quot;www.script-wars.com&quot;, &quot;John Smith Low Level&quot;);</code></p>
+			
+				<p><strong>Please note that languages other than Java may only have access to the low level library.</strong></p>
+				
+				<p>More information can be found on the individual game pages and in the project JavaDocs found at the top of this page.</p>
+			</div>
 		</div>
 		<hr>
 
-		<jsp:include page="/static/fragments/howToCompete.html" />
+		<h2>How to Contribute</h2>
+
+		<p>This project is in the early stages of it's development and you are
+		encouraged to take an active role in it's development. The GitHub page
+		is linked at the top of the page and contains detailed information about
+		what is needed and how to contribute to the project. </p>
+			
+		<p>There are several parts of the project that need assistance. Firstly I would dearly like to
+		have more games than <Strong>Tank Game</strong>. This requires basic knowledge of java and a cool
+		game idea. Secondly libraries in other languages are something I am always looking for, this
+		is a little bit more involved and will require low level UDP and/or TCP knowledge.</p>
+		
+		<p>Other than those specific things please feel free to report any bugs you find, improvements you want or cool
+		ideas you have by submitting an issue <strong><a href="https://github.com/Brownshome/script-wars/issues">here</a></strong>.
+		</p>
 		<hr>
-
-		<h2 id="Contributing">How to Contribute</h2>
-
-		<p>
-			This project is in the early stages of it's development and you are
-			encouraged to take an active role in it's development. The Github page
-			for the site can be found <a href="https://github.com/Brownshome/script-wars">
-			here</a> along with more information about how to contribute to the project. But to sum up
-			the information, the project needs help writing the css pages for the
-			site and creating games other than "Tank Game". Any other changes to
-			the project to benefit ease of use and / or the user experience are
-			also welcome.
-		</p>
-		<p>
-		Also feel free to document any improvements or feedback <a
-			href="https://github.com/Brownshome/script-wars/issues">here</a>.
-		</p>
+		
+		<h2>Credits</h2>
+		
+		<p>I could not have done this without the following people chipping in and helping out, I am eternally grateful.</p>
+		<ul>
+			<li><a href="https://github.com/Evander7">Evander7</a> for writing the Python API.</li>
+			<li><a href="https://github.com/liamtbrand">Liam</a> for persuading me that a high level API was required and then
+			writing one when I was too lazy.</li>
+			<li><a href="https://github.com/Ravid12">Ravid</a> for introducing me to the wonderful world of Bootstrap and taking the
+			 first crack at the css.</li>
+		</ul>
 	</div>
 
 	<footer>

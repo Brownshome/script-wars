@@ -12,26 +12,7 @@
 </head>
 <body onload="onLoad('${gametype.name}')">
 	<div class="container">
-		<nav class="navbar navbar-default navbar-fixed-top">
-			<div class="container">
-				<div class="navbar-header">
-					<button type="button" class="navbar-toggle collapsed"
-						data-toggle="collapse" data-target="#id-navbar-collapse"
-						aria-expanded="false">
-						<span class="sr-only">Toggle navigation</span> <span
-							class="icon-bar"></span> <span class="icon-bar"></span> <span
-							class="icon-bar"></span>
-					</button>
-					<a class="navbar-brand" href="../..">{S}</a>
-				</div>
-
-				<div class="collapse navbar-collapse" id="id-navbar-collapse">
-					<ul class="nav navbar-nav">
-						<li><a href="../doc/index.html">Javadocs</a></li>
-					</ul>
-				</div>
-			</div>
-		</nav>
+		<jsp:include page="/static/fragments/navbar.jsp" />
 
 		<div class="page-header">
 			<h1>Game Type - ${gametype.name}</h1>
@@ -39,7 +20,7 @@
 	
 		<div class="row">
 			<div class="col-md-7">
-				<canvas id="gameCanvas" width="1024" height="1024" style="width:512px;height:512px"></canvas>
+				<canvas id="gameCanvas" width="1024" height="1024" style="width:512px;height:512px;border:1px solid black"></canvas>
 			</div>
 			
 			<div id="playerTable" class="col-md-5"></div>

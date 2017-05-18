@@ -27,8 +27,13 @@ function disconnectWebSocket() {
 var pixelSize = document.getElementById("gameCanvas").width;
 
 function displayMessage(message) {
+	canvas.font = "30px Verdana";
+	canvas.fillStyle = "Black";
+	canvas.textBaseline = "middle";
+	canvas.textAlign = "center";
+	
 	canvas.clearRect(0, 0, pixelSize, pixelSize);
-	canvas.fillText(message, pixelSize / 4, pixelSize / 2);
+	canvas.fillText(message, pixelSize / 2, pixelSize / 2, pixelSize / 2);
 }
 
 function canvasError() {

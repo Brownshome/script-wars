@@ -102,6 +102,7 @@ to move UP subtract one from your y coordinate.
 		<p>The bullet is moving upwards. If the tank moves to the side it will not be killed as tanks are moved before shots
 		are moved in each game tick.</p>
 </div></div>
+<hr>
 
 <h2>Data protocol</h2>
 <p>There are two different ways to connect to the game. The first is to use the custom
