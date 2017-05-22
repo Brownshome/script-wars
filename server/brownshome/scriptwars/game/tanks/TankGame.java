@@ -234,7 +234,7 @@ public class TankGame extends Game<GridDisplayHandler> {
 
 	@Override
 	public int getPreferedConnectionType() {
-		return UDPConnectionHandler.UPD_PROTOCOL_BYTE;
+		return TCPConnectionHandler.TCP_PROTOCOL_BYTE;
 	}
 
 	@Override
