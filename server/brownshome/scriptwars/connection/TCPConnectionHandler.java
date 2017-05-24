@@ -152,7 +152,10 @@ public class TCPConnectionHandler extends ConnectionHandler<COBSChannel> {
 			}
 			total.flip();
 			
-			channel.write(total);
+			//This is sometimes null for some reason TODO
+			if(channel != null)
+				channel.write(total);
+
 		} catch(IOException e) {
 			Server.LOG.log(Level.SEVERE, "Unable to send packet", e);
 		}
