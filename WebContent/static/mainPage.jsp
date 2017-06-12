@@ -117,7 +117,7 @@
 		
 		<p>I could not have done this without the following people chipping in and helping out, I am eternally grateful.</p>
 		<ul>
-			<li><a href="https://github.com/Evander7">Evander7</a> for writing the Python API.</li>
+			<li><a href="https://github.com/Evander7">Jonathan</a> for writing the Python API.</li>
 			<li><a href="https://github.com/liamtbrand">Liam</a> for persuading me that a high level API was required and then
 			writing one when I was too lazy.</li>
 			<li><a href="https://github.com/Ravid12">Ravid</a> for introducing me to the wonderful world of Bootstrap and taking the
