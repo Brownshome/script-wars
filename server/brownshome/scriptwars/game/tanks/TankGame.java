@@ -71,7 +71,7 @@ public class TankGame extends Game<GridDisplayHandler> {
 
 	@Override
 	public int getTickRate() {
-		return 25;
+		return 250;
 	}
 
 	@Override
