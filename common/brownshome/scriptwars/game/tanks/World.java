@@ -19,14 +19,14 @@ import brownshome.scriptwars.server.Server;
 
 public class World {
 	private List<Shot> shots = new ArrayList<>();
-	private Map<Player, Tank> tanks = new HashMap<>();
+	private Map<Player<?>, Tank> tanks = new HashMap<>();
 	private Set<Tank> clientTanks = new HashSet<>();
 	private boolean[][] map;
 	private Tank[][] tankMap;
 	private TankGame game;
 	
 	private Set<Tank> tanksToFire = new HashSet<>();
-	private Set<Player> playersToSpawn = new HashSet<>();
+	private Set<Player<?>> playersToSpawn = new HashSet<>();
 	
 	protected World(boolean[][] map, TankGame game) {
 		assert map.length > 0 && map[0].length > 0;
@@ -103,7 +103,10 @@ public class World {
 		return map.length;
 	}
 
-	protected void moveTank(Player player, Direction direction) {
+	protected void moveTank(Player<?> player, Direction direction) {
+		if(!isAlive(player))
+			throw new IllegalStateException("You are not alive, you cannot move.");
+		
 		Tank tank = tanks.get(player);
 		tank.getPosition();
 		
@@ -141,7 +144,7 @@ public class World {
 		}
 	}
 
-	protected void fireNextTick(Player player) {
+	protected void fireNextTick(Player<?> player) {
 		tanksToFire.add(getTank(player));
 	}
 
@@ -221,11 +224,11 @@ public class World {
 		}
 	}
 
-	protected boolean isAlive(Player player) {
+	protected boolean isAlive(Player<?> player) {
 		return tanks.containsKey(player);
 	}
 
-	protected Collection<Tank> getVisibleTanks(Player player) {
+	protected Collection<Tank> getVisibleTanks(Player<?> player) {
 		Tank tank = getTank(player);
 		
 		return tanks.values().stream()
@@ -254,13 +257,13 @@ public class World {
 		}
 	}
 
-	protected void spawnTank(Player player) {
+	protected void spawnTank(Player<?> player) {
 		playersToSpawn.add(player);
 	}
 	
 	protected void spawnPlayers() {
-		Player player;
-		for(Iterator<Player> iterator = playersToSpawn.iterator(); iterator.hasNext(); ) {
+		Player<?> player;
+		for(Iterator<Player<?>> iterator = playersToSpawn.iterator(); iterator.hasNext(); ) {
 			player = iterator.next();
 			Coordinates coord = getSpawningCoordinate();
 			if(coord == null) {
@@ -425,7 +428,7 @@ public class World {
 		removeTank(tank.getOwner());
 	}
 
-	protected Tank getTank(Player player) {
+	protected Tank getTank(Player<?> player) {
 		return tanks.get(player);
 	}
 
@@ -433,7 +436,7 @@ public class World {
 		return (getWidth() * getHeight() - 1) / Byte.SIZE + 1;
 	}
 
-	protected void removeTank(Player player) {
+	protected void removeTank(Player<?> player) {
 		Tank tank = tanks.remove(player);
 		setTank(tank.getPosition(), null);
 	}

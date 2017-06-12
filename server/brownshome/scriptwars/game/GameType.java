@@ -108,7 +108,7 @@ public class GameType {
 	/** generates a new ID 
 	 * @throws GameCreationException if a new game could not be created and the existing one is full */
 	public int getUserID() throws GameCreationException {
-		return getAvailableGame().getDefaultConnectionHandler().getID();
+		return getAvailableGame().getID();
 	}
 	
 	public Game<?> getAvailableGame() throws GameCreationException {

@@ -5,6 +5,7 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
@@ -16,15 +17,23 @@ import brownshome.scriptwars.server.Server;
  * The first packet sent contains the player ID and the player name
  */
 public class TCPConnectionHandler extends ConnectionHandler<COBSChannel> {
-	private static final int PORT = 35566;
-	private static ExecutorService TCP_POOL = Executors.newCachedThreadPool();
-	private static final int BUFFER_SIZE = 4096;
+	private static TCPConnectionHandler instance;
 	
-	private static Selector incomming;
+	public static TCPConnectionHandler instance() {
+		if(instance == null) {
+			instance = new TCPConnectionHandler();
+		}
+		
+		return instance;
+	}
 	
-	public static final int TCP_PROTOCOL_BYTE = 2;
+	private final int PORT = 35566;
+	private final int BUFFER_SIZE = 4096;
+	private final int TCP_PROTOCOL_BYTE = 2;
 	
-	public static void startTCPListener() {
+	private Selector incomming;
+	
+	private TCPConnectionHandler() {
 		try {
 			incomming = Selector.open();
 			ServerSocketChannel serverSocket = ServerSocketChannel.open();
@@ -32,7 +41,7 @@ public class TCPConnectionHandler extends ConnectionHandler<COBSChannel> {
 			serverSocket.configureBlocking(false);
 			serverSocket.register(incomming, SelectionKey.OP_ACCEPT);
 
-			Thread connectionAcceptThread = new Thread(TCPConnectionHandler::listenLoop, "TCP Connection Accept Thread");
+			Thread connectionAcceptThread = new Thread(this::listenLoop, "TCP Connection Accept Thread");
 			connectionAcceptThread.setDaemon(true);
 			connectionAcceptThread.start();
 		} catch(IOException e) {
@@ -40,90 +49,117 @@ public class TCPConnectionHandler extends ConnectionHandler<COBSChannel> {
 		}
 	}
 	
-	private static void listenLoop() {
-		class Data {
-			COBSChannel channel;
-			Player player = null;
-			
-			Data(SocketChannel channel) {
-				this.channel = new COBSChannel(channel);
-			}
-		}
-		
-		while(!Server.shouldStop()) {
+	private void listenLoop() {
+		while(true) {
 			try {
 				incomming.select();
-				for(SelectionKey key : incomming.selectedKeys()) {
-					if(key.isAcceptable()) {
-						ServerSocketChannel channel = (ServerSocketChannel) key.channel();
-						SocketChannel clientChannel = channel.accept();
-						if(clientChannel == null)
-							continue;
-						
-						clientChannel.configureBlocking(false);
-						clientChannel.register(incomming, SelectionKey.OP_READ, new Data(clientChannel));
-					}
-
-					if(key.isReadable()) {
-						Data data = (Data) key.attachment();
-
-						ByteBuffer packet = data.channel.getPacket();
-
-						if(packet != null) {
-							try {
-								if(data.player == null) {
-									data.player = createPlayer(packet);
-									synchronized(data.player.getConnectionHander().game) {
-										if(data.player.isActive()) {
-											try {
-												sendErrorPacket(data.channel, "That ID is in use. Please use this one: " + data.player.getConnectionHander().game.getType().getUserID());
-											} catch(GameCreationException e)  {
-												sendErrorPacket(data.channel, "That ID is in use. Unable to create a new game");
-											}
-
-											data.channel.close();
-											continue;
-										} else {
-											data.player.firstData(packet);
-											((TCPConnectionHandler) data.player.getConnectionHander()).putMapping(data.channel, data.player);
-										}
-									}
-								} else {
-									synchronized(data.player.getConnectionHander().game) {
-										data.player.incommingData(packet);
-									}
-								}
-							} catch(Exception e) {
-								if(key.attachment() != null) {
-									Player player = ((Data) key.attachment()).player;
-									if(player != null)
-										player.sendError("Error processing packet " + e.getMessage());
-								}
-								
-								((SocketChannel) key.channel()).socket().close();
-							}
-						} else {
-							if(data.channel.isClosed()) {
-								if(data.player != null)
-									data.player.timeOut();
-							}
+				for(Iterator<SelectionKey> iterator = incomming.selectedKeys().iterator(); iterator.hasNext(); ) {
+					SelectionKey key = iterator.next();
+					iterator.remove();
+					
+					if(!key.isValid())
+						continue;
+					
+					try {
+						if(key.isAcceptable()) {
+							acceptConnection(key);
 						}
 
+						if(key.isReadable()) {
+							if(key.attachment() instanceof Player) {
+								@SuppressWarnings("unchecked")
+								Player<COBSChannel> player = (Player<COBSChannel>) key.attachment();
+								readData(player);
+							} else {
+								readData(key);
+							}
+						}
+						
+						if(key.isWritable()) {
+							writeToConnection(key);
+						}
+					} catch(CancelledKeyException kce) {
+						if(key.channel().isOpen())
+							key.channel().close();
+					} catch(IOException e) {
+						Server.LOG.log(Level.WARNING, "TCP Error", e);
+						key.cancel();
+						if(key.channel().isOpen())
+							key.channel().close();
 					}
 				}
-			} catch(IOException e) {
-				Server.LOG.log(Level.WARNING, "TCP Error", e);
+			} catch(ClosedSelectorException cse) {
+				Server.LOG.info("TCP Listener shutting down");
+				return;
+			} catch (IOException e1) {
+				Server.LOG.log(Level.WARNING, "Error in TCP Listener", e1);
+			}
+		}
+	}
+	
+	private void writeToConnection(SelectionKey key) {
+		@SuppressWarnings("unchecked")
+		Player<COBSChannel> player = (Player<COBSChannel>) key.attachment();
+		
+		if(player.getConnection().write()) {
+			finishWrite((SocketChannel) key.channel());
+		}
+	}
+
+	/** Called when the first packet has not yet arrived, we don't know who the player is. */
+	private void readData(SelectionKey key) throws IOException {
+		COBSChannel channel = (COBSChannel) key.attachment();
+		ByteBuffer packet = channel.getPacket();
+		
+		if(packet == null)
+			return;
+		
+		int ID = packet.getInt();
+
+		Player<COBSChannel> player;
+		
+		try {
+			player = new Player<>(ID, ConnectionUtil.bufferToString(packet), this, channel);
+		} catch(ProtocolException pe) {
+			//Error send by player class. Just return;
+			return;
+		}
+		
+		key.attach(player);
+		
+		try {
+			synchronized(player.getGame()) {
+				player.addPlayer();
+			}
+		} catch(IllegalArgumentException iae) {
+			player.sendInvalidIDError();
+		}
+	}
+
+	private void readData(Player<COBSChannel> player) throws IOException {
+		ByteBuffer packet = player.getConnection().getPacket();
+
+		if(packet != null) {
+			try {
+				synchronized(player.getGame()) {
+					player.incommingData(packet);
+				}
+			} catch(Exception e) {
+				player.sendError("Error processing packet " + e.getMessage());
+			}
+		} else {
+			if(player.getConnection().isClosed()) {
+				player.silentTimeOut();
 			}
 		}
 	}
 
-	private static Player createPlayer(ByteBuffer packet) throws ProtocolException {
-		int ID = packet.getInt();
-		return getPlayerFromID(ID);
-	}
-
-	protected TCPConnectionHandler(Game<?> game) {
-		super(game);
+	/** Called when a connection has been accepted */
+	private void acceptConnection(SelectionKey key) throws IOException {
+		ServerSocketChannel channel = (ServerSocketChannel) key.channel();
+		SocketChannel clientChannel = channel.accept();
+		clientChannel.configureBlocking(false);
+		clientChannel.register(incomming, SelectionKey.OP_READ).attach(new COBSChannel(clientChannel));
 	}
 
 	@Override
@@ -131,17 +167,29 @@ public class TCPConnectionHandler extends ConnectionHandler<COBSChannel> {
 		return TCP_PROTOCOL_BYTE;
 	}
 
-	protected void disonnect(Player player) {
-		getMapping(player).close();
-		super.disconnect(player);
+	@Override
+	protected void closeConnection(COBSChannel connection) {
+		try {
+			connection.close();
+		} catch (IOException e) {
+			Server.LOG.log(Level.WARNING, "Unable to close the connection", e);
+		}
 	}
 	
-	private static void sendErrorPacket(COBSChannel channel, String message) {
-		sendPacket(channel, ByteBuffer.wrap(new byte[] {-1}), stringToBuffer(message));
+	@Override
+	public void closeConnectionHandler() {
+		try {
+			incomming.close();
+		} catch (IOException e) {
+			Server.LOG.log(Level.SEVERE, "Unable to close the TCP Listener", e);
+		}
 	}
 
-	private static void sendPacket(COBSChannel channel, ByteBuffer... data) {
+	@Override
+	protected void sendRawData(COBSChannel channel, ByteBuffer... data) {
 		try {
+			writeListen(channel.channel);
+			
 			int length = 0;
 			for(ByteBuffer b : data) {
 				length += b.remaining();
@@ -158,8 +206,13 @@ public class TCPConnectionHandler extends ConnectionHandler<COBSChannel> {
 		}
 	}
 
-	@Override
-	protected void sendRawData(COBSChannel channel, ByteBuffer... data) {
-		sendPacket(channel, data);
+	private void writeListen(SocketChannel channel) {
+		SelectionKey key = channel.keyFor(incomming);
+		key.interestOps(SelectionKey.OP_WRITE);
+	}
+	
+	private void finishWrite(SocketChannel channel) {
+		SelectionKey key = channel.keyFor(incomming);
+		key.interestOps(SelectionKey.OP_READ);
 	}
 }

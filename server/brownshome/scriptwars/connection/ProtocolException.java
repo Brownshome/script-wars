@@ -1,7 +1,4 @@
 package brownshome.scriptwars.connection;
 
-public class ProtocolException extends Exception {
-	public ProtocolException(String cause) {
-		super(cause);
-	}
-}
+/** Player creation failed */
+public class ProtocolException extends Exception {}

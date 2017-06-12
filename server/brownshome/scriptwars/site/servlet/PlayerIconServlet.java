@@ -16,14 +16,17 @@ import brownshome.scriptwars.game.*;
 public class PlayerIconServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		Player player;
+		Player<?> player;
 		String rawID = "Unset";
 		
 		try {
 			rawID = request.getServletMapping().getMatchValue();
 			int playerID = Integer.parseInt(rawID);
-			player = ConnectionHandler.getPlayerFromID(playerID);
-		} catch(NumberFormatException | ProtocolException e) {
+			player = Player.getPlayerFromID(playerID);
+			
+			if(player == null)
+				throw new ProtocolException();
+		} catch(Exception e) {
 			response.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid player ID: " + rawID);
 			return;
 		}

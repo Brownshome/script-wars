@@ -18,8 +18,6 @@ public class Server {
 	
 	public static void initialize() {
 		try {
-			UDPConnectionHandler.startListenerThread();
-			TCPConnectionHandler.startTCPListener();
 			GameType.addBetaType(TankGame.class, Difficulty.EASY);
 		} catch (GameCreationException gce) {
 			Server.LOG.log(Level.SEVERE, "Improperly built game files.", gce);
@@ -32,9 +30,8 @@ public class Server {
 
 	public static void shutdown() {
 		stop = true;
-		try {
-			UDPConnectionHandler.stop();
-		} catch (IOException e) {}
+		UDPConnectionHandler.instance().closeConnectionHandler();
+		TCPConnectionHandler.instance().closeConnectionHandler();
 	}
 	
 	public static boolean shouldStop() {

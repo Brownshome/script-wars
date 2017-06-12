@@ -28,7 +28,7 @@ public class IDRequestServlet extends HttpServlet {
 			Game<?> game;
 			
 			try {
-				id = Game.getGame(slot).getDefaultConnectionHandler().getID();
+				id = Game.getGame(slot).getID();
 			} catch(ArrayIndexOutOfBoundsException | NullPointerException ex) {
 				resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid slot ID");
 				return;

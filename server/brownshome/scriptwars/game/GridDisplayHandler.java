@@ -7,9 +7,9 @@ import java.util.function.Consumer;
 public class GridDisplayHandler extends DisplayHandler {
 	private char[][] grid;
 	private char[][] oldGrid;
-	List<Player> playerList;
+	List<Player<?>> playerList;
 	
-	public void setPlayerList(List<Player> players) {
+	public void setPlayerList(List<Player<?>> players) {
 		assert this.playerList == null;
 		playerList = players;
 	}
@@ -60,7 +60,7 @@ public class GridDisplayHandler extends DisplayHandler {
 		buffer.put((byte) 4);
 		buffer.put((byte) playerList.size());
 		
-		for(Player player : playerList) {
+		for(Player<?> player : playerList) {
 			buffer.putInt(player == null ? 0 : player.getID());
 		}
 		buffer.flip();

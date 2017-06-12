@@ -19,13 +19,28 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	}
 
 	private static final ReentrantReadWriteLock activeGamesLock = new ReentrantReadWriteLock();
+	// SYNCHRONIZED ACCESS ON activeGamesLock
 	/** This may be read and written to from all three threads. All access must use {@link #activeGamesLock} except from single reads */
 	private static final Game<?>[] activeGames = new Game<?>[256];
-
+	private static final IDPool gameIDPool = new IDPool(256);
+	// END SYNC
+	
 	/** The time the game has to close in millis */
 	public static final long CLOSING_GRACE = 30 * 1000l;
 
-	private final Map<Integer, ConnectionHandler<?>> connections = new HashMap<>();
+	static ReentrantReadWriteLock getActiveGamesLock() {
+		return activeGamesLock;
+	}
+
+	public static Game<?> getGame(int gameCode) {
+		activeGamesLock.readLock().lock();
+		try {
+			return activeGames[gameCode];
+		} finally {
+			activeGamesLock.readLock().unlock();
+		}
+	}
+	
 	private final DISPLAY_HANDLER displayHandler;
 	private int slot = -1;
 	
@@ -33,9 +48,16 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	private long timeClosed;
 	private final GameType type;
 	
-	private Set<Player> activePlayers = new LinkedHashSet<>();
-	private Set<Player> outstandingPlayers = new HashSet<>();
-
+	// SYCHRONIZED ACCESS ON this
+	private PlayerIDPool playerIDPool = new PlayerIDPool(256);
+	/** ID players lookup */
+	private Player<?>[] players = new Player[256];
+	/** Holds all players who have yet to send a response this tick */
+	private Set<Player<?>> outstandingPlayers = new HashSet<>();
+	/** Holds the currently connected players */
+	private Set<Player<?>> activePlayers = new LinkedHashSet<>();
+	// END SYNC
+	
 	/** 
 	 * @return If the game sends specific data to each player
 	 */
@@ -64,7 +86,7 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	 * @return The final icon
 	 * @throws IOException If the file cannot be found
 	 */
-	public abstract BufferedImage getIcon(Player player, Function<String, File> pathTranslator) throws IOException;
+	public abstract BufferedImage getIcon(Player<?> player, Function<String, File> pathTranslator) throws IOException;
 	
 	/**
 	 * @return The maximum size of the data to send in bytes per player.
@@ -76,14 +98,14 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	 * @param player The player's data that is being requested. This will be null if {@link #hasPerPlayerData()} is false
 	 * @param data A {@link java.nio.ByteBuffer ByteBuffer} that the new data is to be written to.
 	 */
-	public abstract boolean getData(Player player, ByteBuffer data);
+	public abstract boolean getData(Player<?> player, ByteBuffer data);
 	
-	/** Called when an incoming packet is recieved. The packet will always be for the correct tick it is recieved.
+	/** Called when an incoming packet is received. The packet will always be for the correct tick it is received.
 	 * 
 	 * @param data A {@link java.nio.ByteBuffer ByteBuffer} containing the data
-	 * @param player The player that the data was recieved from
+	 * @param player The player that the data was received from
 	 */
-	public abstract void processData(ByteBuffer data, Player player);
+	public abstract void processData(ByteBuffer data, Player<?> player);
 	
 	/** Called after each tick to get data to display on the website.
 	 * 
@@ -91,7 +113,7 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	 */
 	protected abstract void displayGame(DISPLAY_HANDLER handler);
 
-	public abstract int getPreferedConnectionType();
+	public abstract ConnectionHandler<?> getPreferedConnectionHandler();
 
 	protected Game(GameType type, DISPLAY_HANDLER displayHandler) {
 		this.displayHandler = displayHandler;
@@ -99,10 +121,10 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	}
 
 	/**
-	 * Called by the connection implementation when data is recieved from the client. This is
+	 * Called by the connection implementation when data is received from the client. This is
 	 * called once per player per tick.
 	 */
-	public void incommingData(ByteBuffer passingBuffer, Player player) {
+	public void incommingData(ByteBuffer passingBuffer, Player<?> player) {
 		if(outstandingPlayers.remove(player)) {
 			processData(passingBuffer, player);
 			
@@ -111,19 +133,30 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 		}
 	}
 
-	protected void onPlayerChange() {
-		type.signalListUpdate();
+	/** Generates an ID for this game, the first byte is a
+	 * protocol identifier, the next byte is the game ID,
+	 * the last byte is a player id. The MSB is zero.
+	 * 
+	 * If the number is negative there was no free ID to be generated */
+	public int getID() {
+		try {
+			return getPreferedConnectionHandler().getProtocolByte() << 16 | getSlot() << 8 | playerIDPool.request();
+		} catch (OutOfIDsException e) {
+			return -1;
+		}
 	}
 	
-	public void addPlayer(Player player) {
-		onPlayerChange();
+	protected void onPlayerChange() {
+		type.signalListUpdate();
 	}
 	
 	/**Called when a player times out from the server
 	 * 
 	 * @param p
 	 */
-	public void removePlayer(Player p) {
+	public void removePlayer(Player<?> p) {
+		playerIDPool.free(p.getSlot());
+		players[p.getSlot()] = null;
 		activePlayers.remove(p);
 		onPlayerChange();
 	}
@@ -140,20 +173,20 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	}
 	
 	//called by playerTable.jsp
-	public synchronized List<Player> getActivePlayers() {
+	public synchronized List<Player<?>> getActivePlayers() {
 		return new ArrayList<>(activePlayers);
 	}
 	
 	/**
 	 * @param cutoffTime 
-	 * @return True if the timout has exceeded.
+	 * @return True if the timeout has exceeded.
 	 */
 	private boolean checkTimeOut(long cutoffTime) {
 		if(System.currentTimeMillis() - cutoffTime <= 0) {
 			return false;
 		}
 		
-		for(Player p : outstandingPlayers) {
+		for(Player<?> p : outstandingPlayers) {
 			p.droppedPacket();
 			
 			Server.LOG.info("Player " + p.getName() + " timed out.");
@@ -177,7 +210,7 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 			buffer.flip();
 		}
 		
-		for(Player player : activePlayers) {
+		for(Player<?> player : activePlayers) {
 			if(hasPerPlayerData()) {
 				buffer.clear();
 				if(!getData(player, buffer))
@@ -199,45 +232,43 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	
 	/** This must be called inside a write locked block */
 	void addToSlot() throws OutOfIDsException {
-		for(int i = 0; i < activeGames.length; i++) {
-			if(activeGames[i] == null) {
-				activeGames[i] = this;
-				slot = i;
-				break;
-			}
-		}
-
-		if(slot == -1) {
-			Server.LOG.log(Level.SEVERE, "Not enough slots to start game \'" + getName() + "\'.");
-			throw new OutOfIDsException();
-		}
+		slot = gameIDPool.request();
+		activeGames[slot] = this;
 	}
 	
 	/**
-	 * Makes a player active. If the game cannot accept another player the player is set to a non-active state and a new ID is sent to
+	 * Attempts to add a player to the game. If the game cannot accept another player the player is set to a non-active state and a new ID is sent to
 	 * them in an error message.
 	 * @param player The player to make active
+	 * @throws IllegalArgumentException If the player is not a valid ID
 	 */
-	public void makePlayerActive(Player player) {
+	public void addPlayer(Player<?> player) throws IllegalArgumentException {
 		if(!isSpaceForPlayer()) {
 			//Move player to a new game
 			try {
 				player.sendError("That game is full, here is a new ID " + getType().getUserID());
 			} catch (GameCreationException e) {
-				player.sendError("That game is full and we were unable to generate a new ID");
+				player.sendError("That game is full and we were unable to create a new one.");
 			}
 			
 			return;
 		}
 		
-		player.setActive();
+		if(!playerIDPool.isRequested(player.getSlot())) {
+			throw new IllegalArgumentException();
+		}
+		
+		playerIDPool.makeActive(player.getSlot());
+		players[player.getSlot()] = player;
+		
 		activePlayers.add(player);
-		addPlayer(player);
+		
+		onPlayerChange();
 	}
 	
 	/** This is the main method that is called from the game thread
 	 * 
-	 *  This method is syncronized on the game object, making it so that no network opperations can occur while the game is not sleeping
+	 *  This method is synchronised on the game object, making it so that no network operations can occur while the game is not sleeping
 	 * 
 	 *  FOR INTERNAL USE ONLY */
 	private synchronized void gameLoop() {
@@ -258,25 +289,26 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 
 			while((timeToSleep = lastTick - System.currentTimeMillis() + getTickRate()) > 0) {
 				try {
-					wait(timeToSleep); //keep this the last line. (wait is used to give up this object's monitor). Posible replace this with sleep and used blocks or locks instead
+					wait(timeToSleep); //keep this the last line. (wait is used to give up this object's monitor). Possible replace this with sleep and used blocks or locks instead
 				} catch (InterruptedException e) {
 					endGame();
 				}
 			} 
 			
-			//Give it 20ms of leeway
+			//Give it 20ms of lee-way
 			if(timeToSleep < -100) {
-				Server.LOG.log(Level.WARNING, "Game \'" + getName() + "\' is ticking too slowly.");
+				Server.LOG.log(Level.WARNING, "Game \'" + getClass().getName() + "\' is ticking too slowly.");
 			}
 		}
 		
 		if(state != GameState.CLOSED) {
 			state = GameState.CLOSED;
-			Server.LOG.log(Level.WARNING, "Game \'" + getName() + "\' failed to close in time.");
+			Server.LOG.log(Level.WARNING, "Game \'" + getClass().getName() + "\' failed to close in time.");
 		}
 		
 		activeGamesLock.writeLock().lock();
 		try {
+			gameIDPool.free(slot);
 			activeGames[slot] = null;
 		} finally {
 			activeGamesLock.writeLock().unlock();
@@ -284,13 +316,13 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	}
 	
 	private void endGame() {
-		for(Player player : activePlayers) {
+		for(Player<?> player : activePlayers) {
 			player.endGame();
 		}
 	}
 
 	public void start() {
-		Thread thread = new Thread(this::gameLoop, getName() + " thread");
+		Thread thread = new Thread(this::gameLoop, getClass().getName() + " thread");
 		thread.start();
 	}
 	
@@ -301,14 +333,6 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	/** Returns a byte used to identify this game. */
 	public int getSlot() {
 		return slot;
-	}
-
-	public ConnectionHandler<?> getDefaultConnectionHandler() {
-		return getConnectionHandler(getPreferedConnectionType());
-	}
-
-	public ConnectionHandler<?> getConnectionHandler(int protocolByte) {
-		return connections.computeIfAbsent(protocolByte, i -> ConnectionHandler.createConnection(i, this));
 	}
 
 	public DISPLAY_HANDLER getDisplayHandler() {
@@ -323,30 +347,11 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 		return type;
 	}
 
-	/**
-	 * @return The name of this game to be displayed on the website
-	 */
-	public static String getName() {
-		return "Unnamed Game";
-	}
-
-	/**
-	 * @return A short description of the game to be displayed on the website.
-	 */
-	public static String getDescription() {
-		return "No description";
-	}
-
-	static ReentrantReadWriteLock getActiveGamesLock() {
-		return activeGamesLock;
-	}
-
-	public static Game<?> getGame(int gameCode) {
-		activeGamesLock.readLock().lock();
-		try {
-			return activeGames[gameCode];
-		} finally {
-			activeGamesLock.readLock().unlock();
-		}
+	@SuppressWarnings("unchecked")
+	public <CONNECTION> Player<CONNECTION> getPlayer(int playerCode) {
+		if(playerCode < 0 || playerCode > 255)
+			return null;
+		
+		return (Player<CONNECTION>) players[playerCode];
 	}
 }

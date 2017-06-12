@@ -161,7 +161,7 @@ def getInt():
 
 def getString():
     global position
-    length = struct.unpack('>h', dataIn[position:position+2])
+    length = struct.unpack('>h', dataIn[position:position+2])[0]
     position += 2
     string = dataIn[position: position + length]
     return string.decode()
@@ -183,8 +183,9 @@ def getBoolean():
 
 def getFloat():
     global position
-    struct.unpack('>f', dataIn[position])
+    i = struct.unpack('>f', dataIn[position])[0]
     position += 4
+    return i
 
 def getData():
     global dataOut

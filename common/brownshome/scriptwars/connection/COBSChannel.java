@@ -12,9 +12,16 @@ import java.nio.channels.*;
  * The byte indicates a run of n-1 bytes followed by a zero. The final zero is removed.
  **/
 public class COBSChannel {
-	private final SocketChannel channel;
+	/** The underlying network channel */
+	public final SocketChannel channel;
+	
+	/** The buffer used to send data to the network channel, this will be resized if need be */
 	private ByteBuffer outputBuffer = ByteBuffer.allocate(64);
+	
+	/** The buffer used to read data from the underlying network channel */
 	private final ByteBuffer inputBuffer = ByteBuffer.allocate(1);
+	
+	/** The header byte that was last read from the input */
 	private int nextReadHeader = -1;
 	
 	public COBSChannel(SocketChannel channel) {
@@ -54,54 +61,48 @@ public class COBSChannel {
 		output.put((byte) 0x00);
 		output.flip();
 		
-		while(output.hasRemaining())
+		while(output.hasRemaining()) //TODO non-blocking writes
 			channel.write(output);
 		
 		return written;
 	}
-	
-	public ByteBuffer getPacket() {
-		try {
-			if(isClosed())
-				return null;
 
-			while(true) {
-				if(nextReadHeader == -1) {
-					int raw = read();
+	/** Attempts to read a packet from the incoming network connection. If there is no incoming packet, this method will return null */
+	public ByteBuffer getPacket() throws IOException {
+		while(true) {
+			if(nextReadHeader == -1) {
+				int raw = read();
 
-					if(raw == 0) {
-						if(outputBuffer.position() == 0)
-							return null;
-						
-						outputBuffer.limit(outputBuffer.limit() - 1);
-						outputBuffer.flip();
-						ByteBuffer result = outputBuffer;
-						outputBuffer = ByteBuffer.allocate(64);
-						outputBuffer.flip();
-						return result;
-					}
-
-					if(raw == -1)
+				if(raw == 0) {
+					if(outputBuffer.position() == 0)
 						return null;
 
-					nextReadHeader = raw;
-					setLimit(outputBuffer.position() + raw - 1);
+					outputBuffer.limit(outputBuffer.limit() - 1);
+					outputBuffer.flip();
+					ByteBuffer result = outputBuffer;
+					outputBuffer = ByteBuffer.allocate(64);
+					outputBuffer.flip();
+					return result;
 				}
 
-				while(outputBuffer.hasRemaining()) {
-					if(channel.read(outputBuffer) < 1)
-						return null;
-				}
+				if(raw == -1)
+					return null;
 
-				setLimit(outputBuffer.position() + 1);
-
-				if(nextReadHeader != 0xff)
-					outputBuffer.put((byte) 0);
-
-				nextReadHeader = -1;
+				nextReadHeader = raw;
+				setLimit(outputBuffer.position() + raw - 1);
 			}
-		} catch(IOException iex) {
-			return null;
+
+			while(outputBuffer.hasRemaining()) {
+				if(channel.read(outputBuffer) < 1)
+					return null;
+			}
+
+			setLimit(outputBuffer.position() + 1);
+
+			if(nextReadHeader != 0xff)
+				outputBuffer.put((byte) 0);
+
+			nextReadHeader = -1;
 		}
 	}
 
@@ -118,13 +119,15 @@ public class COBSChannel {
 		}
 	}
 
+	/** Reads a byte, returns -1 if there is no more data */
 	private int read() throws IOException {
 		if(inputBuffer.hasRemaining()) {
 			return Byte.toUnsignedInt(inputBuffer.get());
 		} else {
 			inputBuffer.clear();
 			int read = channel.read(inputBuffer);
-			if(read < 1)
+			
+			if(read < 1) //No bytes read, or end of stream.
 				return -1;
 			
 			inputBuffer.flip();
@@ -136,9 +139,12 @@ public class COBSChannel {
 		return !channel.isConnected();
 	}
 
-	public void close() {
-		try {
-			channel.socket().close();
-		} catch (IOException e) {}
+	public void close() throws IOException {
+		channel.socket().close();
+	}
+
+	/** Attempts to write some data to the underlying channel. Returns true if all data was written */
+	public boolean write() {
+		return true;
 	}
 }

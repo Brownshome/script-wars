@@ -271,7 +271,11 @@ public class Network {
 		COBSChannel channel;
 		
 		TCPConnection(InetAddress address, int port) throws IOException {
-			channel = new COBSChannel(SocketChannel.open(new InetSocketAddress(address, port)));
+			SocketChannel socket = SocketChannel.open();
+			socket.configureBlocking(true);
+			socket.connect(new InetSocketAddress(address, port));
+			channel = new COBSChannel(socket);
+			
 		}
 		
 		@Override
@@ -285,7 +289,14 @@ public class Network {
 
 		@Override
 		public ByteBuffer waitForData() throws ConnectionException {
-			ByteBuffer buffer = channel.getPacket();
+			ByteBuffer buffer;
+			
+			try {
+				buffer = channel.getPacket();
+			} catch (IOException e) {
+				throw new ConnectionException(ConnectionStatus.ERROR("Client side networking error:" + e.getMessage()));
+			}
+			
 			if(buffer == null)
 				throw new ConnectionException(ConnectionStatus.DROPPED);
 

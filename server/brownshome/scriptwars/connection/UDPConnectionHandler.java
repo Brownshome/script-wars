@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.logging.Level;
 
+import brownshome.scriptwars.connection.ProtocolException;
 import brownshome.scriptwars.game.*;
 import brownshome.scriptwars.server.Server;
 
@@ -21,12 +22,22 @@ import brownshome.scriptwars.server.Server;
  * 
  */
 public class UDPConnectionHandler extends ConnectionHandler<SocketAddress> {
+	private static UDPConnectionHandler instance;
+	
+	public static UDPConnectionHandler instance() {
+		if(instance == null) {
+			instance = new UDPConnectionHandler();
+		}
+		
+		return instance;
+	}
+	
 	public static final int PORT = 35565;
 	public static final int UPD_PROTOCOL_BYTE = 1;
 	
-	private static DatagramChannel channel;
+	private DatagramChannel channel;
 
-	public static void startListenerThread() {
+	private UDPConnectionHandler() {
 		try {
 			channel = DatagramChannel.open();
 			channel.socket().bind(new InetSocketAddress(PORT));
@@ -34,20 +45,25 @@ public class UDPConnectionHandler extends ConnectionHandler<SocketAddress> {
 			Server.LOG.log(Level.SEVERE, "Unable to connect to port", e);
 		}
 
-		Thread listenerThread = new Thread(UDPConnectionHandler::listenLoop, "LISTENER-THREAD");
+		Thread listenerThread = new Thread(this::listenLoop, "LISTENER-THREAD");
 		listenerThread.start();
 	}
 
-	public static void stop() throws IOException {
-		channel.close();
+	@Override
+	public void closeConnectionHandler() {
+		try {
+			channel.close();
+		} catch (IOException e) {
+			Server.LOG.log(Level.SEVERE, "Unable to close the UDP Listener", e);
+		}
 	}
 	
-	private static void listenLoop() {
+	private void listenLoop() {
 		byte[] buffer = new byte[1024];
 		ByteBuffer passingBuffer = ByteBuffer.wrap(buffer);
 		SocketAddress address = null;
 		
-		while(!Server.shouldStop()) {
+		while(true) {
 			boolean recieved = false;
 			
 			try {
@@ -57,39 +73,43 @@ public class UDPConnectionHandler extends ConnectionHandler<SocketAddress> {
 				recieved = true;
 
 				int ID = passingBuffer.getInt();
-				Player player = getPlayerFromID(ID);
+				Player<SocketAddress> player = Player.getPlayerFromID(ID);
 				
-				UDPConnectionHandler handler = (UDPConnectionHandler) player.getConnectionHander();
-				
-				synchronized(handler.game) {
-					if(player.isActive()) {
-						if(!address.equals(handler.getMapping(player))) {
-							try {
-								sendErrorPacket(address, "That ID is in use. Please use this one: " + handler.game.getType().getUserID());
-							} catch(GameCreationException e)  {
-								sendErrorPacket(address, "That ID is in use. Unable to create a new game");
-							}
-						} else {
-							player.incommingData(passingBuffer);
-						}
-					} else {
-						player.firstData(passingBuffer);
-						handler.putMapping(address, player);
+				if(player == null) {
+					try {
+						player = new Player<>(ID, ConnectionUtil.bufferToString(passingBuffer), this, address);
+					} catch(ProtocolException pe) {
+						//Error send by player class. Just return;
+						return;
 					}
+					
+					try {
+						synchronized(player.getGame()) {
+							player.addPlayer();
+						}
+					} catch(IllegalArgumentException iae) {
+						player.sendInvalidIDError();
+					}
+				} else {
+						if(!address.equals(player.getConnection())) {
+							sendError(address, ConnectionHandler.getInvalidIDError(player.getGame()));
+						} else {
+							synchronized(player.getGame()) {
+								player.incommingData(passingBuffer);
+							}
+						}
 				}
-			} catch(AsynchronousCloseException ace) {
+				
+				
+			} catch(ClosedChannelException ace) {
 				return; //server shutting down
 			}catch (Exception e) {
 				Server.LOG.log(Level.SEVERE, "Error processing packet", e);
 				
 				if(recieved)
-					sendErrorPacket(address, "Error processing packet " + e.getMessage());
+					sendError(address, "Error processing packet " + e.getMessage());
 			}
 		}
-	}
-
-	protected UDPConnectionHandler(Game<?> game) {
-		super(game);
 	}
 	
 	@Override
@@ -98,15 +118,7 @@ public class UDPConnectionHandler extends ConnectionHandler<SocketAddress> {
 	}
 
 	@Override
-	public void sendRawData(SocketAddress id, ByteBuffer... buffer) {
-		sendPacket(id, buffer);
-	}
-
-	private static void sendErrorPacket(SocketAddress address, String message) {
-		sendPacket(address, ByteBuffer.wrap(new byte[] {-1}), stringToBuffer(message));
-	}
-
-	private static void sendPacket(SocketAddress address, ByteBuffer... data) {
+	public void sendRawData(SocketAddress address, ByteBuffer... data) {
 		try {
 			int length = 0;
 			for(ByteBuffer b : data) {

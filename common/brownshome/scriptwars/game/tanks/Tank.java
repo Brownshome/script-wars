@@ -7,7 +7,7 @@ import brownshome.scriptwars.game.tanks.Direction;
 public class Tank {
 	public final static int MAX_AMMO = 5;
 	
-	private Player owner;
+	private Player<?> owner;
 	//the direction of the last move
 	private Direction direction;
 	private World world;
@@ -21,7 +21,7 @@ public class Tank {
 		position = new Coordinates(x, y);
 	}
 	
-	protected Tank(Coordinates coordinates, Player owner, World world) {
+	protected Tank(Coordinates coordinates, Player<?> owner, World world) {
 		this.position = coordinates;
 		this.owner = owner;
 		this.world = world;
@@ -77,7 +77,7 @@ public class Tank {
 		return;
 	}
 
-	protected Player getOwner() {
+	protected Player<?> getOwner() {
 		return owner;
 	}
 
