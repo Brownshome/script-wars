@@ -55,7 +55,7 @@ public class Player<CONNECTION> {
 		return game.getPlayer(playerCode);
 	}
 	
-	public Player(int ID, String name, ConnectionHandler<CONNECTION> connectionHandler, CONNECTION connection) throws ProtocolException {
+	public Player(int ID, String name, ConnectionHandler<CONNECTION> connectionHandler, CONNECTION connection) throws InvalidIDException {
 		int protocol = (ID >> 16) & 0xff;
 		int playerCode = ID & 0xff;
 		int gameCode = (ID >> 8) & 0xff;
@@ -63,7 +63,7 @@ public class Player<CONNECTION> {
 		game = Game.getGame(gameCode);
 		if(connectionHandler.getProtocolByte() != protocol || game == null) {
 			sendError("Invalid ID");
-			throw new ProtocolException();
+			throw new InvalidIDException();
 		}
 	
 		this.connectionHandler = connectionHandler;
@@ -167,7 +167,7 @@ public class Player<CONNECTION> {
 		isAdded = false;
 	}
 	
-	public void addPlayer() throws IllegalArgumentException {
+	public void addPlayer() throws InvalidIDException {
 		assert !isAdded;
 		
 		game.addPlayer(this);

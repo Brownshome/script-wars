@@ -25,8 +25,8 @@ public class PlayerIconServlet extends HttpServlet {
 			player = Player.getPlayerFromID(playerID);
 			
 			if(player == null)
-				throw new ProtocolException();
-		} catch(Exception e) {
+				throw new InvalidIDException();
+		} catch(NumberFormatException | InvalidIDException e) {
 			response.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid player ID: " + rawID);
 			return;
 		}

@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.logging.Level;
 
-import brownshome.scriptwars.connection.ProtocolException;
+import brownshome.scriptwars.connection.InvalidIDException;
 import brownshome.scriptwars.game.*;
 import brownshome.scriptwars.server.Server;
 
@@ -78,7 +78,7 @@ public class UDPConnectionHandler extends ConnectionHandler<SocketAddress> {
 				if(player == null) {
 					try {
 						player = new Player<>(ID, ConnectionUtil.bufferToString(passingBuffer), this, address);
-					} catch(ProtocolException pe) {
+					} catch(InvalidIDException pe) {
 						//Error send by player class. Just return;
 						return;
 					}
@@ -87,7 +87,7 @@ public class UDPConnectionHandler extends ConnectionHandler<SocketAddress> {
 						synchronized(player.getGame()) {
 							player.addPlayer();
 						}
-					} catch(IllegalArgumentException iae) {
+					} catch(InvalidIDException iae) {
 						player.sendInvalidIDError();
 					}
 				} else {

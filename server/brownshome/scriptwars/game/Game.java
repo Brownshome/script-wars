@@ -240,22 +240,16 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	 * Attempts to add a player to the game. If the game cannot accept another player the player is set to a non-active state and a new ID is sent to
 	 * them in an error message.
 	 * @param player The player to make active
-	 * @throws IllegalArgumentException If the player is not a valid ID
+	 * @throws InvalidIDException If the player ID is taken, old, or invalid
 	 */
-	public void addPlayer(Player<?> player) throws IllegalArgumentException {
+	public void addPlayer(Player<?> player) throws InvalidIDException {
 		if(!isSpaceForPlayer()) {
-			//Move player to a new game
-			try {
-				player.sendError("That game is full, here is a new ID " + getType().getUserID());
-			} catch (GameCreationException e) {
-				player.sendError("That game is full and we were unable to create a new one.");
-			}
-			
-			return;
+			//Player will be moved to a new game
+			throw new InvalidIDException();
 		}
 		
 		if(!playerIDPool.isRequested(player.getSlot())) {
-			throw new IllegalArgumentException();
+			throw new InvalidIDException();
 		}
 		
 		playerIDPool.makeActive(player.getSlot());
@@ -349,8 +343,7 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 
 	@SuppressWarnings("unchecked")
 	public <CONNECTION> Player<CONNECTION> getPlayer(int playerCode) {
-		if(playerCode < 0 || playerCode > 255)
-			return null;
+		assert playerCode >= 0 && playerCode < 256;
 		
 		return (Player<CONNECTION>) players[playerCode];
 	}

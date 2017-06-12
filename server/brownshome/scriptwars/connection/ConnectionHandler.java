@@ -45,7 +45,8 @@ public abstract class ConnectionHandler<CONNECTION> {
 	
 	public static String getInvalidIDError(Game<?> game) {
 		try {
-			return "That has not been requested. Use this one: " + game.getType().getUserID();
+			return "That ID is old, or invalid. Here is a now valid ID " + game.getType().getUserID()
+					+ " (This may or may not be the same ID)";
 		} catch(GameCreationException e)  {
 			return "That has not been requested. Unable to genenerate a new one.";
 		}

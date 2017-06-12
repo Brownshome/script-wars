@@ -120,7 +120,7 @@ public class TCPConnectionHandler extends ConnectionHandler<COBSChannel> {
 		
 		try {
 			player = new Player<>(ID, ConnectionUtil.bufferToString(packet), this, channel);
-		} catch(ProtocolException pe) {
+		} catch(InvalidIDException pe) {
 			//Error send by player class. Just return;
 			return;
 		}
@@ -131,7 +131,7 @@ public class TCPConnectionHandler extends ConnectionHandler<COBSChannel> {
 			synchronized(player.getGame()) {
 				player.addPlayer();
 			}
-		} catch(IllegalArgumentException iae) {
+		} catch(InvalidIDException iae) {
 			player.sendInvalidIDError();
 		}
 	}

@@ -189,7 +189,7 @@ public class TankGame extends Game<GridDisplayHandler> {
 	}
 
 	@Override
-	public void addPlayer(Player<?> player) throws IllegalArgumentException {
+	public void addPlayer(Player<?> player) throws InvalidIDException {
 		super.addPlayer(player);
 		
 		task: {
