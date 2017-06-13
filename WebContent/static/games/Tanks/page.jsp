@@ -29,8 +29,8 @@ you and the other tanks that contains no walls.
 </p><p>
 Tanks have an ammo restraint to make trigger happy tanks less effective. Each 
 tank has a maximum of ${staticBean.tankGameAmmo} ammo that is
-regenerated once every ${staticBean.tankGameRegen} three ticks. This means overall
-you can only fire once every three ticks.
+regenerated once every ${staticBean.tankGameRegen} ticks. This means overall
+you can only fire once every ${staticBean.tankGameRegen} ticks.
 </p><p>
 On death, you will be sent one set of data with the <code>isAlive</code> byte set to
 zero. <strong>There will be no other data in this dataset so do not attempt to read
@@ -58,7 +58,8 @@ to move UP subtract one from your y coordinate.
 	<div class="media-body media-middle"><p>
 	Shots move X spaces. Any tanks on spaces that the shot moves into will be 
 	destroyed and lose a point while the tank than shot the shot will gain a point. 
-	Shots can pass through each other and can be in the same space.
+	Shots cannot pass through each other and cannot share the same space. If this does
+	occur all colliding shots will be destroyed.
 	</p></div>
 </div>
 <div class="media">

@@ -188,8 +188,6 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 		
 		for(Player<?> p : outstandingPlayers) {
 			p.droppedPacket();
-			
-			Server.LOG.info("Player " + p.getName() + " timed out.");
 		}
 		
 		outstandingPlayers.clear();

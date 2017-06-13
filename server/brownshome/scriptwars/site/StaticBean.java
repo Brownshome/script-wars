@@ -19,6 +19,6 @@ public class StaticBean {
 	}
 	
 	public String getTankGameRegen() {
-		return "TODO";
+		return String.valueOf(Tank.REGEN_RATE);
 	}
 }

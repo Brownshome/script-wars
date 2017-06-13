@@ -6,7 +6,6 @@ import brownshome.scriptwars.game.tanks.Direction;
 public class Shot {
 	public static final char BULLET = 2;
 	public static final int SPEED = 3;
-	
 	private Tank owner;
 	private World world;
 	private Direction direction;
@@ -25,30 +24,33 @@ public class Shot {
 	}
 	
 	/**
-	 * Returns true if the shot should be destroyed
+	 * Returns true if the shot should be destroyed, this method defers the actual killing of the tanks later so
+	 * that the list of shots can be iterated through without issues.
 	 **/
 	protected boolean tickShot() {
-		for(int i = 0; i < SPEED; i++) {
-			position = direction.move(position);
-			
-			Tank tank = world.getTank(position);
-			
-			if(tank != null) {
-				tank.kill();
-				owner.getOwner().addScore(1);
-				owner.returnAmmo();
-				return true;
-			}
-			
-			if(world.isWall(position)) {
-				owner.returnAmmo();
-				return true;
-			}
+		position = direction.move(position);
+
+		Tank tank = world.getTank(position);
+
+		if(tank != null) {
+			return true;
+		}
+
+		if(world.isWall(position)) {
+			return true;
 		}
 		
 		return false;
 	}
 
+	protected void completeTick() {
+		Tank tank = world.getTank(position);
+		if(tank != null) {
+			tank.kill();
+			owner.getOwner().addScore(1);
+		}
+	}
+	
 	public Tank getOwner() {
 		return owner;
 	}

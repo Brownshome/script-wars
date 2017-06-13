@@ -13,22 +13,7 @@ import brownshome.scriptwars.connection.*;
 import brownshome.scriptwars.game.*;
 import brownshome.scriptwars.game.tanks.*;
 
-/* Each tick shots are moved x spaces. Then tanks shoot. Then tanks move
- 
- *^ -> dead
-  
- *  -> survive
-  ^
- 
- > < -> no movement
- 
-  v
- *  -> survive
-  ^
-  
-  >> -> back tank shoots 
-  
- */
+/* Each tick shots are moved x spaces. Then tanks shoot. Then tanks move */
 
 public class TankGame extends Game<GridDisplayHandler> {
 	public static final int PLAYER_COUNT = 8;
@@ -45,12 +30,7 @@ public class TankGame extends Game<GridDisplayHandler> {
 	}
 	
 	public TankGame(GameType type) throws OutOfIDsException {
-		this(
-				MapGenerator.getGenerator()
-					.withSize(25, 25)
-					.generate(),
-				type
-			);
+		this(MapGenerator.getGenerator().withSize(25, 25).generate(), type);
 	}
 
 	@Override

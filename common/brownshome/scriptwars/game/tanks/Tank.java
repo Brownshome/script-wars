@@ -5,8 +5,9 @@ import brownshome.scriptwars.game.Player;
 import brownshome.scriptwars.game.tanks.Direction;
 
 public class Tank {
-	public final static int MAX_AMMO = 5;
-	
+	public final static int MAX_AMMO = 10;
+	public static final int REGEN_RATE = 5;
+		
 	private Player<?> owner;
 	//the direction of the last move
 	private Direction direction;
@@ -81,13 +82,9 @@ public class Tank {
 		return owner;
 	}
 
-	protected char getCharacter() {
-		return (char) (hashCode() % 25 + 'A');
-	}
-
 	protected boolean removeAmmo() {
-		if(ammo > 0) {
-			ammo--;
+		if(ammo >= Tank.REGEN_RATE) {
+			ammo -= Tank.REGEN_RATE;
 			return true;
 		}
 		
@@ -95,7 +92,7 @@ public class Tank {
 	}
 
 	protected void returnAmmo() {
-		if(ammo < MAX_AMMO) {
+		if(ammo < MAX_AMMO * Tank.REGEN_RATE) {
 			ammo++;
 		}
 	}

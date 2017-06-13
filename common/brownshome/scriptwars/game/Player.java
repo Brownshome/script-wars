@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.function.Function;
 
 import brownshome.scriptwars.connection.*;
+import brownshome.scriptwars.server.Server;
 
 /** Holds the identifying information for each connected member.
  * This class is suitable for using as a key in a Map */
@@ -29,7 +30,7 @@ public class Player<CONNECTION> {
 		Color.ORANGE.darker()
 	};
 	
-	private static final int TIMEOUT = 3;
+	private static final int TIMEOUT = 20;
 	
 	private final String name;
 	private final int slot;
@@ -94,6 +95,7 @@ public class Player<CONNECTION> {
 	}
 
 	public void timeOut() {
+		Server.LOG.info("Player " + name + " timed out.");
 		silentTimeOut();
 		connectionHandler.sendTimeOut(connection);
 	}

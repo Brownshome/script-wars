@@ -128,7 +128,7 @@ public class Network {
 	 * @return An integer containing the read byte.
 	 */
 	public int getByte() {
-		return dataIn.get();
+		return Byte.toUnsignedInt(dataIn.get());
 	}
 	
 	/** Gets a true or false value from the data. 
@@ -141,7 +141,7 @@ public class Network {
 			dataIn.get();
 		}
 		
-		int currentByte = dataIn.get(positionOfByte);
+		int currentByte = Byte.toUnsignedInt(dataIn.get(positionOfByte));
 		boolean bool = (currentByte & bit) != 0;
 		bit <<= 1;
 		
@@ -254,7 +254,7 @@ public class Network {
 				case 2:
 					throw new ConnectionException(ConnectionStatus.FAILED_TO_KEEP_UP);
 				case -1:
-					int stringLength = buffer.getShort();
+					int stringLength = Short.toUnsignedInt(buffer.getShort());
 					throw new ConnectionException(ConnectionStatus.ERROR(new String(buffer.array(), buffer.position() + buffer.arrayOffset(), stringLength, StandardCharsets.UTF_8)));
 			}
 			

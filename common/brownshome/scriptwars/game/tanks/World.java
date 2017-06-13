@@ -1,14 +1,7 @@
 package brownshome.scriptwars.game.tanks;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -18,11 +11,12 @@ import brownshome.scriptwars.game.tanks.Direction;
 import brownshome.scriptwars.server.Server;
 
 public class World {
-	private List<Shot> shots = new ArrayList<>();
+	private List<Shot> shots = new LinkedList<>();
 	private Map<Player<?>, Tank> tanks = new HashMap<>();
 	private Set<Tank> clientTanks = new HashSet<>();
 	private boolean[][] map;
 	private Tank[][] tankMap;
+	private Shot[][] shotMap;
 	private TankGame game;
 	
 	private Set<Tank> tanksToFire = new HashSet<>();
@@ -35,6 +29,7 @@ public class World {
 		
 		this.map = map;
 		tankMap = new Tank[map.length][map[0].length];
+		shotMap = new Shot[map.length][map[0].length];
 	}
 
 	/**
@@ -47,6 +42,8 @@ public class World {
 		
 		map = new boolean[height][width];
 		tankMap = new Tank[height][width];
+		shotMap = new Shot[height][width];
+		
 		for(boolean[] row : map) {
 			for(int x = 0; x < width; x++) {
 				row[x] = network.getBoolean();
@@ -62,7 +59,9 @@ public class World {
 		
 		int shotCount = network.getByte();
 		for(int s = 0; s < shotCount; s++) {
-			shots.add(new Shot(network));
+			Shot shot = new Shot(network);
+			shots.add(shot);
+			addToShotMap(shot);
 		}
 	}
 
@@ -75,10 +74,18 @@ public class World {
 		return tankMap[y][x];
 	}
 
+	public Shot getShot(int x, int y) {
+		return shotMap[y][x];
+	}
+	
 	public Tank getTank(Coordinates c) {
 		return getTank(c.getX(), c.getY());
 	}
 
+	public Shot getShot(Coordinates c) {
+		return getShot(c.getX(), c.getY());
+	}
+	
 	private void setTank(Coordinates c, Tank tank) {
 		tankMap[c.getY()][c.getX()] = tank;
 	}
@@ -114,35 +121,7 @@ public class World {
 		setTank(tank.getPosition(), tank);
 	}
 
-	protected void fireTank(Tank tank) {
-		tanksToFire.remove(tank); //This prevents weird infinite loops
-		
-		Direction direction = tank.getDirection();
-		
-		Coordinates bulletSpawn = direction.move(tank.getPosition());
-		
-		if(isWall(bulletSpawn))
-			return;
-		
-		Tank otherTank = getTank(bulletSpawn);
-		if(otherTank != null) {
-			if(tanksToFire.contains(otherTank)) {
-				fireTank(otherTank);
-			}
-			
-			//Needed to avoid strange circular gun chains
-			if(isAlive(otherTank.getOwner())) {
-				tank.getOwner().addScore(1);
-				otherTank.kill();
-			}
-			
-			return;
-		}
-		
-		if(tank.removeAmmo()) {
-			shots.add(new Shot(bulletSpawn, tank, this, direction));
-		}
-	}
+
 
 	protected void fireNextTick(Player<?> player) {
 		tanksToFire.add(getTank(player));
@@ -212,16 +191,142 @@ public class World {
 	}
 	
 	protected void fireTanks() {
-		while(!tanksToFire.isEmpty()) {
-			fireTank(tanksToFire.iterator().next()); //not exactly efficient but it avoids concurrent mod exceptions
+		for(Tank tank : tanks.values()) {
+			tank.returnAmmo();
+		}
+		
+		for(Tank tank : tanksToFire) {
+			fireTank(tank);
+		}
+		
+		tanksToFire.clear();
+		
+		//Check to see if any shots are in the same spot, delete them
+		Set<Shot> shotsToRemove = new HashSet<>();
+		for(Shot shot : shots) {
+			Shot other = getShot(shot.getPosition());
+			if(other != shot) {
+				shotsToRemove.add(other);
+				shotsToRemove.add(shot);
+			}
+		}
+		
+		shots.removeIf(s -> {
+			if(shotsToRemove.contains(s)) {
+				removeShotFromMap(s);
+				return true;
+			}
+			
+			return false;
+		});
+	}
+	
+	private void fireTank(Tank tank) {
+		Direction direction = tank.getDirection();
+		Coordinates bulletSpawn = direction.move(tank.getPosition());
+		
+		if(isWall(bulletSpawn))
+			return;
+		
+		if(!tank.removeAmmo())
+			return;
+		
+		Tank otherTank = getTank(bulletSpawn);
+		if(otherTank != null) {
+			tank.getOwner().addScore(1);
+			otherTank.kill();
+			return;
+		}
+		
+		Shot shot = new Shot(bulletSpawn, tank, this, direction);
+		shots.add(shot);
+		addToShotMap(shot);
+	}
+
+	private void addToShotMap(Shot shot) {
+		shotMap[shot.getPosition().getY()][shot.getPosition().getX()] = shot;
+	}
+	
+	protected void moveShots() {
+		for(int i = 0; i < Shot.SPEED; i++) {
+			moveShotsOnce();
+		}
+	}
+	
+	private void moveShotsOnce() {
+		//Delete shots that are swapping
+		//Delete shots that will collide
+		//Move shots, taking into account walls and such things
+		
+		List<Shot> deadShots = new ArrayList<>(shots.size());
+		
+		//Check swapping
+		shots.removeIf(s -> {
+			Shot other;
+			Coordinates nextPos = s.getDirection().move(s.getPosition());
+			
+			//There is a shot in nextPos and it is coming towards us.
+			if((other = getShot(nextPos)) != null && other.getDirection().opposite() == s.getDirection()) {
+				deadShots.add(s);
+				return true;
+			}
+			
+			return false;
+		});
+		
+		for(Shot s : deadShots) {
+			removeShotFromMap(s);
+		}
+		
+		deadShots.clear();
+		
+		//Check for collisions
+		shots.removeIf(s -> {
+			Coordinates nextPos = s.getDirection().move(s.getPosition());
+			if(isWall(nextPos)) {
+				deadShots.add(s);
+				return true;
+			}
+			
+			//Check every direction into the new space other than the one we came from
+			for(Direction dir = s.getDirection().opposite().clockwise(); dir != s.getDirection().opposite(); dir = dir.clockwise()) {
+				Shot other = getShot(dir.move(nextPos));
+				if(other != null && other.getDirection().opposite() == dir) {
+					deadShots.add(s);
+					return true;
+				}
+			}
+			
+			return false;
+		});
+		
+		for(Shot s : deadShots) {
+			removeShotFromMap(s);
+		}
+		
+		deadShots.clear();
+		
+		shots.removeIf(s -> {
+			removeShotFromMap(s);
+			
+			if(s.tickShot()) {
+				deadShots.add(s);
+				return true;
+			} else {
+				addToShotMap(s);
+			}
+			
+			return false;
+		});
+		
+		for(Shot s : deadShots) {
+			s.completeTick();
 		}
 	}
 
-	protected void moveShots() {
-		for(Iterator<Shot> it = shots.iterator(); it.hasNext(); ) {
-			if(it.next().tickShot())
-				it.remove();
-		}
+	private void removeShotFromMap(Shot shot) {
+		if(shotMap[shot.getPosition().getY()][shot.getPosition().getX()] == shot)
+			shotMap[shot.getPosition().getY()][shot.getPosition().getX()] = null;
 	}
 
 	protected boolean isAlive(Player<?> player) {
@@ -426,6 +531,7 @@ public class World {
 
 	protected void removeTank(Tank tank) {
 		removeTank(tank.getOwner());
+		
 	}
 
 	protected Tank getTank(Player<?> player) {
@@ -439,6 +545,15 @@ public class World {
 	protected void removeTank(Player<?> player) {
 		Tank tank = tanks.remove(player);
 		setTank(tank.getPosition(), null);
+		
+		shots.removeIf(s -> {
+			if(s.getOwner() == tank) {
+				removeShotFromMap(s);
+				return true;
+			}
+			
+			return false;
+		});
 	}
 
 	/**
