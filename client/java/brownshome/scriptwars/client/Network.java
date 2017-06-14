@@ -5,8 +5,10 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.SynchronousQueue;
+import java.util.function.Consumer;
 
-import brownshome.scriptwars.connection.COBSChannel;
+import brownshome.scriptwars.connection.*;
 
 /**
  * The main class that clients can use to communicate with the server.
@@ -67,6 +69,8 @@ public class Network {
 			case 2:
 				connection = new TCPConnection(InetAddress.getByName(ip), 35566);
 				break;
+			case 3:
+				connection = new MemoryConnection();
 			default:
 				throw new IllegalArgumentException("Invalid ID");
 		}
@@ -318,5 +322,38 @@ public class Network {
 
 		@Override
 		public void putHeader(ByteBuffer putInt) {}
+	}
+	
+	/** This connection type will ONLY work on the server */
+	class MemoryConnection implements Connection {
+		private SynchronousQueue<ByteBuffer> input = null;
+		private Consumer<ByteBuffer> output = null;
+		
+		@Override
+		public void sendData(ByteBuffer data) throws ConnectionException {
+			if(input == null) {
+				input = new SynchronousQueue<>();
+				try {
+					output = MemoryConnectionHandler.instance().join(data, input);
+				} catch (Exception e) {
+					throw new ConnectionException(ConnectionStatus.ERROR(e.getMessage()));
+				}
+			} else {
+				output.accept(data);
+			}
+		}
+
+		@Override
+		public void putHeader(ByteBuffer putInt) {}
+
+		@Override
+		public ByteBuffer waitForData() throws ConnectionException {
+			try {
+				return input.take();
+			} catch (InterruptedException e) {
+				throw new ConnectionException(ConnectionStatus.DISCONNECTED);
+			}
+		}
+		
 	}
 }

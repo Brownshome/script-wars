@@ -32,6 +32,7 @@ public class Server {
 		stop = true;
 		UDPConnectionHandler.instance().closeConnectionHandler();
 		TCPConnectionHandler.instance().closeConnectionHandler();
+		MemoryConnectionHandler.instance().closeConnectionHandler();
 	}
 	
 	public static boolean shouldStop() {
