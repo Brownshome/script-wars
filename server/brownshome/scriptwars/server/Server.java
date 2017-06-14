@@ -18,7 +18,7 @@ public class Server {
 	
 	public static void initialize() {
 		try {
-			GameType.addBetaType(TankGame.class, Difficulty.EASY);
+			GameType.addType(TankGame.class, Difficulty.EASY);
 		} catch (GameCreationException gce) {
 			Server.LOG.log(Level.SEVERE, "Improperly built game files.", gce);
 		}
