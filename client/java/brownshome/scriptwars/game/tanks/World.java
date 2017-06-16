@@ -5,9 +5,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import brownshome.scriptwars.client.*;
+import brownshome.scriptwars.connection.Network;
 import brownshome.scriptwars.game.*;
-import brownshome.scriptwars.game.tanks.Direction;
 import brownshome.scriptwars.server.Server;
 
 public class World {

@@ -1,11 +1,12 @@
-package brownshome.scriptwars.client;
+package brownshome.scriptwars.connection;
 
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.SynchronousQueue;
+import java.util.Objects;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 import brownshome.scriptwars.connection.*;
@@ -71,6 +72,7 @@ public class Network {
 				break;
 			case 3:
 				connection = new MemoryConnection();
+				break;
 			default:
 				throw new IllegalArgumentException("Invalid ID");
 		}
@@ -349,7 +351,27 @@ public class Network {
 		@Override
 		public ByteBuffer waitForData() throws ConnectionException {
 			try {
-				return input.take();
+				ByteBuffer buffer;
+				
+				buffer = input.poll(1500, TimeUnit.MILLISECONDS);
+				
+				if(buffer == null)
+					throw new ConnectionException(ConnectionStatus.DROPPED);
+
+				int code = buffer.get();
+
+				//Error and disconnect handling
+				switch(code) {
+				case 1:
+					throw new ConnectionException(ConnectionStatus.DISCONNECTED);
+				case 2:
+					throw new ConnectionException(ConnectionStatus.FAILED_TO_KEEP_UP);
+				case -1:
+					int stringLength = buffer.getShort();
+					throw new ConnectionException(ConnectionStatus.ERROR(new String(buffer.array(), buffer.position() + buffer.arrayOffset(), stringLength, StandardCharsets.UTF_8)));
+				}
+
+				return buffer;
 			} catch (InterruptedException e) {
 				throw new ConnectionException(ConnectionStatus.DISCONNECTED);
 			}

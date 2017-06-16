@@ -1,6 +1,6 @@
 package brownshome.scriptwars.game.tanks;
 
-import brownshome.scriptwars.client.Network;
+import brownshome.scriptwars.connection.Network;
 
 public class Coordinates {
 	private final int x;

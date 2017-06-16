@@ -150,7 +150,7 @@ what you are doing the second approach may be more applicable.</p>
 		<br>The <code>brownshome.scriptwars.game.tanks.Coordinates</code>
 		class is an immutable (it cannot be edited) object containing the methods <code>int getX()</code>
 		and <code>int getY()</code> that represents a position on the game world. 
-		<br>Finally, the <code>brownshome.scriptwars.client.tanks.TankAPI</code> contains all the functions needed to interact
+		<br>Finally, the <code>brownshome.scriptwars.game.tanks.TankAPI</code> contains all the functions needed to interact
 		with the game server.</p>
 		
 		<p>First call the constructor <code>TankAPI(int id, String ip, String name)
@@ -166,7 +166,7 @@ what you are doing the second approach may be more applicable.</p>
 		<code>shoot(Direction direction)</code> or <code>doNothing()</code>. This will set what action
 		your tank will do when <code>nextTick()</code> is called.<p>
 		
-		<p class="text-center"><a class="btn btn-primary btn-lg" href="/doc/brownshome/scriptwars/client/tanks/TankAPI.html">Documentation</a></p>
+		<p class="text-center"><a class="btn btn-primary btn-lg" href="/doc/brownshome/scriptwars/game/tanks/TankAPI.html">Documentation</a></p>
 		
 		<h3>Example Code</h3>
 		<p>This is a basic AI showing how to use the classes. This AI will move randomly while shooting at 
@@ -176,7 +176,7 @@ what you are doing the second approach may be more applicable.</p>
 		
 <pre><code>
 import java.io.IOException;
-import brownshome.scriptwars.game.tanks.*;import brownshome.scriptwars.client.tanks.TankAPI;
+import brownshome.scriptwars.game.tanks.*;
 public class ExampleTankAI {	/**	 * The main method to start the AI and connect to the server.	 * 	 * args[0] should contain the game id.	 * You can request one from: http://script-wars.com/games/Tanks	 * by clicking the 'Join' button.	 * 	 * @param args The input arguments containing the ID allocated by the server	 * @throws IOException If we failed to connect to the server	 */	public static void main(String[] args) throws IOException {		// args[0] should contain the game id.		// You can request one from: http://script-wars.com/games/Tanks		// by clicking the 'Join' button				int id;		if(args.length &gt; 0){			id = Integer.valueOf(args[0]);		} else {			System.out.println(&quot;Usage: JAVACOMMAND serverid&quot;);			System.exit(1);			return;		}
 		TankAPI api = new TankAPI(id, &quot;www.script-wars.com&quot;, &quot;Example AI 1&quot;);
 		while(api.nextTick()) {
@@ -191,13 +191,13 @@ import java.io.IOException;
 		high level APIs. Due to it's simplicity it is sometimes the only API
 		that can be used if the game is new or you are not writing your AI in Java.</p>
 		
-		<p>To use this API you create a <code>brownshome.scriptwars.client.Network</code> object using the <code>Network(int ID, String ip, String name)</code>
+		<p>To use this API you create a <code>brownshome.scriptwars.connection.Network</code> object using the <code>Network(int ID, String ip, String name)</code>
 		constructor. Then, in your loop, call <code>nextTick()</code> to get a new set of data from the server and send queued data.
 		This function will return false if there is a problem with the connection. Then extract data from the server using
 		this <code>getX()</code> family of functions, where X is the data type you want. And send data using the <code>sendX()</code> family
 		of functions.</p>
 		
-		<p class="text-center"><a class="btn btn-primary btn-lg" href="/doc/brownshome/scriptwars/client/Network.html">Documentation</a></p>
+		<p class="text-center"><a class="btn btn-primary btn-lg" href="/doc/brownshome/scriptwars/connection/Network.html">Documentation</a></p>
 		
 		<p>For the tank game in particular the data received from the server is laid out in the table below.</p>
 		<table class="table">
@@ -331,7 +331,7 @@ import java.io.IOException;
 		<pre><code>
 import java.io.IOException;
 
-import brownshome.scriptwars.client.Network;
+import brownshome.scriptwars.game.Network;
 
 /**
  * This is an example of reading data from the server. We avoid using the pre-built Tank and

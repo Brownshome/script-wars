@@ -1,8 +1,7 @@
 package brownshome.scriptwars.game.tanks;
 
-import brownshome.scriptwars.client.*;
+import brownshome.scriptwars.connection.Network;
 import brownshome.scriptwars.game.Player;
-import brownshome.scriptwars.game.tanks.Direction;
 
 public class Tank {
 	public final static int MAX_AMMO = 10;

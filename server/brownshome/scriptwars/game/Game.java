@@ -146,6 +146,14 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 		}
 	}
 	
+	public int getID(int protocol) {
+		try {
+			return protocol << 16 | getSlot() << 8 | playerIDPool.request();
+		} catch (OutOfIDsException e) {
+			return -1;
+		}
+	}
+	
 	protected void onPlayerChange() {
 		type.signalListUpdate();
 	}

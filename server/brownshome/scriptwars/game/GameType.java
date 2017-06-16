@@ -111,6 +111,12 @@ public class GameType {
 		return getAvailableGame().getID();
 	}
 	
+	/** generates a new ID 
+	 * @throws GameCreationException if a new game could not be created and the existing one is full */
+	public int getUserID(int protocol) throws GameCreationException {
+		return getAvailableGame().getID(protocol);
+	}
+	
 	public Game<?> getAvailableGame() throws GameCreationException {
 		gamesLock.writeLock().lock();
 		try {

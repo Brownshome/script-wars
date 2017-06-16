@@ -14,6 +14,9 @@ import java.util.function.Function;
 import brownshome.scriptwars.connection.*;
 import brownshome.scriptwars.server.Server;
 
+//This class needs to be in the common package for compilation of uses of the Tank class. Not sure why.
+//Any use of this class will result in ClassNotFoundExceptions
+
 /** Holds the identifying information for each connected member.
  * This class is suitable for using as a key in a Map */
 public class Player<CONNECTION> {
@@ -114,6 +117,10 @@ public class Player<CONNECTION> {
 		removePlayer();
 	}
 
+	public boolean isServerSize() {
+		return connectionHandler instanceof MemoryConnectionHandler;
+	}
+	
 	public void endGame() {
 		connectionHandler.sendEndGame(connection);
 		removePlayer();

@@ -1,7 +1,6 @@
 package brownshome.scriptwars.game.tanks;
 
-import brownshome.scriptwars.client.*;
-import brownshome.scriptwars.game.tanks.Direction;
+import brownshome.scriptwars.connection.Network;
 
 public class Shot {
 	public static final char BULLET = 2;

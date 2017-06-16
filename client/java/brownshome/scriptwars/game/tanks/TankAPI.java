@@ -1,10 +1,9 @@
-package brownshome.scriptwars.client.tanks;
+package brownshome.scriptwars.game.tanks;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
 
-import brownshome.scriptwars.client.*;
-import brownshome.scriptwars.game.tanks.*;
+import brownshome.scriptwars.connection.*;
 
 /**
  * This is a wrapper over the Network class that gives an API to control the Tank.

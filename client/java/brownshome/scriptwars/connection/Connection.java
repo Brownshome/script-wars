@@ -1,4 +1,4 @@
-package brownshome.scriptwars.client;
+package brownshome.scriptwars.connection;
 
 import java.nio.ByteBuffer;
 

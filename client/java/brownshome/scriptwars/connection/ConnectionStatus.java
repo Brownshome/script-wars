@@ -1,4 +1,4 @@
-package brownshome.scriptwars.client;
+package brownshome.scriptwars.connection;
 
 public final class ConnectionStatus {
 	public static final ConnectionStatus NOT_CONNECTED = new ConnectionStatus("NOT_CONNECTED");

@@ -45,6 +45,7 @@
 	<script src="../static/script/gameViewer.js" async></script>
 	<script src="../static/script/gameTable.js" async></script>
 	<script src="../static/script/IDRequest.js" async></script>
+	<script src="../static/script/addServerBot.js" async></script>
 	<script src="../static/script/playerTableHandler.js" async></script>
 	<script src="../static/games/${gametype.name}/displayScript.js" async></script>
 	<!-- Put the Javascript at the end to speed loading -->

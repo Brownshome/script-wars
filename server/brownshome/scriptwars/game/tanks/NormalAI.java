@@ -1,8 +1,8 @@
-package brownshome.scriptwars.client.tanks;
+package brownshome.scriptwars.game.tanks;
 
 import java.io.IOException;
 
-import brownshome.scriptwars.client.Network;
+import brownshome.scriptwars.connection.Network;
 
 /**
  * This is an example of reading data from the server. We avoid using the pre-built Tank and
@@ -11,9 +11,7 @@ import brownshome.scriptwars.client.Network;
  * 
  * @author James
  */
-public class ExampleTankAIBasic {
-	private static Network network;
-	
+public class NormalAI {
 	/**
 	 * The main method to start the AI and connect to the server.
 	 * 
@@ -38,7 +36,7 @@ public class ExampleTankAIBasic {
 			return;
 		}
 
-		network = new Network(id, "www.script-wars.com", "John Smith Low Level");
+		Network network = new Network(id, "www.script-wars.com", "Normal AI");
 		int direction = 0; //The initial direction, UP
 		boolean hasHitWall = false;
 

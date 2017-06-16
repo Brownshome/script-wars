@@ -1,11 +1,10 @@
-package brownshome.scriptwars.client.tanks;
+package brownshome.scriptwars.game.tanks;
 
 import java.io.IOException;
 
 import brownshome.scriptwars.game.tanks.*;
-import brownshome.scriptwars.client.tanks.ExampleTankAI;
 
-public class ExampleTankAI {
+public class RandomAI {
 	/**
 	 * The main method to start the AI and connect to the server.
 	 * 
@@ -30,7 +29,7 @@ public class ExampleTankAI {
 			return;
 		}
 
-		TankAPI api = new TankAPI(id, "www.script-wars.com", "John Smith");
+		TankAPI api = new TankAPI(id, "www.script-wars.com", "Random AI");
 
 		while(api.nextTick()) {
 			if(!api.isAlive()) {

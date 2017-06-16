@@ -1,29 +1,32 @@
 package brownshome.scriptwars.connection;
 
-import java.io.*;
 import java.lang.reflect.*;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.SynchronousQueue;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
-import brownshome.scriptwars.client.*;
-import brownshome.scriptwars.game.Player;
+import brownshome.scriptwars.game.*;
 import brownshome.scriptwars.server.Server;
 
 public class MemoryConnectionHandler extends ConnectionHandler<SynchronousQueue<ByteBuffer>> {
 	private static MemoryConnectionHandler instance;
 	
-	public static void runAI(String name, int ID) {
+	public static void runAI(String name, Game<?> game) {
+		runAI(name, game.getID(instance().getProtocolByte()));
+	}
+	
+	private static void runAI(String name, int ID) {
 		try {
 			Class<?> clazz = Class.forName(name);
 			Method main = clazz.getMethod("main", String[].class);
 			
 			Thread aiThread = new Thread(() -> {
 				try {
-					main.invoke(null, String.valueOf(ID));
-				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {}
+					main.invoke(null, (Object) new String[] {String.valueOf(ID)});
+				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+					Server.LOG.log(Level.WARNING, "Unable to start " + name, e);
+				}
 			}, name + "@" + ID + " AI thread");
 			
 			aiThread.setDaemon(true);

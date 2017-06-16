@@ -2,7 +2,7 @@ package brownshome.scriptwars.site;
 
 import java.util.Collection;
 
-import brownshome.scriptwars.game.GameType;
+import brownshome.scriptwars.game.*;
 import brownshome.scriptwars.game.tanks.*;
 
 public class StaticBean {
@@ -20,5 +20,9 @@ public class StaticBean {
 	
 	public String getTankGameRegen() {
 		return String.valueOf(Tank.REGEN_RATE);
+	}
+	
+	public BotDifficulty[] getDifficulties() {
+		return BotDifficulty.values();
 	}
 }

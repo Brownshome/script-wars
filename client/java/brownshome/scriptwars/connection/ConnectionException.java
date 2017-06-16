@@ -1,4 +1,4 @@
-package brownshome.scriptwars.client;
+package brownshome.scriptwars.connection;
 
 public class ConnectionException extends Exception {
 	ConnectionStatus connectionStatus;

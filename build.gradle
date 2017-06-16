@@ -6,9 +6,8 @@ apply plugin: 'war'
 project.webAppDirName = 'WebContent'
 
 sourceSets {
-	main.java.srcDirs = ['server', 'common']    
-    client.java.srcDirs = ['client/java', 'common']
-	all.java.srcDirs = ['server', 'client/java', 'common']
+	main.java.srcDirs = ['server', 'client/java']    
+    client.java.srcDirs = ['client/java']
 }
 
 repositories {
@@ -22,11 +21,10 @@ dependencies {
 	
 	compile group: 'javax.servlet', name: 'jstl', version: '1.2'
 	
-	allCompile group: 'org.apache.tomcat', name: 'tomcat-catalina', version: '9.0.0.M18'
-    allCompile group: 'org.apache.tomcat', name: 'tomcat-websocket', version: '9.0.0.M18'
+	compile group: 'org.apache.tomcat', name: 'tomcat-catalina', version: '9.0.0.M18'
+    compile group: 'org.apache.tomcat', name: 'tomcat-websocket', version: '9.0.0.M18'
 	
-	compileOnly sourceSets.all.output
-	clientCompileOnly sourceSets.all.output
+	clientCompileOnly sourceSets.main.output
 }
 
 task clientPython(type: Zip) {
@@ -78,7 +76,7 @@ check {
 }
 
 javadoc {
-	source = [sourceSets.main.allJava, sourceSets.client.allJava]
+	source = [sourceSets.main.allJava]
 	destinationDir = file("$docsDir/doc")
 	
 	configure(options) {
