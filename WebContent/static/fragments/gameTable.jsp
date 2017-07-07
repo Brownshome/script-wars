@@ -26,7 +26,7 @@
 						<ul class="dropdown-menu">
 							<jsp:useBean id="staticBean" class="brownshome.scriptwars.site.StaticBean"/>
 							<c:forEach items="${staticBean.difficulties}" var="difficulty">
-								<li><a href="#" onclick="addServerBot('${difficulty.classString}', '${game.slot}')">${difficulty.name}</a></li>
+								<li><a href="#" onclick="addServerBot('${difficulty}', '${game.slot}')">${difficulty.name}</a></li>
 							</c:forEach>
 						</ul>
 					</div>

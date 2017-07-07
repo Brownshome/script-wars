@@ -12,7 +12,7 @@ public class Tank {
 	private Direction direction;
 	private World world;
 	private Coordinates position;
-	private int ammo = MAX_AMMO;
+	private int ammo = MAX_AMMO * REGEN_RATE;
 	private boolean hasMoved = false;
 	
 	public Tank(Network network) {

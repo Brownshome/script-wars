@@ -12,30 +12,6 @@ import brownshome.scriptwars.server.Server;
 public class MemoryConnectionHandler extends ConnectionHandler<SynchronousQueue<ByteBuffer>> {
 	private static MemoryConnectionHandler instance;
 	
-	public static void runAI(String name, Game<?> game) {
-		runAI(name, game.getID(instance().getProtocolByte()));
-	}
-	
-	private static void runAI(String name, int ID) {
-		try {
-			Class<?> clazz = Class.forName(name);
-			Method main = clazz.getMethod("main", String[].class);
-			
-			Thread aiThread = new Thread(() -> {
-				try {
-					main.invoke(null, (Object) new String[] {String.valueOf(ID)});
-				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-					Server.LOG.log(Level.WARNING, "Unable to start " + name, e);
-				}
-			}, name + "@" + ID + " AI thread");
-			
-			aiThread.setDaemon(true);
-			aiThread.start();
-		} catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalArgumentException e) {
-			Server.LOG.log(Level.WARNING, "Unable to start " + name, e);
-		}
-	}
-	
 	public static MemoryConnectionHandler instance() {
 		if(instance == null) {
 			instance = new MemoryConnectionHandler();

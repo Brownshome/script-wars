@@ -24,8 +24,8 @@ public class RandomAI {
 		if(args.length > 0){
 			id = Integer.valueOf(args[0]);
 		} else {
-			System.out.println("Usage: JAVACOMMAND serverid");
-			System.exit(1);
+			//System.out.println("Usage: JAVACOMMAND serverid");
+			//System.exit(1);
 			return;
 		}
 
@@ -59,9 +59,9 @@ public class RandomAI {
 				}
 			}
 			
-			System.out.println("Position: " + api.me().getPosition());
+			//System.out.println("Position: " + api.me().getPosition());
 		}
 		
-		System.out.println("Disconnected from server:\n\t" + api.getConnectionStatus());
+		//System.out.println("Disconnected from server:\n\t" + api.getConnectionStatus());
 	}
 }

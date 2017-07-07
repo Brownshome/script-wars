@@ -31,8 +31,8 @@ public class NormalAI {
 		if(args.length > 0){
 			id = Integer.valueOf(args[0]);
 		} else {
-			System.out.println("Usage: JAVACOMMAND serverid");
-			System.exit(1);
+			//System.out.println("Usage: JAVACOMMAND serverid");
+			//System.exit(1);
 			return;
 		}
 
@@ -44,7 +44,7 @@ public class NormalAI {
 			boolean isAlive = network.getByte() == 1;
 			if(!isAlive) {
 				network.sendByte(0); //Always send data
-				System.out.println("We are dead, not big surprise");
+				//System.out.println("We are dead, not big surprise");
 				continue;
 			}
 			
@@ -106,7 +106,7 @@ public class NormalAI {
 			network.sendByte(direction);
 		}
 		
-		System.out.println(network.getConnectionStatus()); //This function may not be available on some languages.
+		//System.out.println(network.getConnectionStatus()); //This function may not be available on some languages.
 	}
 	
 	/**

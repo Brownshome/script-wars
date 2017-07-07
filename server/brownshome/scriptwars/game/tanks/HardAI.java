@@ -7,6 +7,8 @@ public class HardAI {
 	private TankAPI api;
 	private Random rand = new Random();
 	private LinkedHashSet<Coordinates> priority = new LinkedHashSet<>();
+	private Coordinates last = null;
+	private int ammo = 50;
 	
 	public static void main(String[] args) throws IOException {
 		new HardAI(Integer.parseInt(args[0]));
@@ -18,9 +20,11 @@ public class HardAI {
 		
 		while(api.nextTick()) {
 			if(!api.isAlive()) {
-				System.out.println("We are dead");
 				continue;
 			}
+			
+			ammo++;
+			ammo = Math.max(50, ammo);
 			
 			if(first) {
 				fillPriorityList();
@@ -28,15 +32,25 @@ public class HardAI {
 			}
 			
 			flagViewed();
-			while(pathTo(getNextCoord()));
+			if(api.me().getPosition().equals(last)) {
+				priority.clear();
+				fillPriorityList();
+			}
 			
-			shootBadGuys();
+			last = api.me().getPosition();
+			
+			pathTo(getNextCoord());
+			
+			if(ammo >= 5)
+				shootBadGuys();
+			
 			avoidBullets();
+			
+			if(api.getAction() == Action.SHOOT)
+				ammo -= 5;
 			
 			//api.printAction();
 		}
-		
-		System.out.println(api.getConnectionStatus());
 	}
 	
 	private void flagCoord(Coordinates coord) {
@@ -44,6 +58,7 @@ public class HardAI {
 		priority.add(coord);
 	}
 	
+	//Needs to be updated with the new ruleset
 	private void flagViewed() {
 		World map = api.getMap();
 		
@@ -62,14 +77,19 @@ public class HardAI {
 	}
 	
 	private void fillPriorityList() {
+		List<Coordinates> array = new ArrayList<>();
+		
 		World map = api.getMap();
 		for(int x = 0; x < map.getWidth(); x++) {
 			for(int y = 0; y < map.getHeight(); y++) {
 				if(!map.isWall(x, y)) {
-					priority.add(new Coordinates(x, y));
+					array.add(new Coordinates(x, y));
 				}
 			}
 		}
+		
+		Collections.shuffle(array);
+		priority.addAll(array);
 	}
 	
 	private void avoidBullets() {
@@ -96,8 +116,6 @@ public class HardAI {
 			}
 		}
 		
-		//we are going to die
-		System.out.println("We are going to die");
 		return;
 	}
 
@@ -148,10 +166,9 @@ public class HardAI {
 				Math.abs(tank.getPosition().getY() - api.me().getPosition().getY());
 	}
 	
-	private boolean pathTo(Coordinates aim) {
+	private void pathTo(Coordinates aim) {
 		if(aim.equals(api.me().getPosition())) {
-			System.out.println("Reached goal");
-			return true;
+			return;
 		}
 		
 		World map = api.getMap();
@@ -165,12 +182,12 @@ public class HardAI {
 				for(Direction dir : Direction.values()) {
 					Coordinates next = dir.move(coord);
 					
-					if(!map.isWall(next) && !traversed.contains(next)) {
-						if(api.me().getPosition().equals(next)) {
-							api.move(dir.opposite());
-							return false;
-						}
-						
+					if(api.me().getPosition().equals(next)) {
+						api.move(dir.opposite());
+						return;
+					}
+					
+					if(!map.isWall(next) && map.getTank(next) == null && !traversed.contains(next)) {	
 						toTraverse.add(next);
 					}
 				}
@@ -181,7 +198,7 @@ public class HardAI {
 			toTraverse = new HashSet<>();
 		}
 		
-		System.out.println("No path found");
-		return false;
+		//We can't find a way, go to another spot
+		flagCoord(aim);
 	}
 }
