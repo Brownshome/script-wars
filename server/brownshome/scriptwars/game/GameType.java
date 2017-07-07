@@ -66,7 +66,6 @@ public class GameType {
 				Game.getActiveGamesLock().writeLock().lock();
 				Game<?> game = constructor.newInstance(this);
 				game.addToSlot();
-				game.start();
 				return game;
 			} catch (OutOfIDsException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 				throw new GameCreationException("Unable to instantiate game", e);
@@ -137,7 +136,9 @@ public class GameType {
 	public Collection<Game<?>> getGames() {
 		gamesLock.readLock().lock();
 		try {
-			return new ArrayList<>(games); //return a copy for thread safety
+			List<Game<?>> list = new ArrayList<>(games);
+			list.removeIf(g -> g.getActivePlayers().isEmpty());
+			return list;
 		} finally {
 			gamesLock.readLock().unlock();
 		}

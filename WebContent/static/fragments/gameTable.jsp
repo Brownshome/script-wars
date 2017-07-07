@@ -19,10 +19,12 @@
 				<button onclick="watchGame(${game.slot})" class="btn btn-primary">Watch</button>
 				<c:if test="${game.spaceForPlayer}">
 					<button onclick="requestSpecificID('${game.slot}')" class="btn btn-primary">Join</button>
+					
 					<div class="btn-group">
 						<button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown"
 						aria-haspopup="true" aria-expanded="false">Add an enemy<span class="caret"></span>
 						</button>
+						
 						<ul class="dropdown-menu">
 							<jsp:useBean id="staticBean" class="brownshome.scriptwars.site.StaticBean"/>
 							<c:forEach items="${staticBean.difficulties}" var="difficulty">

@@ -65,16 +65,21 @@ public class Player<CONNECTION> {
 		int gameCode = (ID >> 8) & 0xff;
 	
 		game = Game.getGame(gameCode);
-		if(connectionHandler.getProtocolByte() != protocol || game == null) {
-			sendError("Invalid ID");
-			throw new InvalidIDException();
-		}
-	
 		this.connectionHandler = connectionHandler;
 		this.name = name;
 		this.connection = connection;
 		this.join = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
 		this.slot = playerCode;
+		
+		if(game == null) {
+			sendError("Invalid game slot");
+			throw new InvalidIDException();
+		}
+		
+		if(connectionHandler.getProtocolByte() != protocol) {
+			sendInvalidIDError();
+			throw new InvalidIDException();
+		}
 	}
 
 	public int getID() {
@@ -117,7 +122,7 @@ public class Player<CONNECTION> {
 		removePlayer();
 	}
 
-	public boolean isServerSize() {
+	public boolean isServerSide() {
 		return connectionHandler instanceof MemoryConnectionHandler;
 	}
 	

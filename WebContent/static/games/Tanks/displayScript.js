@@ -47,20 +47,25 @@ function onMessage(message) {
 	let header = dataView.getUint8(0);
 	
 	switch(header) {
-	case 1: //delta
-		handleDeltaData(dataView);
-		break;
 	case 0: //bulk
 		handleBulkData(dataView);
+		break;
+	case 1: //delta
+		handleDeltaData(dataView);
 		break;
 	case 2:
 		updateGameTable();
 		break;
+	case 3:
+		updatePlayerList();
+		break;
 	case 4:
 		updateIDMap(dataView);
 		break;
-	case 3:
-		updatePlayerList();
+	case 5:
+		disconnectWebSocket();
+		canvasNoGame();
+		break;
 	default:
 		canvasError();
 	}

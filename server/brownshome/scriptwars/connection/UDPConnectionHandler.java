@@ -80,7 +80,7 @@ public class UDPConnectionHandler extends ConnectionHandler<SocketAddress> {
 						player = new Player<>(ID, ConnectionUtil.bufferToString(passingBuffer), this, address);
 					} catch(InvalidIDException pe) {
 						//Error send by player class. Just return;
-						return;
+						continue;
 					}
 					
 					try {

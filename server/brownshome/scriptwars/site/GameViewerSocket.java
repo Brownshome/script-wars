@@ -20,6 +20,9 @@ import brownshome.scriptwars.game.*;
  * 	0 - bulk sync
  * 	1 - delta update
  * 	2 - game table update
+ * 	3 - updatePlayerList
+ *  4 - update id map
+ *  5 - game ended
  * 
  * 	0: width, height, char data
  * 	1: {char, x, y}

@@ -10,7 +10,7 @@ function connectWebSocket(gameID) {
 	socket = new WebSocket(createWSURL(gameID));
 	socket.onmessage = onMessage;
 	socket.onopen = canvasNoGame;
-	socket.onclose = canvasError;
+	socket.onclose = canvasNoGame;
 	socket.onerror = canvasError;
 	socket.binaryType = "arraybuffer";
 }
@@ -37,7 +37,7 @@ function displayMessage(message) {
 }
 
 function canvasError() {
-	displayMessage("Error connecting to server");
+	displayMessage("Error connecting to server. Please refresh.");
 }
 
 function canvasNoGame() {

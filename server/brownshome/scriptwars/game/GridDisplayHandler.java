@@ -8,6 +8,7 @@ public class GridDisplayHandler extends DisplayHandler {
 	private char[][] grid;
 	private char[][] oldGrid;
 	List<Player<?>> playerList;
+	private volatile boolean gameHasEnded = false;
 	
 	public void setPlayerList(List<Player<?>> players) {
 		assert this.playerList == null;
@@ -73,7 +74,7 @@ public class GridDisplayHandler extends DisplayHandler {
 		ByteBuffer buffer = getPlayerIDListBuffer();
 		
 		for(Consumer<ByteBuffer> viewer : viewers) {
-			viewer.accept(buffer);
+			viewer.accept(buffer.duplicate());
 		}
 	}
 
@@ -144,5 +145,32 @@ public class GridDisplayHandler extends DisplayHandler {
 				grid[yCoord][xCoord] = character;
 			}
 		}
+	}
+
+	@Override
+	public void addViewer(Consumer<ByteBuffer> viewer) {
+		if(gameHasEnded) {
+			viewer.accept(getEndGameBuffer());
+			return;
+		}
+		
+		super.addViewer(viewer);
+	}
+	
+	private ByteBuffer getEndGameBuffer() {
+		ByteBuffer buffer = ByteBuffer.wrap(new byte[] {5});
+		return buffer;
+	}
+	
+	@Override
+	public void endGame() {
+		getLock().lock();
+		gameHasEnded = true;
+		ByteBuffer buffer = getEndGameBuffer();
+		
+		for(Consumer<ByteBuffer> viewer : viewers) {
+			viewer.accept(buffer.duplicate());
+		}
+		getLock().unlock();
 	}
 }

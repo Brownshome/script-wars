@@ -27,4 +27,5 @@ public abstract class DisplayHandler {
 	}
 
 	public abstract void print();
+	public abstract void endGame();
 }

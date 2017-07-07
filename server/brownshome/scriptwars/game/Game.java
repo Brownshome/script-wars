@@ -15,7 +15,7 @@ import brownshome.scriptwars.server.Server;
 /** The interface that all played games must implement. */
 public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	private enum GameState {
-		ACTIVE, CLOSING, CLOSED
+		WAITING, RUNNING
 	}
 
 	private static final ReentrantReadWriteLock activeGamesLock = new ReentrantReadWriteLock();
@@ -44,7 +44,7 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	private final DISPLAY_HANDLER displayHandler;
 	private int slot = -1;
 	
-	private GameState state = GameState.ACTIVE; //TODO possibility of pre-start phase
+	private GameState state = GameState.WAITING;
 	private long timeClosed;
 	private final GameType type;
 	
@@ -263,6 +263,9 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 		
 		activePlayers.add(player);
 		
+		if(state == GameState.WAITING)
+			start();
+		
 		onPlayerChange();
 	}
 	
@@ -274,12 +277,12 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	private synchronized void gameLoop() {
 		while(!Server.shouldStop()) {
 			long lastTick = System.currentTimeMillis(); //keep this the first line.
-
-			tick();
 			
-			if(shouldClose()) {
-				break;
+			if(activePlayers.stream().allMatch(Player::isServerSide)) {
+				break; //End the game, the only bots left are server-side bots
 			}
+			
+			tick();
 			
 			displayGame(displayHandler);
 			sendData();
@@ -291,7 +294,7 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 				try {
 					wait(timeToSleep); //keep this the last line. (wait is used to give up this object's monitor). Possible replace this with sleep and used blocks or locks instead
 				} catch (InterruptedException e) {
-					endGame();
+					break;
 				}
 			} 
 			
@@ -301,10 +304,7 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 			}
 		}
 		
-		if(state != GameState.CLOSED) {
-			state = GameState.CLOSED;
-			Server.LOG.log(Level.WARNING, "Game \'" + getClass().getName() + "\' failed to close in time.");
-		}
+		endGame();
 		
 		activeGamesLock.writeLock().lock();
 		try {
@@ -316,18 +316,18 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	}
 	
 	private void endGame() {
+		getDisplayHandler().endGame();
+		
 		for(Player<?> player : activePlayers) {
 			player.endGame();
 		}
 	}
 
 	public void start() {
+		state = GameState.RUNNING;
 		Thread thread = new Thread(this::gameLoop, getClass().getName() + " thread");
+		thread.setDaemon(true);
 		thread.start();
-	}
-	
-	private boolean shouldClose() {
-		return state == GameState.CLOSING && System.currentTimeMillis() - timeClosed > CLOSING_GRACE || state == GameState.CLOSED;
 	}
 
 	/** Returns a byte used to identify this game. */
@@ -338,7 +338,7 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	public DISPLAY_HANDLER getDisplayHandler() {
 		return displayHandler;
 	}
-
+	
 	public boolean isSpaceForPlayer() {
 		return getPlayerCount() < getMaximumPlayers();
 	}
