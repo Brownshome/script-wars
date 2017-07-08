@@ -318,7 +318,8 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	private void endGame() {
 		getDisplayHandler().endGame();
 		
-		for(Player<?> player : activePlayers) {
+		Player<?>[] players = activePlayers.toArray(new Player<?>[activePlayers.size()]);
+		for(Player<?> player : players) {
 			player.endGame();
 		}
 	}
