@@ -70,12 +70,14 @@ public class GridDisplayHandler extends DisplayHandler {
 	}
 
 	/** Sends the player list to the viewers, null players are sent as a zero. */
-	public synchronized void sendPlayerIDs() {
+	public void sendPlayerIDs() {
 		ByteBuffer buffer = getPlayerIDListBuffer();
 		
+		getLock().lock();
 		for(Consumer<ByteBuffer> viewer : viewers) {
 			viewer.accept(buffer.duplicate());
 		}
+		getLock().unlock();
 	}
 
 	private boolean shouldBulkSync() {
@@ -164,10 +166,10 @@ public class GridDisplayHandler extends DisplayHandler {
 	
 	@Override
 	public void endGame() {
-		getLock().lock();
 		gameHasEnded = true;
 		ByteBuffer buffer = getEndGameBuffer();
 		
+		getLock().lock();
 		for(Consumer<ByteBuffer> viewer : viewers) {
 			viewer.accept(buffer.duplicate());
 		}

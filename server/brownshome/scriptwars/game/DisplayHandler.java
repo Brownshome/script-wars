@@ -19,7 +19,9 @@ public abstract class DisplayHandler {
 	}
 
 	public void removeViewer(Consumer<ByteBuffer> viewer) {
+		getLock().lock();
 		viewers.remove(viewer);
+		getLock().unlock();
 	}
 
 	protected ReentrantLock getLock() {
