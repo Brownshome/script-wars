@@ -42,12 +42,9 @@
 		</div>
 	</footer>
 	
-	<script src="../static/script/gameViewer.js" async></script>
-	<script src="../static/script/gameTable.js" async></script>
-	<script src="../static/script/IDRequest.js" async></script>
-	<script src="../static/script/addServerBot.js" async></script>
-	<script src="../static/script/playerTableHandler.js" async></script>
-	<script src="../static/games/${gametype.name}/displayScript.js" async></script>
+	<script src="../static/script/displayHandler.js"></script>
+	<script src="../static/script/gamePage.js"></script>
+	<script src="../static/games/${gametype.name}/displayScript.js"></script>
 	<!-- Put the Javascript at the end to speed loading -->
 	<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
