@@ -1,175 +1,74 @@
-/**
- * The display script for Tanks. This code displays sprites in a grid based canvas.
- */
+var displayHandler;
 
-var images = {};
-var idList = null;
-
-//Called on page load
-function onLoad(gameID) {
-	displayMessage("Loading Sprites");
-	let sprites = {
-		bullet: "../static/games/Tanks/bullet.png", 
-	};
-	
-	loadSprites(sprites, gameID);
+/** The tank game displayHandler */
+function TankGameDisplayHandler() {
+	GridDisplayHandler.call(this, "Tanks");
 }
 
-function loadSprites(sprites, gameID) {
-	let numImages = 0;
-	// get num of sources
-	for(name in sprites) {
-		numImages++;
-	}
+TankGameDisplayHandler.prototype = Object.create(GridDisplayHandler.prototype);
+TankGameDisplayHandler.prototype.constructor = TankGameDisplayHandler;
 
-	for(name in sprites) {
-		images[name] = new Image();
-		images[name].onload = function() {
-			if(--numImages <= 0) {
-				connectWebSocket(gameID);
-			}
-		};
+/** Handles an incoming list of player IDs, an ID of zero means that the image is not used and will not be sent */
+TankGameDisplayHandler.prototype.updatePlayerIDMap = function(dataView) {
+	const length = dataView.getUint8(1); 
+
+	/** Holds a mapping from player number to player ID */
+	this.idList = [];
+	for(let index = 0; index < length; index++) { 
+		const id = dataView.getUint32(index * 4 + 2); 
+		this.idList.push(id);
+
+		if(id != 0 && !ImageSprite.prototype.sprites[id])
+			ImageSprite.regesterSprite(id, "/playericon/" + id);
+	} 
+};
+
+TankGameDisplayHandler.prototype.functionLookup = GridDisplayHandler.prototype.functionLookup.concat([
+	TankGameDisplayHandler.prototype.updatePlayerIDMap
+]);
+
+function WallSprite(x, y, handler) {
+	GridSprite.call(this, x, y, handler);
+}
+
+WallSprite.prototype = Object.create(GridSprite.prototype);
+WallSprite.prototype.constructor = WallSprite;
+
+WallSprite.prototype.render = function() {
+	const displayHandler = this.displayHandler;
+
+	displayHandler.context.fillStyle = 'black'; 
+	displayHandler.context.fillRect(
+			this.displayHandler.convertX(this.x), 
+			this.displayHandler.convertY(this.y), 
+			this.displayHandler.size,
+			this.displayHandler.size
+	);
+};
+
+TankGameDisplayHandler.prototype.getSprite = function(data, x, y) {
+	switch(data) {
+		case 0: return null;
+		case 1: return new WallSprite(x, y, this);
+		case 2: return new ImageSprite(x, y, this, "bullet");
+	}
+	
+	if(!this.idList)
+		return undefined;
 		
-		images[name].src = sprites[name];
-	}
-}
+	let id = this.idList[data - 3]; /** No 3 is player 1 */
+	
+	if(id == 0)
+		return undefined;
+	
+	//Player sprite
+	return new ImageSprite(x, y, this, id);
+};
 
-/*
- * 4: Player ID list
- * 0: Bulk update
- * 1: Delta update
- * 
- * 2: Update game table
- * 3: Update player table
- */
-function onMessage(message) {
-	let dataView = new DataView(message.data);
-	let header = dataView.getUint8(0);
-	
-	switch(header) {
-	case 0: //bulk
-		handleBulkData(dataView);
-		break;
-	case 1: //delta
-		handleDeltaData(dataView);
-		break;
-	case 2:
-		updateGameTable();
-		break;
-	case 3:
-		updatePlayerList();
-		break;
-	case 4:
-		updateIDMap(dataView);
-		break;
-	case 5:
-		disconnectWebSocket();
-		canvasNoGame();
-		break;
-	default:
-		canvasError();
-	}
-}
+function onLoad() {
+	displayHandler = new TankGameDisplayHandler();
 
-function updateIDMap(dataView) {
-	idList = [];
-	let length = dataView.getUint8(1);
+	ImageSprite.regesterSprite("bullet", "../static/games/Tanks/bullet.png");
 	
-	for(index = 0; index < length; index++) {
-		let id = dataView.getUint32(index * 4 + 2).toString();
-		idList.push(id);
-		
-		if(id == "0") {
-			images[id] = null;
-		} else {
-			images[id] = new Image();
-			images[id].src = "/playericon/" + id;
-		}
-	}
+	setInterval(() => displayHandler.render(), 20);
 }
-
-function handleBulkData(dataView) {
-	canvas.clearRect(0, 0, pixelSize, pixelSize);
-	
-	width = dataView.getUint8(1);
-	
-	height = dataView.getUint8(2);
-	
-	for(y = 0; y < height; y++) {
-		for(x = 0; x < width; x++) {
-			let c = dataView.getUint16(3 + (x + y * width) * 2);
-			paintItem(x, y, c);
-		}
-	}
-}
-
-function paintItem(x, y, c) {
-	switch(c) {
-	case 0: //space
-		clear(x, y);
-		break;
-	case 1: //wall
-		wall(x, y);
-		break;
-	case 2: //bullet
-		shot(x, y);
-		break;
-	default:
-		tank(x, y, c - 3);
-	}
-}
-
-function handleDeltaData(dataView) {
-	let offset = 1;
-	
-	while(offset <= dataView.byteLength - 4) {
-		let c = dataView.getUint16(offset);
-		let x = dataView.getUint8(offset + 2);
-		let y = dataView.getUint8(offset + 3);
-		
-		paintItem(x, y, c);
-		
-		offset = offset + 4;
-	}
-}
-
-function tank(x, y, index) {
-	clear(x, y);
-	
-	if(idList == null)
-		return;
-	
-	if(idList.length <= index) {
-		return; //we haven't been sent that ID yet
-	}
-	
-	let image = images[idList[index]];
-	
-	if(image == null) {
-		return;
-	}
-	
-	if(image.complete) {
-		canvas.drawImage(image, x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
-	} else {
-		image.onload = function() {
-			tank(x, y, index);
-		};
-	}
-}
-
-function wall(x, y) {
-	canvas.fillStyle = 'black';
-	canvas.fillRect(x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
-}
-	
-function clear(x, y) {
-	canvas.clearRect(x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
-}
-
-function shot(x, y) {
-	clear(x, y);
-	
-	canvas.drawImage(images.bullet, x * pixelSize / width, y * pixelSize / height, pixelSize / width, pixelSize / height);
-}
-

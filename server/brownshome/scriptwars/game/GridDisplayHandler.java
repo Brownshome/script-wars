@@ -5,6 +5,12 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class GridDisplayHandler extends DisplayHandler {
+	private static final byte PLAYER_ID_BYTE = 6;
+	private static final byte DISCONNECT_BYTE = 2;
+	private static final byte BULK_UPDATE_BYTE = 4;
+	private static final byte DELTA_UPDATE_BYTE = 5;
+	private static final byte UPDATE_PLAYER_TABLE = 1;
+	
 	private char[][] grid;
 	private char[][] oldGrid;
 	List<Player<?>> playerList;
@@ -58,7 +64,7 @@ public class GridDisplayHandler extends DisplayHandler {
 
 	private ByteBuffer getPlayerIDListBuffer() {
 		ByteBuffer buffer = ByteBuffer.allocate(Byte.BYTES + Byte.BYTES + Integer.BYTES * playerList.size());
-		buffer.put((byte) 4);
+		buffer.put(PLAYER_ID_BYTE);
 		buffer.put((byte) playerList.size());
 		
 		for(Player<?> player : playerList) {
@@ -68,14 +74,21 @@ public class GridDisplayHandler extends DisplayHandler {
 		
 		return buffer;
 	}
+	
+	private ByteBuffer getPlayerTableUpdateBuffer() {
+		ByteBuffer buffer = ByteBuffer.wrap(new byte[] {UPDATE_PLAYER_TABLE});
+		return buffer;
+	}
 
 	/** Sends the player list to the viewers, null players are sent as a zero. */
 	public void sendPlayerIDs() {
-		ByteBuffer buffer = getPlayerIDListBuffer();
+		ByteBuffer playerIDBuffer = getPlayerIDListBuffer();
+		ByteBuffer updatePlayerTableBuffer = getPlayerTableUpdateBuffer();
 		
 		getLock().lock();
 		for(Consumer<ByteBuffer> viewer : viewers) {
-			viewer.accept(buffer.duplicate());
+			viewer.accept(playerIDBuffer.duplicate());
+			viewer.accept(updatePlayerTableBuffer.duplicate());
 		}
 		getLock().unlock();
 	}
@@ -91,7 +104,7 @@ public class GridDisplayHandler extends DisplayHandler {
 	private ByteBuffer getBulkSyncBuffer() {
 		ByteBuffer buffer = ByteBuffer.allocate(Byte.BYTES + Byte.BYTES + Byte.BYTES + Character.BYTES * getWidth() * getHeight());
 		
-		buffer.put((byte) 0);
+		buffer.put(BULK_UPDATE_BYTE);
 		buffer.put((byte) getWidth()).put((byte) getHeight());
 		
 		for(char[] row : grid) {
@@ -107,7 +120,7 @@ public class GridDisplayHandler extends DisplayHandler {
 	private ByteBuffer getDeltaBuffer() {
 		ByteBuffer buffer = ByteBuffer.allocate(Byte.BYTES + (Character.BYTES + Byte.BYTES + Byte.BYTES) * getWidth() * getHeight());
 	
-		buffer.put((byte) 1);
+		buffer.put(DELTA_UPDATE_BYTE);
 		
 		for(int y = 0; y < grid.length; y++) {
 			for(int x = 0; x < grid[y].length; x++) {
@@ -160,7 +173,7 @@ public class GridDisplayHandler extends DisplayHandler {
 	}
 	
 	private ByteBuffer getEndGameBuffer() {
-		ByteBuffer buffer = ByteBuffer.wrap(new byte[] {5});
+		ByteBuffer buffer = ByteBuffer.wrap(new byte[] {DISCONNECT_BYTE});
 		return buffer;
 	}
 	

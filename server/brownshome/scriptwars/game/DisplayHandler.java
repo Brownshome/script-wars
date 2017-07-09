@@ -30,4 +30,29 @@ public abstract class DisplayHandler {
 
 	public abstract void print();
 	public abstract void endGame();
+	
+	public void sendScores(Collection<? extends Player<?>> players) {
+		ByteBuffer scoreBuffer = getPlayerScoreBuffer(players);
+		
+		getLock().lock();
+		for(Consumer<ByteBuffer> viewer : viewers) {
+			viewer.accept(scoreBuffer.duplicate());
+		}
+		getLock().unlock();
+	}
+
+	private ByteBuffer getPlayerScoreBuffer(Collection<? extends Player<?>> players) {
+		ByteBuffer buffer = ByteBuffer.allocate(players.size() * 2 * Integer.SIZE + 2);
+		buffer.put((byte) 3);
+		buffer.put((byte) players.size());
+		
+		for(Player<?> player : players) {
+			buffer.putInt(player.getID());
+			buffer.putInt(player.getScore());
+		}
+		
+		buffer.flip();
+		
+		return buffer;
+	}
 }

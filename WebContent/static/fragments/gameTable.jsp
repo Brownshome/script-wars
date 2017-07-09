@@ -16,9 +16,9 @@
 			<td><c:out value="${loopStatus.index + 1}" /></td>
 			<td><c:out value="Players ${game.playerCount} / ${game.maximumPlayers}" /></td>
 			<td>
-				<button onclick="watchGame(${game.slot})" class="btn btn-primary">Watch</button>
+				<button onclick="displayHandler.watchGame(${game.slot})" class="btn btn-primary">Watch</button>
 				<c:if test="${game.spaceForPlayer}">
-					<button onclick="requestSpecificID('${game.slot}')" class="btn btn-primary">Join</button>
+					<button onclick="AJAX.requestSpecificID('${game.slot}')" class="btn btn-primary">Join</button>
 					
 					<div class="btn-group">
 						<button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown"
@@ -28,7 +28,7 @@
 						<ul class="dropdown-menu">
 							<jsp:useBean id="staticBean" class="brownshome.scriptwars.site.StaticBean"/>
 							<c:forEach items="${staticBean.difficulties}" var="difficulty">
-								<li><a href="#" onclick="addServerBot('${difficulty}', '${game.slot}')">${difficulty.name}</a></li>
+								<li><a href="#" onclick="AJAX.addServerBot('${difficulty}', '${game.slot}')">${difficulty.name}</a></li>
 							</c:forEach>
 						</ul>
 					</div>
@@ -38,7 +38,7 @@
 	</c:forEach>
 </table>
 <div class="row"><div class="col-md-12 text-center">
-	<button onclick="requestID('${gametype.name}')" class="btn btn-lg btn-primary">Join a game</button>
+	<button onclick="AJAX.requestID('${gametype.name}')" class="btn btn-lg btn-primary">Join a game</button>
 </div></div>
 </body>
 </html>

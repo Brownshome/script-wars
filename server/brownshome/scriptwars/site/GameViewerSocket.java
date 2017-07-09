@@ -17,12 +17,15 @@ import brownshome.scriptwars.game.*;
  * 
  * Message format.
  * Type:
- * 	0 - bulk sync
- * 	1 - delta update
- * 	2 - game table update
- * 	3 - updatePlayerList
- *  4 - update id map
- *  5 - game ended
+ * 	0 - update game table
+ * 	1 - update player table
+ * 	2 - disconnect
+ * 	3 - score update
+ * 
+ * 	4 - bulk update
+ * 	5 - delta update
+ * 
+ * 	6 - update player ID map
  * 
  * 	0: width, height, char data
  * 	1: {char, x, y}
@@ -71,7 +74,7 @@ public class GameViewerSocket {
 		updateGameTable = () -> {
 			synchronized(session) {
 				if(session.isOpen()) {
-					try { sender.sendBinary(ByteBuffer.wrap(new byte[] {(byte) 2}));} catch (IOException e) {}
+					try { sender.sendBinary(ByteBuffer.wrap(new byte[] {(byte) 0}));} catch (IOException e) {}
 				}
 			}
 		};
