@@ -20,7 +20,7 @@
 	
 		<div class="row">
 			<div class="col-md-7">
-				<canvas id="gameCanvas" width="1024" height="1024" style="width:512px;height:512px;border:1px solid black"></canvas>
+				<canvas id="gameCanvas" width="1024" class="img-responsive" height="1024" style="border:1px solid black"></canvas>
 			</div>
 			
 			<div id="playerTable" class="col-md-5"></div>
@@ -42,8 +42,9 @@
 		</div>
 	</footer>
 	
-	<script src="../static/script/displayHandler.js"></script>
 	<script src="../static/script/gamePage.js"></script>
+	<script src="../static/script/displayHandler.js"></script>
+	<script src="../static/script/gridDisplayHandler.js"></script>
 	<script src="../static/games/${gametype.name}/displayScript.js"></script>
 	<!-- Put the Javascript at the end to speed loading -->
 	<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>

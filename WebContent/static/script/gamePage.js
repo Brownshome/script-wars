@@ -52,7 +52,7 @@ var AJAX = {
 		//Requests an connectionID value from the server using AJAX
 		requestID : function(type) {
 			var request = new XMLHttpRequest();
-			request.onreadystatechange = IDRequest.IDAJAXComplete;
+			request.onreadystatechange = AJAX.IDAJAXComplete;
 			request.open("POST", "../requestID", true);
 			request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 			request.send("type=" + type);
@@ -72,5 +72,3 @@ var AJAX = {
 			}
 		}
 };
-
-var displayHandler = createDisplayHandler();

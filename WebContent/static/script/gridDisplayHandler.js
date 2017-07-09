@@ -1,23 +1,14 @@
 /**
  * This object extends the displayHandler to handle grid based commands
  */
-function GridDisplayHandler() {
-	DisplayHandler.call(this);
+function GridDisplayHandler(gameID) {
+	DisplayHandler.call(this, gameID);
 }
 
-GridDisplayHandler.prototype = Objects.create(DisplayHandler.prototype);
+GridDisplayHandler.prototype = Object.create(DisplayHandler.prototype);
 GridDisplayHandler.prototype.constructor = GridDisplayHandler;
 
-/**
- * 3: bulk Update
- * 4: delta Update
- */
-GridDisplayHandler.prototype.functionLookup = DisplayHandler.prototype.functionLookup.concat([
-	(data) => this.bulkUpdate(data),
-	(data) => this.deltaUpdate(data)
-]);
-
-GridDisplayHandler.prototype.bulkUpdate = function(data) {
+GridDisplayHandler.prototype.bulkUpdate = function(dataView) {
 	this.clearCanvas();
 	
 	this.width = dataView.getUint8(1);
@@ -32,10 +23,10 @@ GridDisplayHandler.prototype.bulkUpdate = function(data) {
 	this.grid = [];
 	
 	for(let y = 0; y < this.height; y++) {
-		grid[y] = [];
+		this.grid[y] = [];
 		for(let x = 0; x < this.width; x++) {
-			const c = dataView.getUint16(3 + (x + y * width) * 2);
-			if(c != 0) grid[y][x] = this.getSprite(c, x, y);
+			const c = dataView.getUint16(3 + (x + y * this.width) * 2);
+			this.grid[y][x] = this.getSprite(c, x, y);
 		}
 	}
 };
@@ -49,16 +40,19 @@ GridDisplayHandler.prototype.convertY = function(y) {
 }
 
 GridDisplayHandler.prototype.render = function() {
+	if(this.slot == null)
+		return;
+		
 	this.clearCanvas();
 	
 	for(let y = 0; y < this.height; y++) {
 		for(let x = 0; x < this.width; x++) {
-			if(grid[y][x]) grid[y][x].render();
+			if(this.grid[y][x]) this.grid[y][x].render();
 		}
 	}
 };
 
-GridDisplayHandler.prototype.deltaUpdate = function(data) {
+GridDisplayHandler.prototype.deltaUpdate = function(dataView) {
 	let offset = 1;
 	
 	while(offset <= dataView.byteLength - 4) {
@@ -66,11 +60,20 @@ GridDisplayHandler.prototype.deltaUpdate = function(data) {
 		const x = dataView.getUint8(offset + 2);
 		const y = dataView.getUint8(offset + 3);
 		
-		if(c != 0) grid[y][x] = this.getSprite(c, x, y);
+		this.grid[y][x] = this.getSprite(c, x, y);
 		
 		offset = offset + 4;
 	}
 };
+
+/**
+ * 3: bulk Update
+ * 4: delta Update
+ */
+GridDisplayHandler.prototype.functionLookup = DisplayHandler.prototype.functionLookup.concat([
+	GridDisplayHandler.prototype.bulkUpdate,
+	GridDisplayHandler.prototype.deltaUpdate
+]);
 
 /**
  * Represents a single object in the grid 
@@ -87,7 +90,7 @@ function ImageSprite(x, y, displayHandler, imageName) {
 	this.image = this.sprites[imageName]; 
 }
 
-ImageSprite.prototype = Objects.create(GridSprite.prototype);
+ImageSprite.prototype = Object.create(GridSprite.prototype);
 ImageSprite.prototype.constructor = GridSprite;
 
 ImageSprite.prototype.sprites = {};
@@ -95,7 +98,7 @@ ImageSprite.prototype.sprites = {};
 /** Starts the image loading process */
 ImageSprite.regesterSprite = function(name, url) {
 	const image = new Image();
-	ImageSprites.prototype.sprites[name] = image;
+	ImageSprite.prototype.sprites[name] = image;
 	image.src = url;
 };
 

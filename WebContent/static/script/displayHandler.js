@@ -11,18 +11,20 @@ function DisplayHandler(gameID) {
 	this.gameID = gameID;
 	this.slot = null;
 	this.canvas = document.getElementById("gameCanvas");
-	this.context = DisplayHandler.canvas.getContext("2d");
+	this.context = this.canvas.getContext("2d");
 	this.playerTable = document.getElementById("playerTable");
 	
 	setInterval(() => this.updatePlayerList, 2000);
 	
-	this.socket.onmessage = () => this.onMessage;
-	this.socket.onclose = () => this.displayNoGame;
-	this.socket.onerror = () => this.displayError;
+	this.socket.onmessage = (message) => this.onMessage(message);
+	this.socket.onclose = () => this.displayNoGame();
+	this.socket.onerror = () => this.displayError();
 	this.socket.binaryType = "arraybuffer";
 	
-	this.playerTableRefreshCounter = setInterval(updatePlayerList, 5000);
+	this.displayNoGame();
 }
+
+DisplayHandler.prototype = Object.create(Object.prototype);
 
 /** Sets the current game to display on the canvas */
 DisplayHandler.prototype.watchGame = function(slot) {
@@ -31,7 +33,7 @@ DisplayHandler.prototype.watchGame = function(slot) {
 	
 	this.slot = slot;
 	const buffer = new ArrayBuffer(1);
-	new DataView(buffer).setUint8(0, this.slot || -1);
+	new DataView(buffer).setUint8(0, this.slot == null ? -1 : this.slot);
 	this.socket.send(buffer);
 	GameTable.clickOnSlot(slot);
 	
@@ -62,8 +64,8 @@ DisplayHandler.prototype.displayError = function () {
 
 DisplayHandler.prototype.displayNoGame = function() {
 	this.clearPlayerTable();
-	clearInterval(playerTableRefreshCounter);
-	this.canvasNoGame();
+	this.slot = null;
+	this.displayMessage("No game selected.");
 };
 
 DisplayHandler.prototype.updatePlayerList = function() {
@@ -77,24 +79,13 @@ DisplayHandler.prototype.updatePlayerList = function() {
 			return;
 		
 		if(request.readyState == 4 && request.status == 200) {
-			DisplayHandler.playerTable.innerHTML = this.responseText;
+			this.playerTable.innerHTML = request.responseText;
 		}
 	};
 	
-	request.open("GET", "../playertable/" + this.gameID, true);
+	request.open("GET", "../playertable/" + this.slot, true);
 	request.send();
 };
-
-/**
- * 0: updateGameTable
- * 1: updatePlayerTable
- * 2: disconnect
- */
-DisplayHandler.prototype.functionLookup = [
-	AJAX.updateGameTable,
-	AJAX.updatePlayerList,
-	() => this.displayNoGame()
-];
 
 /**
  * The first uint8 is a purpose code used to lookup the correct function to call
@@ -104,8 +95,19 @@ DisplayHandler.prototype.onMessage = function(message) {
 	const header = dataView.getUint8(0);
 	
 	if(header in this.functionLookup) {
-		this.functionLookup[header](data);
+		this.functionLookup[header].call(this, dataView);
 	} else {
 		this.canvasError();
 	}
 };
+
+/**
+ * 0: updateGameTable
+ * 1: updatePlayerTable
+ * 2: disconnect
+ */
+DisplayHandler.prototype.functionLookup = [
+	AJAX.updateGameTable,
+	DisplayHandler.prototype.updatePlayerList,
+	DisplayHandler.prototype.displayNoGame
+];
