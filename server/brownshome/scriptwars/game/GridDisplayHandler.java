@@ -5,10 +5,11 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class GridDisplayHandler extends DisplayHandler {
-	private static final byte PLAYER_ID_BYTE = 5;
+	private static final byte PLAYER_ID_BYTE = 6;
 	private static final byte DISCONNECT_BYTE = 2;
-	private static final byte BULK_UPDATE_BYTE = 3;
-	private static final byte DELTA_UPDATE_BYTE = 4;
+	private static final byte BULK_UPDATE_BYTE = 4;
+	private static final byte DELTA_UPDATE_BYTE = 5;
+	private static final byte UPDATE_PLAYER_TABLE = 1;
 	
 	private char[][] grid;
 	private char[][] oldGrid;
@@ -73,14 +74,21 @@ public class GridDisplayHandler extends DisplayHandler {
 		
 		return buffer;
 	}
+	
+	private ByteBuffer getPlayerTableUpdateBuffer() {
+		ByteBuffer buffer = ByteBuffer.wrap(new byte[] {UPDATE_PLAYER_TABLE});
+		return buffer;
+	}
 
 	/** Sends the player list to the viewers, null players are sent as a zero. */
 	public void sendPlayerIDs() {
-		ByteBuffer buffer = getPlayerIDListBuffer();
+		ByteBuffer playerIDBuffer = getPlayerIDListBuffer();
+		ByteBuffer updatePlayerTableBuffer = getPlayerTableUpdateBuffer();
 		
 		getLock().lock();
 		for(Consumer<ByteBuffer> viewer : viewers) {
-			viewer.accept(buffer.duplicate());
+			viewer.accept(playerIDBuffer.duplicate());
+			viewer.accept(updatePlayerTableBuffer.duplicate());
 		}
 		getLock().unlock();
 	}

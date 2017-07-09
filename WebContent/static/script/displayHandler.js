@@ -13,9 +13,6 @@ function DisplayHandler(gameID) {
 	this.canvas = document.getElementById("gameCanvas");
 	this.context = this.canvas.getContext("2d");
 	this.playerTable = document.getElementById("playerTable");
-	
-	setInterval(() => this.updatePlayerList, 2000);
-	
 	this.socket.onmessage = (message) => this.onMessage(message);
 	this.socket.onclose = () => this.displayNoGame();
 	this.socket.onerror = () => this.displayError();
@@ -87,6 +84,20 @@ DisplayHandler.prototype.updatePlayerList = function() {
 	request.send();
 };
 
+DisplayHandler.prototype.updatePlayerScores = function(dataView) {
+	if(this.slot == null)
+		return;
+	
+	const length = dataView.getUint8(1); 
+
+	for(let index = 0; index < length; index++) {
+		const id = dataView.getInt32(index * 8 + 2)
+		const score = dataView.getInt32(index * 8 + 6);
+		
+		document.getElementById("Score-" + id).innerHTML = score;
+	} 
+};
+
 /**
  * The first uint8 is a purpose code used to lookup the correct function to call
  */
@@ -105,9 +116,11 @@ DisplayHandler.prototype.onMessage = function(message) {
  * 0: updateGameTable
  * 1: updatePlayerTable
  * 2: disconnect
+ * 3: updateScores
  */
 DisplayHandler.prototype.functionLookup = [
 	AJAX.updateGameTable,
 	DisplayHandler.prototype.updatePlayerList,
-	DisplayHandler.prototype.displayNoGame
+	DisplayHandler.prototype.displayNoGame,
+	DisplayHandler.prototype.updatePlayerScores
 ];

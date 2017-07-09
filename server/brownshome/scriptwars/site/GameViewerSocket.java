@@ -20,11 +20,12 @@ import brownshome.scriptwars.game.*;
  * 	0 - update game table
  * 	1 - update player table
  * 	2 - disconnect
+ * 	3 - score update
  * 
- * 	3 - bulk update
- * 	4 - delta update
+ * 	4 - bulk update
+ * 	5 - delta update
  * 
- * 	5 - update player ID map
+ * 	6 - update player ID map
  * 
  * 	0: width, height, char data
  * 	1: {char, x, y}

@@ -25,6 +25,8 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 	private static final IDPool gameIDPool = new IDPool(256);
 	// END SYNC
 	
+	private volatile boolean sendPlayerScores = false;
+	
 	/** The time the game has to close in millis */
 	public static final long CLOSING_GRACE = 30 * 1000l;
 
@@ -284,7 +286,15 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 			
 			tick();
 			
+			
+			
 			displayGame(displayHandler);
+			
+			if(sendPlayerScores) {
+				sendPlayerScores = false;
+				displayHandler.sendScores(getActivePlayers());
+			}
+			
 			sendData();
 			waitForResponses(lastTick + getTickRate());
 			
@@ -355,5 +365,10 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 		assert playerCode >= 0 && playerCode < 256;
 		
 		return (Player<CONNECTION>) players[playerCode];
+	}
+
+	/** Causes the scores to be upload to the clients next round */
+	public void flagScores() {
+		sendPlayerScores = true;
 	}
 }

@@ -67,8 +67,8 @@ GridDisplayHandler.prototype.deltaUpdate = function(dataView) {
 };
 
 /**
- * 3: bulk Update
- * 4: delta Update
+ * 4: bulk Update
+ * 5: delta Update
  */
 GridDisplayHandler.prototype.functionLookup = DisplayHandler.prototype.functionLookup.concat([
 	GridDisplayHandler.prototype.bulkUpdate,

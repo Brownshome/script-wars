@@ -21,7 +21,7 @@
 					<tr>
 						<td><img src="/playericon/${player.ID}" style="width:35px;height:35px;"></td>
 						<td><c:out value="${player.name}" /></td>
-						<td><c:out value="${player.score}" /></td>
+						<td id="Score-${player.ID}"><c:out value="${player.score}" /></td>
 						<td><c:out value="${player.timeJoined}" /></td>
 					</tr>
 				</c:forEach>
