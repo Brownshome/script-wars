@@ -322,6 +322,8 @@ public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
 		for(Player<?> player : players) {
 			player.endGame();
 		}
+		
+		getType().endGame(this);
 	}
 
 	public void start() {
