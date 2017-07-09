@@ -116,6 +116,12 @@ public class GameType {
 		return getAvailableGame().getID(protocol);
 	}
 	
+	public void endGame(Game<?> game) {
+		gamesLock.writeLock().lock();
+		games.remove(game);
+		gamesLock.writeLock().unlock();
+	}
+	
 	public Game<?> getAvailableGame() throws GameCreationException {
 		gamesLock.writeLock().lock();
 		try {
