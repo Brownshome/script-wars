@@ -14,11 +14,11 @@ function DisplayHandler(gameID) {
 	this.context = DisplayHandler.canvas.getContext("2d");
 	this.playerTable = document.getElementById("playerTable");
 	
-	setInterval(this.updatePlayerList.bind(this), 2000);
+	setInterval(() => this.updatePlayerList, 2000);
 	
-	this.socket.onmessage = this.onMessage.bind(this);
-	this.socket.onclose = this.displayNoGame.bind(this);
-	this.socket.onerror = this.displayError.bind(this);
+	this.socket.onmessage = () => this.onMessage;
+	this.socket.onclose = () => this.displayNoGame;
+	this.socket.onerror = () => this.displayError;
 	this.socket.binaryType = "arraybuffer";
 	
 	this.playerTableRefreshCounter = setInterval(updatePlayerList, 5000);
@@ -30,7 +30,7 @@ DisplayHandler.prototype.watchGame = function(slot) {
 		return;
 	
 	this.slot = slot;
-	var buffer = new ArrayBuffer(1);
+	const buffer = new ArrayBuffer(1);
 	new DataView(buffer).setUint8(0, this.slot || -1);
 	this.socket.send(buffer);
 	GameTable.clickOnSlot(slot);
@@ -48,8 +48,12 @@ DisplayHandler.prototype.displayMessage = function(message) {
 	this.context.textBaseline = "middle";
 	this.context.textAlign = "center";
 	
-	this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	this.clearCanvas();
 	this.context.fillText(message, this.canvas.width / 2, this.canvas.height / 2, this.canvas.width / 2);
+};
+
+DisplayHandler.prototype.clearCanvas = function() {
+	this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 };
 
 DisplayHandler.prototype.displayError = function () {
@@ -66,18 +70,42 @@ DisplayHandler.prototype.updatePlayerList = function() {
 	if(this.slot == null)
 		return;
 	
-	var request = new XMLHttpRequest();
-	var objRef = this;
+	const request = new XMLHttpRequest();
 	
-	request.onreadystatechange = function() {
-		if(objRef.slot == null)
+	request.onreadystatechange = () => {
+		if(this.slot == null)
 			return;
 		
-		if(this.readyState == 4 && this.status == 200) {
+		if(request.readyState == 4 && request.status == 200) {
 			DisplayHandler.playerTable.innerHTML = this.responseText;
 		}
 	};
 	
 	request.open("GET", "../playertable/" + this.gameID, true);
 	request.send();
+};
+
+/**
+ * 0: updateGameTable
+ * 1: updatePlayerTable
+ * 2: disconnect
+ */
+DisplayHandler.prototype.functionLookup = [
+	AJAX.updateGameTable,
+	AJAX.updatePlayerList,
+	() => this.displayNoGame()
+];
+
+/**
+ * The first uint8 is a purpose code used to lookup the correct function to call
+ */
+DisplayHandler.prototype.onMessage = function(message) {
+	const dataView = new DataView(message.data);
+	const header = dataView.getUint8(0);
+	
+	if(header in this.functionLookup) {
+		this.functionLookup[header](data);
+	} else {
+		this.canvasError();
+	}
 };
