@@ -67,7 +67,7 @@ public class GridDisplayHandler extends DisplayHandler {
 		return buffer;
 	}
 
-	private ByteBuffer getDeltaBuffer() {
+	protected ByteBuffer getDeltaBuffer() {
 		ByteBuffer buffer = ByteBuffer.allocate(Byte.BYTES + (Character.BYTES + Byte.BYTES + Byte.BYTES) * getWidth() * getHeight());
 	
 		buffer.put(DELTA_UPDATE_BYTE);
@@ -75,7 +75,13 @@ public class GridDisplayHandler extends DisplayHandler {
 		for(int y = 0; y < grid.length; y++) {
 			for(int x = 0; x < grid[y].length; x++) {
 				if(oldGrid[y][x] != grid[y][x]) {
-					buffer.putChar(grid[y][x]).put((byte) x).put((byte) y);
+					if(grid[y][x] == null) {
+						buffer.put((byte) 0).put((byte) x).put((byte) y).put((byte) 0).put((byte) 0);
+					} else {
+						buffer.put(grid[y][x].getCode())
+						.put((byte) x).put((byte) y)
+						.put((byte) grid[y][x].getMove().getX()).put((byte) grid[y][x].getMove().getY());
+					}
 				}
 			}
 		}
@@ -93,49 +99,14 @@ public class GridDisplayHandler extends DisplayHandler {
 		return grid[0].length;
 	}
 
-	public void putGrid(char[][] grid) {
+	public synchronized void putGrid(GridItem[][] grid) {
+		if(this.grid == null || grid.length != this.grid.length || grid[0].length != this.grid[0].length)
+			oldGrid = null;
+		
 		this.grid = grid;
 	}
 
-	/**
-	 * @param width
-	 * @param height
-	 * @param x The position of the upper left corner
-	 * @param y The position of the upper left corner
-	 * @param character
-	 */
-	public void putSquare(float width, float height, float x, float y, char character) {
-		for(int yCoord = (int) (grid.length * y); yCoord >= 0 && yCoord < grid.length; yCoord++) {
-			for(int xCoord = (int) (grid[yCoord].length * x); xCoord >= 0 && xCoord < grid[yCoord].length; xCoord++) {
-				grid[yCoord][xCoord] = character;
-			}
-		}
-	}
-
-	@Override
-	public void addViewer(Consumer<ByteBuffer> viewer) {
-		if(gameHasEnded) {
-			viewer.accept(getEndGameBuffer());
-			return;
-		}
-		
-		super.addViewer(viewer);
-	}
-	
-	private ByteBuffer getEndGameBuffer() {
-		ByteBuffer buffer = ByteBuffer.wrap(new byte[] {DISCONNECT_BYTE});
-		return buffer;
-	}
-	
-	@Override
-	public void endGame() {
-		gameHasEnded = true;
-		ByteBuffer buffer = getEndGameBuffer();
-		
-		getLock().lock();
-		for(Consumer<ByteBuffer> viewer : viewers) {
-			viewer.accept(buffer.duplicate());
-		}
-		getLock().unlock();
+	public Game getGame() {
+		return game;
 	}
 }

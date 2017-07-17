@@ -43,7 +43,7 @@ public abstract class Game {
 		}
 	}
 	
-	private final DISPLAY_HANDLER displayHandler;
+	private final DisplayHandler displayHandler;
 	private int slot = -1;
 	
 	private GameState state = GameState.WAITING;
@@ -59,6 +59,9 @@ public abstract class Game {
 	/** Holds the currently connected players */
 	private Set<Player<?>> activePlayers = new LinkedHashSet<>();
 	// END SYNC
+	
+	private volatile boolean sendPlayerScores = false;
+	private volatile boolean updatePlayerList = false;
 	
 	/** 
 	 * @return If the game sends specific data to each player
@@ -109,19 +112,18 @@ public abstract class Game {
 	 */
 	public abstract void processData(ByteBuffer data, Player<?> player);
 	
-	/** Called after each tick to get data to display on the website.
-	 * 
-	 * @param handler The {@link brownshome.scriptwars.game.DisplayHandler DisplayHandler} that the commands are to be sent to
-	 */
-	protected abstract void displayGame(DISPLAY_HANDLER handler);
+	/** Called after each tick to get data to display on the website. */
+	protected abstract void displayGame();
 
 	public abstract ConnectionHandler<?> getPreferedConnectionHandler();
 
-	protected Game(GameType type, DISPLAY_HANDLER displayHandler) {
-		this.displayHandler = displayHandler;
+	protected Game(GameType type) {
 		this.type = type;
+		this.displayHandler = constructDisplayHandler();
 	}
 
+	protected abstract DisplayHandler constructDisplayHandler();
+	
 	/**
 	 * Called by the connection implementation when data is received from the client. This is
 	 * called once per player per tick.
@@ -157,6 +159,7 @@ public abstract class Game {
 	}
 	
 	protected void onPlayerChange() {
+		updatePlayerList = true;
 		type.signalListUpdate();
 	}
 	
@@ -286,14 +289,7 @@ public abstract class Game {
 			
 			tick();
 			
-			
-			
-			displayGame(displayHandler);
-			
-			if(sendPlayerScores) {
-				sendPlayerScores = false;
-				displayHandler.sendScores(getActivePlayers());
-			}
+			displayGame();
 			
 			sendData();
 			waitForResponses(lastTick + getTickRate());
@@ -333,6 +329,7 @@ public abstract class Game {
 			player.endGame();
 		}
 		
+		state = GameState.ENDED;
 		getType().endGame(this);
 	}
 
@@ -348,7 +345,7 @@ public abstract class Game {
 		return slot;
 	}
 
-	public DISPLAY_HANDLER getDisplayHandler() {
+	public DisplayHandler getDisplayHandler() {
 		return displayHandler;
 	}
 	
@@ -370,5 +367,23 @@ public abstract class Game {
 	/** Causes the scores to be upload to the clients next round */
 	public void flagScores() {
 		sendPlayerScores = true;
+	}
+
+	public boolean hasEnded() {
+		return state == GameState.ENDED;
+	}
+
+	public boolean clearScoreFlag() {
+		if(!sendPlayerScores) return false;
+		
+		sendPlayerScores = false;
+		return true;
+	}
+
+	public boolean clearPlayersFlag() {
+		if(!updatePlayerList) return false;
+		
+		updatePlayerList = false;
+		return true;
 	}
 }

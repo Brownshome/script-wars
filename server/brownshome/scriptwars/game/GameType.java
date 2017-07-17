@@ -44,19 +44,19 @@ public class GameType {
 	private Difficulty difficulty;
 	
 	private ReentrantReadWriteLock gamesLock = new ReentrantReadWriteLock();
-	private Collection<Game<?>> games = new ArrayList<>();
+	private Collection<Game> games = new ArrayList<>();
 	private Set<Runnable> onListUpdate = new HashSet<>();
 	
-	public GameType(Class<? extends Game<?>> clazz, Difficulty difficulty) throws GameCreationException {
+	public GameType(Class<? extends Game> clazz, Difficulty difficulty) throws GameCreationException {
 		this(clazz, false, Language.ANY, difficulty);
 	}
 	
-	public GameType(Class<? extends Game<?>> clazz, boolean isBeta, Language language, Difficulty difficulty) throws GameCreationException {
+	public GameType(Class<? extends Game> clazz, boolean isBeta, Language language, Difficulty difficulty) throws GameCreationException {
 		this.isBetaGame = isBeta;
 		this.difficulty = difficulty;
 		this.language = language;
 		
-		Constructor<? extends Game<?>> constructor;
+		Constructor<? extends Game> constructor;
 		
 		try {
 			constructor = clazz.getConstructor(GameType.class);
@@ -67,7 +67,7 @@ public class GameType {
 		this.constructor = () -> {
 			try {
 				Game.getActiveGamesLock().writeLock().lock();
-				Game<?> game = constructor.newInstance(this);
+				Game game = constructor.newInstance(this);
 				game.addToSlot();
 				return game;
 			} catch (OutOfIDsException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
@@ -119,21 +119,21 @@ public class GameType {
 		return getAvailableGame().getID(protocol);
 	}
 	
-	public void endGame(Game<?> game) {
+	public void endGame(Game game) {
 		gamesLock.writeLock().lock();
 		games.remove(game);
 		gamesLock.writeLock().unlock();
 	}
 	
-	public Game<?> getAvailableGame() throws GameCreationException {
+	public Game getAvailableGame() throws GameCreationException {
 		gamesLock.writeLock().lock();
 		try {
-			for(Game<?> game : games) {
+			for(Game game : games) {
 				if(game.isSpaceForPlayer())
 					return game;
 			}
 
-			Game<?> availableGame = constructor.get();
+			Game availableGame = constructor.get();
 			games.add(availableGame);
 			signalListUpdate();
 			return availableGame;
@@ -142,27 +142,24 @@ public class GameType {
 		}
 	}
 	
-	public Collection<Game<?>> getGames() {
-		gamesLock.readLock().lock();
+	//Can be called from the tomcat thread
+	public Collection<Game> getGames() {
+		List<Game> list;
+		
 		try {
-			List<Game<?>> list = new ArrayList<>(games);
-			list.removeIf(g -> g.getActivePlayers().isEmpty());
-			return list;
+			gamesLock.readLock().lock();
+			list = new ArrayList<>(games);
 		} finally {
 			gamesLock.readLock().unlock();
 		}
+			
+		list.removeIf(g -> g.getActivePlayers().isEmpty());
+		return list;
 	}
 
-	public synchronized void onListUpdate(Runnable update) {
-		onListUpdate.add(update);
-	}
-
-	public synchronized void removeOnListUpdate(Runnable update) {
-		onListUpdate.remove(update);
-	}
-
+	/** Updates the game table */
 	public synchronized void signalListUpdate() {
-		onListUpdate.forEach(Runnable::run);
+		DisplayHandler.sendGameTableUpdate();
 	}
 
 	public String getDifficulty() {

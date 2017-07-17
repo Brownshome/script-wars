@@ -23,12 +23,11 @@ public class RandomAI {
 		if(args.length > 0){
 			id = Integer.valueOf(args[0]);
 		} else {
-			//System.out.println("Usage: JAVACOMMAND serverid");
-			//System.exit(1);
-			return;
+			System.out.println("Random AI - Please input an ID");
+			id = (int) new Scanner(System.in).nextLong(); //Handles unsigned conversion
 		}
 
-		TankAPI api = new TankAPI(id, "www.script-wars.com", "Random AI");
+		TankAPI api = new TankAPI(id, "localhost", "Random AI");
 
 		while(api.nextTick()) {
 			if(!api.isAlive()) {
@@ -61,6 +60,7 @@ public class RandomAI {
 			//System.out.println("Position: " + api.me().getPosition());
 		}
 		
-		//System.out.println("Disconnected from server:\n\t" + api.getConnectionStatus());
+		if(args.length == 0)
+			System.out.println("Disconnected from server:\n\t" + api.getConnectionStatus());
 	}
 }
