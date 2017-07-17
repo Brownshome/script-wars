@@ -48,11 +48,11 @@ WallSprite.prototype.render = function() {
 	);
 };
 
-TankGameDisplayHandler.prototype.getSprite = function(data, x, y) {
+TankGameDisplayHandler.prototype.getSprite = function(data, x, y, dx, dy) {
 	switch(data) {
 		case 0: return null;
 		case 1: return new WallSprite(x, y, this);
-		case 2: return new ImageSprite(x, y, this, "bullet");
+		case 2: return new ImageSprite(x, y, dx, dy, this, "bullet");
 	}
 	
 	if(!this.idList)
@@ -64,11 +64,12 @@ TankGameDisplayHandler.prototype.getSprite = function(data, x, y) {
 		return undefined;
 	
 	//Player sprite
-	return new ImageSprite(x, y, this, id);
+	return new ImageSprite(x, y, dx, dy, this, id);
 };
 
 function onLoad() {
 	displayHandler = new TankGameDisplayHandler();
+	ImageSprite.frameTime = 250; //TODO sync this value from the server, maybe using jsp?
 	ImageSprite.regesterSprite("bullet", "../static/games/Tanks/bullet.png");
 	displayHandler.startRender();
 }
