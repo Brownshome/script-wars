@@ -1,6 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+<c:set var="root" value=".." scope="request"/>
+
 <!DOCTYPE html>
 <html>
 	<body>
@@ -19,7 +21,7 @@
 
 				<c:forEach items="${game.activePlayers}" var="player">
 					<tr>
-						<td><img src="/playericon/${player.ID}" style="width:35px;height:35px;"></td>
+						<td><img src="${root}/playericon/${player.ID}" style="width:35px;height:35px;"></td>
 						<td><c:out value="${player.name}" /></td>
 						<td id="Score-${player.ID}"><c:out value="${player.score}" /></td>
 						<td><c:out value="${player.timeJoined}" /></td>

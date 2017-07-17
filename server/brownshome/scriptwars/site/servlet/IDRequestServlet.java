@@ -7,7 +7,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import brownshome.scriptwars.game.*;
+import brownshome.scriptwars.game.Game;
+import brownshome.scriptwars.game.GameCreationException;
+import brownshome.scriptwars.game.GameType;
 
 @WebServlet("/requestID")
 public class IDRequestServlet extends HttpServlet {
@@ -25,7 +27,7 @@ public class IDRequestServlet extends HttpServlet {
 				return;
 			}
 			
-			Game<?> game;
+			Game game;
 			
 			try {
 				if(rawProtocol == null)

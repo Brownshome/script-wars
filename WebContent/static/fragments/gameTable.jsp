@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<c:set var="root" value=".." scope="request"/>
+
 <!DOCTYPE html>
 <html>
 <body>
@@ -18,7 +20,7 @@
 			<td>
 				<button onclick="displayHandler.watchGame(${game.slot})" class="btn btn-primary">Watch</button>
 				<c:if test="${game.spaceForPlayer}">
-					<button onclick="AJAX.requestSpecificID('${game.slot}')" class="btn btn-primary">Join</button>
+					<button onclick="AJAX.requestSpecificID(${game.slot})" class="btn btn-primary">Join</button>
 					
 					<div class="btn-group">
 						<button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown"

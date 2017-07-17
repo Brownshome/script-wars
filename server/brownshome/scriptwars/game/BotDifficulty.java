@@ -1,11 +1,11 @@
 package brownshome.scriptwars.game;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import brownshome.scriptwars.connection.MemoryConnectionHandler;
-import brownshome.scriptwars.game.tanks.*;
+import brownshome.scriptwars.game.tanks.HardAI;
+import brownshome.scriptwars.game.tanks.NormalAI;
+import brownshome.scriptwars.game.tanks.RandomAI;
 import brownshome.scriptwars.server.Server;
 
 public enum BotDifficulty {
@@ -27,7 +27,7 @@ public enum BotDifficulty {
 		this.action = action;
 	}
 
-	public void start(Game<?> game) throws OutOfIDsException {		
+	public void start(Game game) throws OutOfIDsException {		
 		int ID = game.getID(MemoryConnectionHandler.instance().getProtocolByte());
 		
 		if(ID == -1)

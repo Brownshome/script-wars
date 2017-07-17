@@ -1,13 +1,14 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<c:set var="root" value=".." scope="request"/>
 
 <!DOCTYPE html>
 <html>
 <head>
 	<title>Script Wars - ${gametype.name}</title>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-	<link rel="stylesheet" href="../css/style.css">
+	<link rel="stylesheet" href="${root}/css/style.css">
 	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.11.0/styles/default.min.css">
 </head>
 <body onload="onLoad('${gametype.name}')">
@@ -42,10 +43,10 @@
 		</div>
 	</footer>
 	
-	<script src="../static/script/gamePage.js"></script>
-	<script src="../static/script/displayHandler.js"></script>
-	<script src="../static/script/gridDisplayHandler.js"></script>
-	<script src="../static/games/${gametype.name}/displayScript.js"></script>
+	<script src="${root}/static/script/gamePage.js"></script>
+	<script src="${root}/static/script/displayHandler.js"></script>
+	<script src="${root}/static/script/gridDisplayHandler.js"></script>
+	<script src="${root}/static/games/${gametype.name}/displayScript.js"></script>
 	<!-- Put the Javascript at the end to speed loading -->
 	<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>

@@ -1,115 +1,65 @@
 package brownshome.scriptwars.game;
 
 import java.nio.ByteBuffer;
-import java.util.List;
+import java.util.Collection;
 import java.util.function.Consumer;
 
 public class GridDisplayHandler extends DisplayHandler {
-	private static final byte PLAYER_ID_BYTE = 6;
-	private static final byte DISCONNECT_BYTE = 2;
-	private static final byte BULK_UPDATE_BYTE = 4;
-	private static final byte DELTA_UPDATE_BYTE = 5;
-	private static final byte UPDATE_PLAYER_TABLE = 1;
+	private static final byte BULK_UPDATE_BYTE = DisplayHandler.FREE_ID;
+	private static final byte DELTA_UPDATE_BYTE = DisplayHandler.FREE_ID + 1;
+	protected static final byte FREE_ID = DisplayHandler.FREE_ID + 2;
 	
-	private char[][] grid;
-	private char[][] oldGrid;
-	List<Player<?>> playerList;
-	private volatile boolean gameHasEnded = false;
+	private GridItem[][] grid;
+	private GridItem[][] oldGrid;
 	
-	public void setPlayerList(List<Player<?>> players) {
-		assert this.playerList == null;
-		playerList = players;
+	public GridDisplayHandler(Game game) {
+		super(game);
 	}
 	
-	/**
-	 * For send format see GameViewerSocket.
-	 */
 	@Override
-	public void print() {
-		ByteBuffer buffer = getBulkSyncBuffer();
+	protected void handleNewViewers(Collection<Consumer<ByteBuffer>> newViewers) {		
+		if(grid == null)
+			return;
 		
-		getLock().lock();
-		{
-			if(!newViewers.isEmpty()) {
-				ByteBuffer idUpdateBuffer = getPlayerIDListBuffer();
-
-				for(Consumer<ByteBuffer> viewer : newViewers) {
-					viewer.accept(idUpdateBuffer.duplicate());
-					viewer.accept(buffer.duplicate()); //send bulk update
-				}
-			}
-
-			if(!shouldBulkSync()) {
-				ByteBuffer delta = getDeltaBuffer();
-				if(delta.remaining() < buffer.remaining())
-					buffer = delta;
-			}
-
-			for(Consumer<ByteBuffer> viewer : viewers) {
-				viewer.accept(buffer.duplicate()); //duplicating for thread safety and async uploads
-			}
-
-			viewers.addAll(newViewers);
-			newViewers.clear();
-		}
-		getLock().unlock();
-		
-		if(oldGrid == null)
-			oldGrid = new char[getHeight()][getWidth()];
-		
-		for(int row = 0; row < grid.length; row++) {
-			System.arraycopy(grid[row], 0, oldGrid[row], 0, grid[row].length);
-		}
-	}
-
-	private ByteBuffer getPlayerIDListBuffer() {
-		ByteBuffer buffer = ByteBuffer.allocate(Byte.BYTES + Byte.BYTES + Integer.BYTES * playerList.size());
-		buffer.put(PLAYER_ID_BYTE);
-		buffer.put((byte) playerList.size());
-		
-		for(Player<?> player : playerList) {
-			buffer.putInt(player == null ? 0 : player.getID());
-		}
-		buffer.flip();
-		
-		return buffer;
+		send(getBulkSyncBuffer(), newViewers);
 	}
 	
-	private ByteBuffer getPlayerTableUpdateBuffer() {
-		ByteBuffer buffer = ByteBuffer.wrap(new byte[] {UPDATE_PLAYER_TABLE});
-		return buffer;
-	}
-
-	/** Sends the player list to the viewers, null players are sent as a zero. */
-	public void sendPlayerIDs() {
-		ByteBuffer playerIDBuffer = getPlayerIDListBuffer();
-		ByteBuffer updatePlayerTableBuffer = getPlayerTableUpdateBuffer();
+	@Override
+	public void handleOldViewers(Collection<Consumer<ByteBuffer>> viewers) {
+		super.handleOldViewers(viewers);
 		
-		getLock().lock();
-		for(Consumer<ByteBuffer> viewer : viewers) {
-			viewer.accept(playerIDBuffer.duplicate());
-			viewer.accept(updatePlayerTableBuffer.duplicate());
-		}
-		getLock().unlock();
-	}
-
-	private boolean shouldBulkSync() {
-		if(oldGrid == null || grid.length != oldGrid.length || grid[0].length != oldGrid[0].length) {
-			return true;
-		}
+		if(grid == null)
+			return;
 		
-		return false;
+		if(oldGrid == null) {
+			//If there is a new grid, send a bulk update
+			ByteBuffer buffer = getBulkSyncBuffer();
+			oldGrid = new GridItem[getHeight()][getWidth()];
+			
+			send(buffer, viewers);
+		} else {
+			ByteBuffer buffer = getDeltaBuffer();
+
+			if(buffer.remaining() == 0)
+				return;
+
+			send(buffer, viewers);
+
+			for(int row = 0; row < grid.length; row++) {
+				System.arraycopy(grid[row], 0, oldGrid[row], 0, grid[row].length);
+			}
+		}
 	}
 
-	private ByteBuffer getBulkSyncBuffer() {
-		ByteBuffer buffer = ByteBuffer.allocate(Byte.BYTES + Byte.BYTES + Byte.BYTES + Character.BYTES * getWidth() * getHeight());
+	protected ByteBuffer getBulkSyncBuffer() {
+		ByteBuffer buffer = ByteBuffer.allocate(Byte.BYTES + Byte.BYTES + Byte.BYTES + Byte.BYTES * getWidth() * getHeight());
 		
 		buffer.put(BULK_UPDATE_BYTE);
 		buffer.put((byte) getWidth()).put((byte) getHeight());
 		
-		for(char[] row : grid) {
-			for(char c : row) {
-				buffer.putChar(c);
+		for(GridItem[] row : grid) {
+			for(GridItem c : row) {
+				buffer.put(c == null ? 0 : c.getCode());
 			}
 		}
 		

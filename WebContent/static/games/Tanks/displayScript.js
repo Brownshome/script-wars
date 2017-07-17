@@ -1,3 +1,4 @@
+
 var displayHandler;
 
 /** The tank game displayHandler */
@@ -10,16 +11,17 @@ TankGameDisplayHandler.prototype.constructor = TankGameDisplayHandler;
 
 /** Handles an incoming list of player IDs, an ID of zero means that the image is not used and will not be sent */
 TankGameDisplayHandler.prototype.updatePlayerIDMap = function(dataView) {
-	const length = dataView.getUint8(1); 
-
 	/** Holds a mapping from player number to player ID */
 	this.idList = [];
-	for(let index = 0; index < length; index++) { 
-		const id = dataView.getUint32(index * 4 + 2); 
+	
+	let offset = 0;
+	while(offset + 4 <= dataView.byteLength) {
+		const id = dataView.getUint32(offset);
+		offset += 4;
 		this.idList.push(id);
 
 		if(id != 0 && !ImageSprite.prototype.sprites[id])
-			ImageSprite.regesterSprite(id, "/playericon/" + id);
+			ImageSprite.regesterSprite(id, "../playericon/" + id);
 	} 
 };
 
@@ -67,8 +69,6 @@ TankGameDisplayHandler.prototype.getSprite = function(data, x, y) {
 
 function onLoad() {
 	displayHandler = new TankGameDisplayHandler();
-
 	ImageSprite.regesterSprite("bullet", "../static/games/Tanks/bullet.png");
-	
-	setInterval(() => displayHandler.render(), 20);
+	displayHandler.startRender();
 }

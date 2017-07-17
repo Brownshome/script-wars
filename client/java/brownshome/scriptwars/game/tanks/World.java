@@ -169,10 +169,7 @@ public class World {
 				}
 			}
 			
-			if(tanksToRollBack.isEmpty()) {
-				for(Tank tank : tanks.values())
-					tank.clearHasMoved();
-					
+			if(tanksToRollBack.isEmpty()) {	
 				return;
 			}
 		}
@@ -503,29 +500,123 @@ public class World {
 		return true;
 	}
 	
+	private static class WallGridItem implements GridItem {
+		private static final Coordinates coord = new Coordinates(0, 0);
+		
+		@Override
+		public boolean equals(Object obj) {
+			return obj instanceof WallGridItem;
+		}
+		
+		@Override
+		public byte getCode() {
+			return 1;
+		}
+
+		@Override
+		public Coordinates getMove() {
+			return coord;
+		}
+
+		@Override
+		public int hashCode() {
+			return 1;
+		}
+	}
+	
+	private static class ShotGridItem implements GridItem {
+		private final Coordinates coord;
+		
+		@Override
+		public boolean equals(Object obj) {
+			return obj instanceof ShotGridItem && ((ShotGridItem) obj).coord.equals(coord);
+		}
+		
+		public ShotGridItem(Shot shot) {
+			Direction direction = shot.getDirection();
+			coord = new Coordinates(direction.dx * Shot.SPEED, direction.dy * Shot.SPEED);
+		}
+		
+		@Override
+		public byte getCode() {
+			return 2;
+		}
+
+		@Override
+		public Coordinates getMove() {
+			return coord;
+		}
+
+		@Override
+		public int hashCode() {
+			return coord.hashCode();
+		}
+	}
+	
+	private class TankGridItem implements GridItem {
+		private final Coordinates coord;
+		private final byte code;
+		
+		public TankGridItem(Tank tank) {
+			if(tank.hasMoved()) {
+				Direction dir = tank.getDirection();
+				coord = new Coordinates(dir.dx, dir.dy);
+			} else {
+				coord = new Coordinates(0, 0);
+			}
+			
+			code = (byte) (World.this.game.getIndex(tank.getOwner()) + 3);
+		}
+		
+		@Override
+		public byte getCode() {
+			return code;
+		}
+
+		@Override
+		public Coordinates getMove() {
+			return coord;
+		}
+		
+		@Override
+		public int hashCode() {
+			return Objects.hash(code, coord);
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			return obj instanceof TankGridItem
+					&& ((TankGridItem) obj).code == code
+					&& ((TankGridItem) obj).coord.equals(coord);
+		}
+	}
+	
 	protected void displayWorld(GridDisplayHandler handler) {
-		char[][] display = new char[getHeight()][getWidth()];
+		GridItem[][] display = new GridItem[getHeight()][getWidth()];
 		
 		for(int x = 0; x < getWidth(); x++) {
 			for(int y = 0; y < getHeight(); y++) {
 				if(isWall(x, y))
-					display[y][x] = 1;
+					display[y][x] = new WallGridItem();
 				else {
 					Tank tank = getTank(x, y);
-					if(tank != null) {
-						display[y][x] = (char) (3 + game.getIndex(tank.getOwner()));
-					} else
-						display[y][x] = 0;
+					if(tank != null)
+						display[y][x] = new TankGridItem(tank);
+					else
+						display[y][x] = null;
 				}
 			}
 		}
 		
 		for(Shot shot : shots) {
-			display[shot.getPosition().getY()][shot.getPosition().getX()] = Shot.BULLET;
+			display[shot.getPosition().getY()][shot.getPosition().getX()] = new ShotGridItem(shot);
 		}
 		
 		handler.putGrid(display);
-		handler.print();
+		
+		for(Tank tank : tanks.values())
+			tank.clearHasMoved();
+		
 	}
 
 	protected void removeTank(Tank tank) {

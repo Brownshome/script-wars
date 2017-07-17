@@ -1,14 +1,9 @@
 package brownshome.scriptwars.connection;
 
 import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import brownshome.scriptwars.game.*;
-import brownshome.scriptwars.server.Server;
+import brownshome.scriptwars.game.Game;
+import brownshome.scriptwars.game.GameCreationException;
 
 /**
  * This class is a singleton that handles one specific connection type.
@@ -43,7 +38,7 @@ public abstract class ConnectionHandler<CONNECTION> {
 		sendRawData(connection, ByteBuffer.wrap(new byte[] {0}), data);
 	}
 	
-	public static String getInvalidIDError(Game<?> game) {
+	public static String getInvalidIDError(Game game) {
 		try {
 			return "That ID is old, or invalid. Here is a now valid ID " + game.getType().getUserID()
 					+ " (This may or may not be the same ID)";

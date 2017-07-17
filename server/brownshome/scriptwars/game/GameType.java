@@ -2,25 +2,28 @@ package brownshome.scriptwars.game;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import brownshome.scriptwars.connection.ConnectionHandler;
-import brownshome.scriptwars.game.tanks.TankGame;
 
 public class GameType {
 	static interface GameCreator {
-		Game<?> get() throws GameCreationException;
+		Game get() throws GameCreationException;
 	}
 	
 	private static Map<String, GameType> publicGames = new HashMap<>();
 	
-	public static void addType(Class<? extends Game<?>> clazz, Difficulty difficulty) throws GameCreationException {
+	public static void addType(Class<? extends Game> clazz, Difficulty difficulty) throws GameCreationException {
 		GameType type = new GameType(clazz, difficulty);
 		publicGames.put(type.getName(), type);
 	}
 	
-	public static void addBetaType(Class<? extends Game<?>> clazz, Difficulty difficulty) throws GameCreationException {
+	public static void addBetaType(Class<? extends Game> clazz, Difficulty difficulty) throws GameCreationException {
 		GameType type = new GameType(clazz, true, Language.ANY, difficulty);
 		publicGames.put(type.getName(), type);
 	}

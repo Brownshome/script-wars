@@ -74,7 +74,7 @@ to move UP subtract one from your y coordinate.
 
 <h2>Example Situations</h2>
 <div class="media"><div class="media-left">
-		<img class="media-object" src="/static/games/Tanks/eg1.png" alt="Example 1" style="width:128px;height:128px;border:5px solid black">
+		<img class="media-object" src="${root}/static/games/Tanks/eg1.png" alt="Example 1" style="width:128px;height:128px;border:5px solid black">
 	</div><div class="media-body">
 		<p>If both tanks fire towards each other they will both be killed as all tanks fire instantly. If
 		one tank shoots and one tank moves up no tank will die as the tanks are moved each tick before shots
@@ -82,7 +82,7 @@ to move UP subtract one from your y coordinate.
 </div></div>
 
 <div class="media"><div class="media-left">
-		<img class="media-object" src="/static/games/Tanks/eg2.png" alt="Example 2" style="width:128px;height:128px;border:5px solid black">
+		<img class="media-object" src="${root}/static/games/Tanks/eg2.png" alt="Example 2" style="width:128px;height:128px;border:5px solid black">
 	</div><div class="media-body">
 		<p>The bullet is moving upwards. If the tank moves onto the bullet it will not be killed
 		and the bullet will continue on its way. This is because tanks are only killed if a bullet moves
@@ -90,7 +90,7 @@ to move UP subtract one from your y coordinate.
 </div></div>
 
 <div class="media"><div class="media-left">
-		<img class="media-object" src="/static/games/Tanks/eg3.png" alt="Example 3" style="width:128px;height:128px;border:5px solid black">
+		<img class="media-object" src="${root}/static/games/Tanks/eg3.png" alt="Example 3" style="width:128px;height:128px;border:5px solid black">
 	</div><div class="media-body">
 		<p>Both tanks try to move into the central space at the same time. They are both cannot move as two tanks cannot
 		occupy the same space. Neither tank can see the other one so make sure to check if your moves succeed to avoid
@@ -98,7 +98,7 @@ to move UP subtract one from your y coordinate.
 </div></div>
 
 <div class="media"><div class="media-left">
-		<img class="media-object" src="/static/games/Tanks/eg4.png" alt="Example 4" style="width:128px;height:128px;border:5px solid black">
+		<img class="media-object" src="${root}/static/games/Tanks/eg4.png" alt="Example 4" style="width:128px;height:128px;border:5px solid black">
 	</div><div class="media-body">
 		<p>The bullet is moving upwards. If the tank moves to the side it will not be killed as tanks are moved before shots
 		are moved in each game tick.</p>
@@ -197,7 +197,7 @@ import java.io.IOException;
 		this <code>getX()</code> family of functions, where X is the data type you want. And send data using the <code>sendX()</code> family
 		of functions.</p>
 		
-		<p class="text-center"><a class="btn btn-primary btn-lg" href="/doc/brownshome/scriptwars/connection/Network.html">Documentation</a></p>
+		<p class="text-center"><a class="btn btn-primary btn-lg" href="${root}/doc/brownshome/scriptwars/connection/Network.html">Documentation</a></p>
 		
 		<p>For the tank game in particular the data received from the server is laid out in the table below.</p>
 		<table class="table">

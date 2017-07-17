@@ -14,7 +14,7 @@
 							class="icon-bar"></span> <span class="icon-bar"></span> <span
 							class="icon-bar"></span>
 					</button>
-					<a class="navbar-brand" href="/">{S}</a>
+					<a class="navbar-brand" href="${root}">{S}</a>
 				</div>
 
 				<div class="collapse navbar-collapse" id="id-navbar-collapse">
@@ -23,12 +23,12 @@
           					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Games <span class="caret"></span></a>
           						<ul class="dropdown-menu">
 	            					<c:forEach items="${staticBean.typeList}" var="gameType">
-	            						<li><a href="/games/${gameType.name}">${gameType.name}</a></li>
+	            						<li><a href="${root}/games/${gameType.name}">${gameType.name}</a></li>
 	            					</c:forEach>
           						</ul>
        					</li>
 						<li><a href="https://github.com/Brownshome/script-wars">GitHub</a></li>
-						<li><a href="/doc/index.html">JavaDocs</a></li>
+						<li><a href="${root}/doc/index.html">JavaDocs</a></li>
 					</ul>
 				</div>
 			</div>

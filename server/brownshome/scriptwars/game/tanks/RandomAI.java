@@ -1,8 +1,7 @@
 package brownshome.scriptwars.game.tanks;
 
 import java.io.IOException;
-
-import brownshome.scriptwars.game.tanks.*;
+import java.util.Scanner;
 
 public class RandomAI {
 	/**

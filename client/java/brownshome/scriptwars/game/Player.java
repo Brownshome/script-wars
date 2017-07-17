@@ -2,16 +2,16 @@ package brownshome.scriptwars.game;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.net.SocketAddress;
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
-import java.time.temporal.*;
-import java.util.Date;
+import java.time.temporal.ChronoUnit;
 import java.util.function.Function;
 
-import brownshome.scriptwars.connection.*;
+import brownshome.scriptwars.connection.ConnectionHandler;
+import brownshome.scriptwars.connection.InvalidIDException;
+import brownshome.scriptwars.connection.MemoryConnectionHandler;
 import brownshome.scriptwars.server.Server;
 
 //This class needs to be in the common package for compilation of uses of the Tank class. Not sure why.
@@ -40,7 +40,7 @@ public class Player<CONNECTION> {
 	private int missedPackets = 0;
 	
 	private final CONNECTION connection;
-	private final Game<?> game;
+	private final Game game;
 	private final ConnectionHandler<CONNECTION> connectionHandler;
 	
 	/** The time that this player joined the game */
@@ -54,7 +54,7 @@ public class Player<CONNECTION> {
 		int playerCode = ID & 0xff;
 		int gameCode = (ID >> 8) & 0xff;
 		
-		Game<?> game = Game.getGame(gameCode);
+		Game game = Game.getGame(gameCode);
 		if(game == null) return null;
 		return game.getPlayer(playerCode);
 	}
@@ -171,7 +171,7 @@ public class Player<CONNECTION> {
 		return connection;
 	}
 
-	public Game<?> getGame() {
+	public Game getGame() {
 		return game;
 	}
 

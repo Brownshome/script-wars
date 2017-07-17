@@ -2,41 +2,50 @@ package brownshome.scriptwars.game.tanks;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
 
 import javax.imageio.ImageIO;
 
-import brownshome.scriptwars.connection.*;
-import brownshome.scriptwars.game.*;
-import brownshome.scriptwars.game.tanks.*;
+import brownshome.scriptwars.connection.ConnectionHandler;
+import brownshome.scriptwars.connection.InvalidIDException;
+import brownshome.scriptwars.connection.UDPConnectionHandler;
+import brownshome.scriptwars.game.DisplayHandler;
+import brownshome.scriptwars.game.Game;
+import brownshome.scriptwars.game.GameType;
+import brownshome.scriptwars.game.OutOfIDsException;
+import brownshome.scriptwars.game.Player;
 
 /* Each tick shots are moved x spaces. Then tanks shoot. Then tanks move */
 
-public class TankGame extends Game<GridDisplayHandler> {
+public class TankGame extends Game {
 	public static final int PLAYER_COUNT = 8;
 	
-	private volatile boolean updatePlayerLists;
 	private final List<Player<?>> players = Arrays.asList(new Player[PLAYER_COUNT]);
 	private World world;
 	
-	
 	public TankGame(boolean[][] map, GameType type) throws OutOfIDsException {
-		super(type, new GridDisplayHandler());
-		getDisplayHandler().setPlayerList(players);
+		super(type);
 		this.world = new World(map, this);
+	}
+	
+	@Override
+	protected DisplayHandler constructDisplayHandler() {
+		return new TankGameDisplayHandler(this);
+	}
+	
+	@Override
+	public TankGameDisplayHandler getDisplayHandler() {
+		return (TankGameDisplayHandler) super.getDisplayHandler();
 	}
 	
 	public TankGame(GameType type) throws OutOfIDsException {
 		this(MapGenerator.getGenerator().withSize(25, 25).generate(), type);
-	}
-
-	@Override
-	protected void onPlayerChange() {
-		super.onPlayerChange();
-		updatePlayerLists = true;
 	}
 	
 	@Override
@@ -159,13 +168,11 @@ public class TankGame extends Game<GridDisplayHandler> {
 	}
 
 	@Override
-	public void displayGame(GridDisplayHandler handler) {
-		if(updatePlayerLists) {
-			updatePlayerLists = false;
-			handler.sendPlayerIDs();	
-		}
+	public void displayGame() {
+		TankGameDisplayHandler handler = getDisplayHandler();
 		
 		world.displayWorld(handler);
+		handler.sendUpdates();
 	}
 
 	@Override
@@ -187,12 +194,12 @@ public class TankGame extends Game<GridDisplayHandler> {
 	}
 
 	public int getIndex(Player<?> owner) {
-		for(int i = 0; i < players.size(); i++) {
-			if(players.get(i) == owner)
-				return i;
-		}
+		int result = players.indexOf(owner);
 		
-		throw new RuntimeException("Player not found");
+		if(result == -1)
+			throw new RuntimeException("Player not found");
+		
+		return result;
 	}
 	
 	@Override

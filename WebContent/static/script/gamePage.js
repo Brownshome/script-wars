@@ -60,7 +60,7 @@ var AJAX = {
 
 		requestSpecificID : function(slot) {
 			var request = new XMLHttpRequest();
-			request.onreadystatechange = IDRequest.IDAJAXComplete;
+			request.onreadystatechange = AJAX.IDAJAXComplete;
 			request.open("POST", "../requestID", true);
 			request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 			request.send("slot=" + slot);

@@ -1,6 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+<c:set var="root" value="." scope="request"/>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -57,7 +59,7 @@
 						<div class="col-md-3 col-sm-6 text-center">
 					</c:otherwise>
 				</c:choose>
-				<a href="#"><img title="${gameType.name}" src="gameicons/${gameType.name}"
+				<a href="#"><img title="${gameType.name}" src="${root}/gameicons/${gameType.name}"
 					alt="${gameType.name}" class="responsiveimg"
 					style="width: 192px; height: 192px;"
 					onclick="setGameTypeSelected('${gameType.name}')"></a>
@@ -73,8 +75,8 @@
 			<div class="panel panel-primary">
 				<div class="panel-heading">Library downloads, more coming soon!</div>
 				<div class="list-group">
-					<a class="list-group-item" href="/static/script-wars-client.jar">Java library</a>
-					<a class="list-group-item" href="/static/script-wars-python.zip">Python library</a>
+					<a class="list-group-item" href="${root}/static/script-wars-client.jar">Java library</a>
+					<a class="list-group-item" href="${root}/static/script-wars-python.zip">Python library</a>
 				</div>
 			</div>
 			</div>
@@ -139,6 +141,6 @@
 		src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
 		integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
 		crossorigin="anonymous"></script>
-	<script src="./static/script/mainPage.js"></script>
+	<script src="${root}/static/script/mainPage.js"></script>
 </body>
 </html>

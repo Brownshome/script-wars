@@ -87,12 +87,10 @@ DisplayHandler.prototype.updatePlayerList = function() {
 DisplayHandler.prototype.updatePlayerScores = function(dataView) {
 	if(this.slot == null)
 		return;
-	
-	const length = dataView.getUint8(1); 
 
-	for(let index = 0; index < length; index++) {
-		const id = dataView.getInt32(index * 8 + 2)
-		const score = dataView.getInt32(index * 8 + 6);
+	for(let index = 0; index * 8 <= dataView.byteLength - 8; index++) {
+		const id = dataView.getInt32(index * 8)
+		const score = dataView.getInt32(index * 8 + 4);
 		
 		document.getElementById("Score-" + id).innerHTML = score;
 	} 
@@ -106,7 +104,7 @@ DisplayHandler.prototype.onMessage = function(message) {
 	const header = dataView.getUint8(0);
 	
 	if(header in this.functionLookup) {
-		this.functionLookup[header].call(this, dataView);
+		this.functionLookup[header].call(this, new DataView(message.data, 1));
 	} else {
 		this.canvasError();
 	}

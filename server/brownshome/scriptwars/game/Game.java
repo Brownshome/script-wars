@@ -1,40 +1,40 @@
 package brownshome.scriptwars.game;
 
-import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.logging.Level;
 
-import brownshome.scriptwars.connection.*;
+import brownshome.scriptwars.connection.ConnectionHandler;
+import brownshome.scriptwars.connection.InvalidIDException;
 import brownshome.scriptwars.server.Server;
 
 /** The interface that all played games must implement. */
-public abstract class Game<DISPLAY_HANDLER extends DisplayHandler> {
+public abstract class Game {
 	private enum GameState {
-		WAITING, RUNNING
+		WAITING, RUNNING, ENDED
 	}
 
 	private static final ReentrantReadWriteLock activeGamesLock = new ReentrantReadWriteLock();
 	// SYNCHRONIZED ACCESS ON activeGamesLock
 	/** This may be read and written to from all three threads. All access must use {@link #activeGamesLock} except from single reads */
-	private static final Game<?>[] activeGames = new Game<?>[256];
+	private static final Game[] activeGames = new Game[256];
 	private static final IDPool gameIDPool = new IDPool(256);
 	// END SYNC
 	
-	private volatile boolean sendPlayerScores = false;
-	
-	/** The time the game has to close in millis */
-	public static final long CLOSING_GRACE = 30 * 1000l;
-
 	static ReentrantReadWriteLock getActiveGamesLock() {
 		return activeGamesLock;
 	}
 
-	public static Game<?> getGame(int gameCode) {
+	public static Game getGame(int gameCode) {
 		activeGamesLock.readLock().lock();
 		try {
 			return activeGames[gameCode];

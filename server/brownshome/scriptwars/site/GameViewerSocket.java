@@ -35,9 +35,8 @@ import brownshome.scriptwars.game.*;
 @ServerEndpoint("/gameviewer/{gametype}")
 public class GameViewerSocket {
 	Consumer<ByteBuffer> viewer;
-	Runnable updateGameTable;
 	
-	Game<?> game;
+	Game game;
 	GameType type;
 	
 	@OnMessage
@@ -71,41 +70,27 @@ public class GameViewerSocket {
 		
 		Basic sender = session.getBasicRemote();
 		
-		updateGameTable = () -> {
-			synchronized(session) {
-				if(session.isOpen()) {
-					try { sender.sendBinary(ByteBuffer.wrap(new byte[] {(byte) 0}));} catch (IOException e) {}
-				}
-			}
-		};
-		
-		type.onListUpdate(updateGameTable);
-		
 		viewer = data -> {
 				synchronized(session) {
 					if(session.isOpen())
 						try { sender.sendBinary(data); } catch (IOException e) {}
 				}
 		};
+		
+		DisplayHandler.addGlobalViewer(viewer);
 	}
 	
 	//TODO find out if session.close causes this to fire
 	@OnClose
 	public void close() {
 		removeViewer();
-		
-		if(type != null)
-			type.removeOnListUpdate(updateGameTable);
+		DisplayHandler.removeGlobalViewer(viewer);
 	}
 	
 	@OnError
 	public void error(Throwable t) {
 		//This will only be low down errors, nothing we can really do here, just ignore
-		
-		removeViewer();
-		
-		if(type != null)
-			type.removeOnListUpdate(updateGameTable);
+		close();
 	}
 	
 	private void removeViewer() {

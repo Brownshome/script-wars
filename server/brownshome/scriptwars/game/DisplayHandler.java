@@ -1,50 +1,126 @@
 package brownshome.scriptwars.game;
 
 import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.locks.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
 public abstract class DisplayHandler {
-	protected Set<Consumer<ByteBuffer>> viewers = new CopyOnWriteArraySet<>();
-	protected Set<Consumer<ByteBuffer>> newViewers = new HashSet<>();
-	
-	private final ReentrantLock viewerListLock = new ReentrantLock();
-	
-	public void addViewer(Consumer<ByteBuffer> viewer) {
-		getLock().lock();
-		newViewers.add(viewer);
-		getLock().unlock();
-	}
+	private static final byte UPDATE_GAME_TABLE = 0;
+	private static final byte UPDATE_PLAYER_TABLE = 1;
+	private static final byte DISCONNECT = 2;
+	private static final byte UPDATE_SCORE = 3;
 
-	public void removeViewer(Consumer<ByteBuffer> viewer) {
-		getLock().lock();
-		viewers.remove(viewer);
-		getLock().unlock();
-	}
-
-	protected ReentrantLock getLock() {
-		return viewerListLock;
-	}
-
-	public abstract void print();
-	public abstract void endGame();
+	protected static final byte FREE_ID = 4;
 	
-	public void sendScores(Collection<? extends Player<?>> players) {
-		ByteBuffer scoreBuffer = getPlayerScoreBuffer(players);
+	private static final Collection<Consumer<ByteBuffer>> allViewers = new HashSet<>();
+	private static final ReentrantReadWriteLock allViewersLock = new ReentrantReadWriteLock();
+	
+	public final Game game;
+	
+	private final Collection<Consumer<ByteBuffer>> viewers = new HashSet<>();
+	private final Collection<Consumer<ByteBuffer>> newViewers = new HashSet<>();
+	
+	public static void sendGameTableUpdate() {
+		ByteBuffer buffer = ByteBuffer.wrap(new byte[] {UPDATE_GAME_TABLE});
 		
-		getLock().lock();
-		for(Consumer<ByteBuffer> viewer : viewers) {
-			viewer.accept(scoreBuffer.duplicate());
+		try {
+			allViewersLock.readLock().lock();
+			send(buffer, allViewers);
+		} finally {
+			allViewersLock.readLock().unlock();
 		}
-		getLock().unlock();
+	}
+	
+	public static void removeGlobalViewer(Consumer<ByteBuffer> viewer) {
+		try {
+			allViewersLock.writeLock().lock();
+			allViewers.remove(viewer);
+		} finally {
+			allViewersLock.writeLock().unlock();
+		}
+	}
+	
+	public static void addGlobalViewer(Consumer<ByteBuffer> viewer) {
+		try {
+			allViewersLock.writeLock().lock();
+			allViewers.add(viewer);
+		} finally {
+			allViewersLock.writeLock().unlock();
+		}
+	}
+	
+	public DisplayHandler(Game game) {
+		this.game = game;
+	}
+	
+	/** Returns true if the viewer was added */
+	public synchronized void addViewer(Consumer<ByteBuffer> viewer) {
+		if(game.hasEnded()) {
+			viewer.accept(ByteBuffer.wrap(new byte[] {DISCONNECT}));
+			return;
+		}
+
+		newViewers.add(viewer);
+		viewers.add(viewer);
+	}
+
+	public synchronized void sendUpdates() {
+		if(!newViewers.isEmpty())
+			handleNewViewers(newViewers);
+		
+		newViewers.clear();
+		
+		handleOldViewers(viewers);
+	}
+	
+	protected abstract void handleNewViewers(Collection<Consumer<ByteBuffer>> newViewers);
+	
+	protected void handleOldViewers(Collection<Consumer<ByteBuffer>> oldViewers) {
+		if(game.clearScoreFlag()) {
+			updateScores(oldViewers);
+		} else if(game.clearPlayersFlag()) {
+			updatePlayerTable(oldViewers);
+		}
+	}
+	
+	protected void updatePlayerTable(Collection<Consumer<ByteBuffer>> oldViewers) {
+		ByteBuffer playerTable = ByteBuffer.wrap(new byte[] {UPDATE_PLAYER_TABLE});
+	
+		send(playerTable, oldViewers);
+	}
+
+	protected static void send(ByteBuffer buffer, Collection<Consumer<ByteBuffer>> viewers) {
+		for(Consumer<ByteBuffer> viewer : viewers) {
+			buffer.rewind();
+			viewer.accept(buffer);
+		}
+	}
+
+	protected void updateScores(Collection<Consumer<ByteBuffer>> oldViewers) {
+		ByteBuffer scoreBuffer = getPlayerScoreBuffer(game.getActivePlayers());
+		
+		send(scoreBuffer, oldViewers);
+	}
+	
+	public synchronized void removeViewer(Consumer<ByteBuffer> viewer) {
+		if(game.hasEnded())
+			return;
+		
+		viewers.remove(viewer);
+		newViewers.remove(viewer);
+	}
+
+	public synchronized void endGame() {
+		ByteBuffer endGameBuffer = ByteBuffer.wrap(new byte[] {DISCONNECT});
+		
+		send(endGameBuffer, viewers);
 	}
 
 	private ByteBuffer getPlayerScoreBuffer(Collection<? extends Player<?>> players) {
 		ByteBuffer buffer = ByteBuffer.allocate(players.size() * 2 * Integer.SIZE + 2);
-		buffer.put((byte) 3);
-		buffer.put((byte) players.size());
+		buffer.put(UPDATE_SCORE);
 		
 		for(Player<?> player : players) {
 			buffer.putInt(player.getID());

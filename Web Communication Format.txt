@@ -1,0 +1,36 @@
+DisplayHandler
+	Coms:
+	updateGameTable
+		No data
+	
+	updatePlayerTable
+		No data
+	
+	disconnect
+		No data
+	
+	updateScores
+		(int32 id, int32 score)[] scores
+	
+	Java:
+	updateGameTable() - non game specific
+	
+	updatePlayerTable()
+	disconnect()
+	updateScores()
+GridDisplayHandler
+	Coms:
+	bulkUpdate
+		uint8 width
+		uint8 height
+		uint8[width * height] array
+	
+	deltaUpdate -- also includes movement
+		(uint8 item, uint8 x, uint8 y, uint8 dx, uint8 dy)[] updates
+		
+TankGameDisplayHandler
+	updatePlayerIDMap
+		uint32[] ids
+		
+	Java:
+	updatePlayerIDs()

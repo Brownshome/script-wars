@@ -9,10 +9,8 @@ GridDisplayHandler.prototype = Object.create(DisplayHandler.prototype);
 GridDisplayHandler.prototype.constructor = GridDisplayHandler;
 
 GridDisplayHandler.prototype.bulkUpdate = function(dataView) {
-	this.clearCanvas();
-	
-	this.width = dataView.getUint8(1);
-	this.height = dataView.getUint8(2);
+	this.width = dataView.getUint8();
+	this.height = dataView.getUint8(1);
 	
 	//Ensure that each grid element is square
 	this.size = Math.min(
@@ -25,7 +23,7 @@ GridDisplayHandler.prototype.bulkUpdate = function(dataView) {
 	for(let y = 0; y < this.height; y++) {
 		this.grid[y] = [];
 		for(let x = 0; x < this.width; x++) {
-			const c = dataView.getUint16(3 + (x + y * this.width) * 2);
+			const c = dataView.getUint8(2 + (x + y * this.width));
 			this.grid[y][x] = this.getSprite(c, x, y);
 		}
 	}
@@ -39,30 +37,36 @@ GridDisplayHandler.prototype.convertY = function(y) {
 	return (this.canvas.height - this.size * this.height) / 2 + y * this.size;
 }
 
+GridDisplayHandler.prototype.startRender = function() {
+	requestAnimationFrame(() => this.render());
+}
+
 GridDisplayHandler.prototype.render = function() {
-	if(this.slot == null)
-		return;
-		
-	this.clearCanvas();
-	
-	for(let y = 0; y < this.height; y++) {
-		for(let x = 0; x < this.width; x++) {
-			if(this.grid[y][x]) this.grid[y][x].render();
+	if(this.slot != null) {
+		this.clearCanvas();
+		for(let y = 0; y < this.height; y++) {
+			for(let x = 0; x < this.width; x++) {
+				if(this.grid[y][x]) this.grid[y][x].render();
+			}
 		}
 	}
+	
+	requestAnimationFrame(() => this.render());
 };
 
 GridDisplayHandler.prototype.deltaUpdate = function(dataView) {
-	let offset = 1;
+	let offset = 0;
 	
 	while(offset <= dataView.byteLength - 4) {
-		const c = dataView.getUint16(offset);
-		const x = dataView.getUint8(offset + 2);
-		const y = dataView.getUint8(offset + 3);
+		const c = dataView.getUint8(offset);
+		const x = dataView.getUint8(offset + 1);
+		const y = dataView.getUint8(offset + 2);
+		const dx = dataView.getUint8(offset + 3);
+		const dy = dataView.getUint8(offset + 4);
 		
 		this.grid[y][x] = this.getSprite(c, x, y);
 		
-		offset = offset + 4;
+		offset = offset + 5;
 	}
 };
 
