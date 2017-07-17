@@ -30,7 +30,7 @@ TankGameDisplayHandler.prototype.functionLookup = GridDisplayHandler.prototype.f
 ]);
 
 function WallSprite(x, y, handler) {
-	GridSprite.call(this, x, y, handler);
+	GridSprite.call(this, x, y, 0, handler);
 }
 
 WallSprite.prototype = Object.create(GridSprite.prototype);
@@ -52,19 +52,20 @@ TankGameDisplayHandler.prototype.getSprite = function(data, x, y, dx, dy) {
 	switch(data) {
 		case 0: return null;
 		case 1: return new WallSprite(x, y, this);
-		case 2: return new ImageSprite(x, y, dx, dy, this, "bullet");
+		case 2: return new ImageSprite(x, y, dx, dy, 1, this, "bullet");
+		case 3: return new ImageSprite(x + dx, y + dy, dx, dy, 1, this, "bullet");
 	}
 	
 	if(!this.idList)
 		return undefined;
 		
-	let id = this.idList[data - 3]; /** No 3 is player 1 */
+	let id = this.idList[data - 4]; /** No 4 is player 1 */
 	
 	if(id == 0)
 		return undefined;
 	
 	//Player sprite
-	return new ImageSprite(x, y, dx, dy, this, id);
+	return new ImageSprite(x, y, dx, dy, 2, this, id);
 };
 
 function onLoad() {

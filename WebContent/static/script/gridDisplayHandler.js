@@ -48,9 +48,12 @@ GridDisplayHandler.prototype.startRender = function() {
 GridDisplayHandler.prototype.render = function() {
 	if(this.slot != null) {
 		this.clearCanvas();
-		for(let y = 0; y < this.height; y++) {
-			for(let x = 0; x < this.width; x++) {
-				if(this.grid[y][x]) this.grid[y][x].render();
+		
+		for(let layer = 0; layer <= GridSprite.maxLayer; layer++) {
+			for(let y = 0; y < this.height; y++) {
+				for(let x = 0; x < this.width; x++) {
+					if(this.grid[y][x] && this.grid[y][x].layer == layer) this.grid[y][x].render();
+				}
 			}
 		}
 	}
@@ -88,14 +91,19 @@ GridDisplayHandler.prototype.functionLookup = DisplayHandler.prototype.functionL
 /**
  * Represents a single object in the grid 
  **/
-function GridSprite(x, y, displayHandler) {
+function GridSprite(x, y, layer, displayHandler) {
 	this.x = x;
 	this.y = y;
+	this.layer = layer;
+	GridSprite.maxLayer = Math.max(GridSprite.maxLayer, layer);
+	
 	this.displayHandler = displayHandler;
 }
 
-function ImageSprite(x, y, dx, dy, displayHandler, imageName) {
-	GridSprite.call(this, x, y, displayHandler);
+GridSprite.maxLayer = 0;
+
+function ImageSprite(x, y, dx, dy, layer, displayHandler, imageName) {
+	GridSprite.call(this, x, y, layer, displayHandler);
 	
 	this.dx = dx;
 	this.dy = dy;

@@ -4,17 +4,19 @@ import brownshome.scriptwars.connection.Network;
 
 public class Shot {
 	public static final char BULLET = 2;
-	public static final int SPEED = 3;
+	public static final int SPEED = 1;
 	private Tank owner;
 	private World world;
 	private Direction direction;
 	private Coordinates position;
+	private Coordinates previous;
 	
 	protected Shot(Coordinates spawn, Tank owner, World world, Direction direction) {
 		this.position = spawn;
 		this.owner = owner;
 		this.world = world;
 		this.direction = direction;
+		previous = owner.getPosition();
 	}
 
 	public Shot(Network network) {
@@ -42,6 +44,10 @@ public class Shot {
 		return false;
 	}
 
+	protected void updatePrevious() {
+		previous = position;
+	}
+	
 	protected void completeTick() {
 		Tank tank = world.getTank(position);
 		if(tank != null) {
@@ -60,5 +66,9 @@ public class Shot {
 
 	public Direction getDirection() {
 		return direction;
+	}
+
+	public Coordinates getPrevious() {
+		return previous;
 	}
 }
