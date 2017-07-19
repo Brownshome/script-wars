@@ -28,6 +28,9 @@ public class World {
 	private Set<Tank> tanksToFire = new HashSet<>();
 	private Set<Player<?>> playersToSpawn = new HashSet<>();
 	
+	private Collection<Shot> deadShotsToRender = new ArrayList<>();
+	Collection<Tank> deadTanksToRender = new ArrayList<>();
+	
 	private TankGame game;
 	
 	protected World(boolean[][] map, TankGame game) {
@@ -212,6 +215,8 @@ public class World {
 			if(other != shot) {
 				shotsToRemove.add(other);
 				shotsToRemove.add(shot);
+				deadShotsToRender.add(other);
+				deadShotsToRender.add(shot);
 			}
 		}
 		
@@ -229,20 +234,24 @@ public class World {
 		Direction direction = tank.getDirection();
 		Coordinates bulletSpawn = direction.move(tank.getPosition());
 		
-		if(isWall(bulletSpawn))
-			return;
-		
 		if(!tank.removeAmmo())
 			return;
+		
+		Shot shot = new Shot(bulletSpawn, tank, this, direction);
+		
+		if(isWall(bulletSpawn)) {
+			deadShotsToRender.add(shot);
+			return;
+		}
 		
 		Tank otherTank = getTank(bulletSpawn);
 		if(otherTank != null) {
 			tank.getOwner().addScore(1);
 			otherTank.kill();
+			deadShotsToRender.add(shot);
 			return;
 		}
 		
-		Shot shot = new Shot(bulletSpawn, tank, this, direction);
 		shots.add(shot);
 		addToShotMap(shot);
 	}
@@ -281,6 +290,7 @@ public class World {
 		
 		for(Shot s : deadShots) {
 			removeShotFromMap(s);
+			//TODO have the shots collide at the half extents
 		}
 		
 		deadShots.clear();
@@ -307,6 +317,8 @@ public class World {
 		
 		for(Shot s : deadShots) {
 			removeShotFromMap(s);
+			s.tickShot(); //Make the position of the shot correct
+			deadShotsToRender.add(s);
 		}
 		
 		deadShots.clear();
@@ -316,6 +328,7 @@ public class World {
 			
 			if(s.tickShot()) {
 				deadShots.add(s);
+				deadShotsToRender.add(s);
 				return true;
 			} else {
 				addToShotMap(s);
@@ -557,7 +570,18 @@ public class World {
 		for(Shot shot : shots) {
 			items.add(new ShotGridItem(shot));
 		}
-
+		
+		for(Shot shot : deadShotsToRender) {
+			items.add(new ShotGridItem(shot)); //This includes shots that never existed
+		}
+		
+		for(Tank tank : deadTanksToRender) {
+			items.add(new TankGridItem(tank));
+		}
+		
+		deadTanksToRender.clear();
+		deadShotsToRender.clear();
+		
 		handler.setDynamicItems(items);
 	}
 	

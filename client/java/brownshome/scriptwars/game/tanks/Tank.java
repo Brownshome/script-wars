@@ -57,6 +57,7 @@ public class Tank {
 	protected void kill() {
 		owner.addScore(-1);
 		world.removeTank(this);
+		world.deadTanksToRender.add(this);
 	}
 
 	@Override
