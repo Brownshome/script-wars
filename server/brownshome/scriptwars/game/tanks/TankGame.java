@@ -32,6 +32,7 @@ public class TankGame extends Game {
 	public TankGame(boolean[][] map, GameType type) throws OutOfIDsException {
 		super(type);
 		this.world = new World(map, this);
+		this.getDisplayHandler().putStaticGrid(getStaticGrid());
 	}
 	
 	@Override
@@ -247,5 +248,20 @@ public class TankGame extends Game {
 	
 	private int blend(int a, int b) {
 		return 255 - (255 - a) * (255 - b) / 255;
+	}
+	
+	byte[][] getStaticGrid() {
+		byte[][] grid = new byte[world.getHeight()][world.getWidth()];
+		
+		for(int x = 0; x < world.getWidth(); x++) {
+			for(int y = 0; y < world.getHeight(); y++) {
+				if(world.isWall(x, y))
+					grid[y][x] = 1;
+				else 
+					grid[y][x] = 0;
+			}
+		}
+		
+		return grid;
 	}
 }

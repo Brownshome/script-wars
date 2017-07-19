@@ -75,7 +75,7 @@ public abstract class DisplayHandler {
 		handleOldViewers(viewers);
 	}
 	
-	protected abstract void handleNewViewers(Collection<Consumer<ByteBuffer>> newViewers);
+	protected void handleNewViewers(Collection<Consumer<ByteBuffer>> newViewers) {}
 	
 	protected void handleOldViewers(Collection<Consumer<ByteBuffer>> oldViewers) {
 		if(game.clearScoreFlag()) {

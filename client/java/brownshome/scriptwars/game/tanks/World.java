@@ -14,7 +14,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import brownshome.scriptwars.connection.Network;
-import brownshome.scriptwars.game.Player;
+import brownshome.scriptwars.game.*;
 import brownshome.scriptwars.server.Server;
 
 public class World {
@@ -28,10 +28,13 @@ public class World {
 	private Set<Tank> tanksToFire = new HashSet<>();
 	private Set<Player<?>> playersToSpawn = new HashSet<>();
 	
+	private TankGame game;
+	
 	protected World(boolean[][] map, TankGame game) {
 		assert map.length > 0 && map[0].length > 0;
 		
 		this.map = map;
+		this.game = game;
 		tankMap = new Tank[map.length][map[0].length];
 		shotMap = new Shot[map.length][map[0].length];
 	}
@@ -506,11 +509,56 @@ public class World {
 		return true;
 	}
 	
-	public void displayWorld(TankGameDisplayHandler handler) {
-		handler.displayWorld(this);
+	private static final byte PLAYER_START = 4;
+	
+	private class TankGridItem implements GridItem {
+		private final Coordinates start, end;
+		private final byte code;
 		
-		for(Tank tank : tanks.values())
+		public TankGridItem(Tank tank) {
+			if(tank.hasMoved()) {
+				Direction dir = tank.getDirection().opposite();
+				end = tank.getPosition();
+				start = dir.move(end);
+			} else {
+				start = end = tank.getPosition();
+			}
+			
+			code = (byte) (game.getIndex(tank.getOwner()) + PLAYER_START);
+		}
+		
+		@Override public byte code() { return code; }
+		@Override public Coordinates start() { return start; }
+		@Override public Coordinates end() { return end; }
+	}
+	
+	public static class ShotGridItem implements GridItem {
+		private final Coordinates start, end;
+		
+		public ShotGridItem(Shot shot) {
+			start = shot.getPrevious();
+			end = shot.getPosition();
+		}
+
+		@Override public byte code() { return 2; }
+		@Override public Coordinates start() { return start; }
+		@Override public Coordinates end() { return end; }
+	}
+	
+	public void displayWorld(TankGameDisplayHandler handler) {
+		//TODO add dead shots and tanks
+		
+		Collection<GridItem> items = new ArrayList<>();
+		for(Tank tank : tanks.values()) {
+			items.add(new TankGridItem(tank));
 			tank.clearHasMoved();
+		}
+		
+		for(Shot shot : shots) {
+			items.add(new ShotGridItem(shot));
+		}
+
+		handler.setDynamicItems(items);
 	}
 	
 	protected void removeTank(Tank tank) {
@@ -548,17 +596,7 @@ public class World {
 		return clientTanks;
 	}
 
-	public Collection<TankGameDisplayHandler.ShotImage> getShotItemsToRender() {
-		//For all shots render them, leaving them with a dP of (0, 0) if they were just created
-		//For all destroyed shots, render an image at their last square, with start being the square they came from.
-		//As dead shots may end on the same space, shots are placed at their starting space.
-		
-		Collection<TankGameDisplayHandler.ShotImage> result = new ArrayList<>();
-		
-		for(Shot shot : shots) {
-			result.add(new TankGameDisplayHandler.ShotImage(shot));
-		}
-		
-		return result;
+	boolean[][] getMap() {
+		return map;
 	}
 }

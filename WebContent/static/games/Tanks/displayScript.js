@@ -30,7 +30,7 @@ TankGameDisplayHandler.prototype.functionLookup = GridDisplayHandler.prototype.f
 ]);
 
 function WallSprite(x, y, handler) {
-	GridSprite.call(this, x, y, 0, handler);
+	GridSprite.call(this, x, y, 1, handler);
 }
 
 WallSprite.prototype = Object.create(GridSprite.prototype);
@@ -48,12 +48,17 @@ WallSprite.prototype.render = function() {
 	);
 };
 
-TankGameDisplayHandler.prototype.getSprite = function(data, x, y, dx, dy) {
+TankGameDisplayHandler.prototype.getStaticSprite = function(data, x, y) {
+	if(data == 0)
+		return null;
+	
+	return new WallSprite(x, y, this);
+};
+
+TankGameDisplayHandler.prototype.getDynamicSprite = function(data, sx, sy, ex, ey) {
 	switch(data) {
-		case 0: return null;
-		case 1: return new WallSprite(x, y, this);
-		case 2: return new ImageSprite(x, y, dx, dy, 1, this, "bullet");
-		case 3: return new ImageSprite(x + dx, y + dy, dx, dy, 1, this, "bullet");
+		case 2: return new ImageSprite(sx, sy, ex, ey, 0, this, "bullet");
+		case 3: return undefined;
 	}
 	
 	if(!this.idList)
@@ -65,7 +70,7 @@ TankGameDisplayHandler.prototype.getSprite = function(data, x, y, dx, dy) {
 		return undefined;
 	
 	//Player sprite
-	return new ImageSprite(x, y, dx, dy, 2, this, id);
+	return new ImageSprite(sx, sy, ex, ey, 2, this, id);
 };
 
 function onLoad() {

@@ -3,15 +3,13 @@
  */
 function GridDisplayHandler(gameID) {
 	DisplayHandler.call(this, gameID);
-	
-	this.lastDeltaUpdate = null;
 }
 
 GridDisplayHandler.prototype = Object.create(DisplayHandler.prototype);
 GridDisplayHandler.prototype.constructor = GridDisplayHandler;
 
-GridDisplayHandler.prototype.bulkUpdate = function(dataView) {
-	this.lastDeltaUpdate = null;
+GridDisplayHandler.prototype.staticUpdate = function(dataView) {
+	this.dynamicObjects = null;
 	
 	this.width = dataView.getUint8();
 	this.height = dataView.getUint8(1);
@@ -28,7 +26,7 @@ GridDisplayHandler.prototype.bulkUpdate = function(dataView) {
 		this.grid[y] = [];
 		for(let x = 0; x < this.width; x++) {
 			const c = dataView.getUint8(2 + (x + y * this.width));
-			this.grid[y][x] = this.getSprite(c, x, y, 0, 0);
+			this.grid[y][x] = this.getStaticSprite(c, x, y);
 		}
 	}
 };
@@ -55,37 +53,40 @@ GridDisplayHandler.prototype.render = function() {
 					if(this.grid[y][x] && this.grid[y][x].layer == layer) this.grid[y][x].render();
 				}
 			}
+			
+			if(this.dynamicObjects)
+				for(let i = 0; i < this.dynamicObjects.length; i++) {
+					if(this.dynamicObjects[i].layer == layer) this.dynamicObjects[i].render();
+				}
 		}
 	}
 	
 	requestAnimationFrame(() => this.render());
 };
 
-GridDisplayHandler.prototype.deltaUpdate = function(dataView) {
+GridDisplayHandler.prototype.dynamicUpdate = function(dataView) {
+	this.dynamicObjects = [];
+	
 	let offset = 0;
 	
 	while(offset <= dataView.byteLength - 4) {
 		const c = dataView.getUint8(offset);
-		const x = dataView.getUint8(offset + 1);
-		const y = dataView.getUint8(offset + 2);
-		const dx = dataView.getInt8(offset + 3);
-		const dy = dataView.getInt8(offset + 4);
+		const sx = dataView.getUint8(offset + 1);
+		const sy = dataView.getUint8(offset + 2);
+		const ex = dataView.getInt8(offset + 3);
+		const ey = dataView.getInt8(offset + 4);
 		
-		this.grid[y][x] = this.getSprite(c, x, y, dx, dy);
+		this.dynamicObjects.push(this.getDynamicSprite(c, sx, sy, ex, ey));
 		
 		offset = offset + 5;
 	}
 
-	this.lastDeltaUpdate = Date.now();
+	this.dynamicObjects.lastUpdate = Date.now();
 };
 
-/**
- * 4: bulk Update
- * 5: delta Update
- */
 GridDisplayHandler.prototype.functionLookup = DisplayHandler.prototype.functionLookup.concat([
-	GridDisplayHandler.prototype.bulkUpdate,
-	GridDisplayHandler.prototype.deltaUpdate
+	GridDisplayHandler.prototype.staticUpdate,
+	GridDisplayHandler.prototype.dynamicUpdate
 ]);
 
 /**
@@ -102,11 +103,13 @@ function GridSprite(x, y, layer, displayHandler) {
 
 GridSprite.maxLayer = 0;
 
-function ImageSprite(x, y, dx, dy, layer, displayHandler, imageName) {
-	GridSprite.call(this, x, y, layer, displayHandler);
+function ImageSprite(sx, sy, ex, ey, layer, displayHandler, imageName) {
+	GridSprite.call(this, ex, ey, layer, displayHandler);
 	
-	this.dx = dx;
-	this.dy = dy;
+	this.sx = sx;
+	this.sy = sy;
+	this.ex = ex;
+	this.ey = ey;
 	this.image = this.sprites[imageName]; 
 }
 
@@ -128,21 +131,12 @@ ImageSprite.prototype.render = function() {
 	 * is received and is smoothed to (x, y) over ImageSprite.frameTime time.
 	 */
 	
-	//Maybe should cache Date.now this leads to every item being animated differently.
-	
-	let x;
-	let y;
+	//Maybe should cache Date.now this leads to every item being animated differently
+	const dt = (Date.now() - this.displayHandler.dynamicObjects.lastUpdate) / ImageSprite.frameTime;
+	const lerp = Math.max(dt, 1);
 
-	if(ImageSprite.frameTime && this.displayHandler.lastDeltaUpdate != null) {
-		const dt = (Date.now() - this.displayHandler.lastDeltaUpdate) / ImageSprite.frameTime;
-		const lerp = Math.max(dt, 1);
-
-		x = this.x - this.dx * (1 - dt);
-		y = this.y - this.dy * (1 - dt);
-	} else {
-		x = this.x;
-		y = this.y;
-	}
+	const x = this.ex * dt + this.sx * (1 - dt);
+	const y = this.ey * dt + this.sy * (1 - dt);
 	
 	if(this.image.complete) {
 		this.displayHandler.context.drawImage(

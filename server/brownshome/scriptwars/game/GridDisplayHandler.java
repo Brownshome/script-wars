@@ -1,16 +1,18 @@
 package brownshome.scriptwars.game;
 
 import java.nio.ByteBuffer;
-import java.util.Collection;
+import java.util.*;
 import java.util.function.Consumer;
 
+/** A DisplayHandler that displays a grid of static items and dynamic items */
 public class GridDisplayHandler extends DisplayHandler {
-	private static final byte BULK_UPDATE_BYTE = DisplayHandler.FREE_ID;
-	private static final byte DELTA_UPDATE_BYTE = DisplayHandler.FREE_ID + 1;
+	private static final byte STATIC_UPDATE_BYTE = DisplayHandler.FREE_ID;
+	private static final byte DYNAMIC_UPDATE_BYTE = DisplayHandler.FREE_ID + 1;
 	protected static final byte FREE_ID = DisplayHandler.FREE_ID + 2;
 	
-	private GridItem[][] grid;
-	private GridItem[][] oldGrid;
+	private byte[][] staticGrid;
+	private boolean isStaticGridDirty = true;
+	private Collection<GridItem> dynamicItems = Collections.emptyList();
 	
 	public GridDisplayHandler(Game game) {
 		super(game);
@@ -18,48 +20,48 @@ public class GridDisplayHandler extends DisplayHandler {
 	
 	@Override
 	protected void handleNewViewers(Collection<Consumer<ByteBuffer>> newViewers) {		
-		if(grid == null)
+		super.handleNewViewers(newViewers);
+		
+		if(staticGrid == null)
 			return;
 		
-		send(getBulkSyncBuffer(), newViewers);
+		send(getStaticBuffer(), newViewers);
 	}
 	
 	@Override
 	public void handleOldViewers(Collection<Consumer<ByteBuffer>> viewers) {
 		super.handleOldViewers(viewers);
 		
-		if(grid == null)
+		if(staticGrid == null)
 			return;
 		
-		if(oldGrid == null) {
-			//If there is a new grid, send a bulk update
-			ByteBuffer buffer = getBulkSyncBuffer();
-			oldGrid = new GridItem[getHeight()][getWidth()];
-			
+		if(isStaticGridDirty) {
+			ByteBuffer buffer = getStaticBuffer();
 			send(buffer, viewers);
-		} else {
-			ByteBuffer buffer = getDeltaBuffer();
-
-			if(buffer.remaining() == 0)
-				return;
-
-			send(buffer, viewers);
-
-			for(int row = 0; row < grid.length; row++) {
-				System.arraycopy(grid[row], 0, oldGrid[row], 0, grid[row].length);
-			}
+			isStaticGridDirty = false;
 		}
+		
+		ByteBuffer buffer = getDeltaBuffer();
+
+		if(buffer.hasRemaining()) 
+			send(buffer, viewers);
+		
+		dynamicItems.clear();
 	}
 
-	protected ByteBuffer getBulkSyncBuffer() {
-		ByteBuffer buffer = ByteBuffer.allocate(Byte.BYTES + Byte.BYTES + Byte.BYTES + Byte.BYTES * getWidth() * getHeight());
+	public synchronized void setDynamicItems(Collection<GridItem> items) {
+		dynamicItems = items;
+	}
+	
+	protected ByteBuffer getStaticBuffer() {
+		ByteBuffer buffer = ByteBuffer.allocate(3 + getWidth() * getHeight());
 		
-		buffer.put(BULK_UPDATE_BYTE);
+		buffer.put(STATIC_UPDATE_BYTE);
 		buffer.put((byte) getWidth()).put((byte) getHeight());
 		
-		for(GridItem[] row : grid) {
-			for(GridItem c : row) {
-				buffer.put(c == null ? 0 : c.getCode());
+		for(byte[] row : staticGrid) {
+			for(byte c : row) {
+				buffer.put(c);
 			}
 		}
 		
@@ -68,22 +70,18 @@ public class GridDisplayHandler extends DisplayHandler {
 	}
 
 	protected ByteBuffer getDeltaBuffer() {
-		ByteBuffer buffer = ByteBuffer.allocate(Byte.BYTES + (Character.BYTES + Byte.BYTES + Byte.BYTES) * getWidth() * getHeight());
-	
-		buffer.put(DELTA_UPDATE_BYTE);
+		if(dynamicItems == null || dynamicItems.isEmpty())
+			return ByteBuffer.allocate(0);
 		
-		for(int y = 0; y < grid.length; y++) {
-			for(int x = 0; x < grid[y].length; x++) {
-				if(oldGrid[y][x] != grid[y][x]) {
-					if(grid[y][x] == null) {
-						buffer.put((byte) 0).put((byte) x).put((byte) y).put((byte) 0).put((byte) 0);
-					} else {
-						buffer.put(grid[y][x].getCode())
-						.put((byte) x).put((byte) y)
-						.put((byte) grid[y][x].getMove().getX()).put((byte) grid[y][x].getMove().getY());
-					}
-				}
-			}
+		//code, sx, sy, ex, ey
+		ByteBuffer buffer = ByteBuffer.allocate(1 + 5 * getWidth() * getHeight());
+	
+		buffer.put(DYNAMIC_UPDATE_BYTE);
+		
+		for(GridItem item : dynamicItems) {
+			buffer.put(item.code());
+			buffer.put((byte) item.start().getX()).put((byte) item.start().getY());
+			buffer.put((byte) item.end().getX()).put((byte) item.end().getY());
 		}
 		
 		buffer.flip();
@@ -92,18 +90,16 @@ public class GridDisplayHandler extends DisplayHandler {
 	}
 
 	public int getHeight() {
-		return grid.length;
+		return staticGrid.length;
 	}
 
 	public int getWidth() {
-		return grid[0].length;
+		return staticGrid[0].length;
 	}
 
-	public synchronized void putGrid(GridItem[][] grid) {
-		if(this.grid == null || grid.length != this.grid.length || grid[0].length != this.grid[0].length)
-			oldGrid = null;
-		
-		this.grid = grid;
+	public synchronized void putStaticGrid(byte[][] grid) {
+		isStaticGridDirty = true;
+		staticGrid = grid;
 	}
 
 	public Game getGame() {

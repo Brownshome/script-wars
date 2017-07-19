@@ -4,7 +4,7 @@ import brownshome.scriptwars.connection.Network;
 
 public class Shot {
 	public static final char BULLET = 2;
-	public static final int SPEED = 1;
+	public static final int SPEED = 3;
 	private Tank owner;
 	private World world;
 	private Direction direction;

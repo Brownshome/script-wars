@@ -26,7 +26,7 @@ GridDisplayHandler
 		uint8[width * height] array
 	
 	deltaUpdate -- also includes movement
-		(uint8 item, uint8 x, uint8 y, uint8 dx, uint8 dy)[] updates
+		(uint8 item, uint8 startx, uint8 starty, uint8 endx, uint8 endy)[] updates
 		
 TankGameDisplayHandler
 	updatePlayerIDMap
