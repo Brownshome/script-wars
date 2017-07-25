@@ -28,16 +28,16 @@ You can see an enemy if there is a rectangle that can be drawn that contains bot
 you and the other tanks that contains no walls.
 </p><p>
 Tanks have an ammo restraint to make trigger happy tanks less effective. Each 
-tank has a maximum of ${staticBean.tankGameAmmo} ammo that is
-regenerated once every ${staticBean.tankGameRegen} ticks. This means overall
-you can only fire once every ${staticBean.tankGameRegen} ticks.
+tank has a maximum of ${staticBean.tankGameAmmo} ammo.
+</p><p>
+Ammo pickups, shown as a pile of shots on the game viewer, fully restores a tank's ammo
+reserve. Furthermore, any kill will fully restore your ammo.
 </p><p>
 On death, you will be sent one set of data with the <code>isAlive</code> byte set to
 zero. <strong>There will be no other data in this dataset so do not attempt to read
 any, seriously, we are NOT hiding anything in this data.</strong>
 </p><p>
-One point is gained for every kill and one point is lost for every death. I know it is
-cruel, but a zero sum game is the only way to avoid exploitation by you clever people.
+One point is gained for every kill and one point is lost for every death, it is not possible to have negative points.
 </p><p>
 The coordinate system is defined so that (0, 0) is at the top left of the game board. So
 to move UP subtract one from your y coordinate.
@@ -182,7 +182,8 @@ import java.io.IOException;
 		while(api.nextTick()) {
 			if(!api.isAlive()) {
 				continue;
-			}			// Move randomly, this will be overwritten if we can see someone.			int direction = (int) (Math.random() * 4);			api.move(Direction.values()[direction]);				// See if there is a tank in our field of view,			// and if there is select it.			Tank targetTank = null;			for(Tank tank : api.getVisibleTanks()){				targetTank = tank;			}				// If we can see a tank, lets shoot it.			if(targetTank != null){				Coordinates targetPosition = targetTank.getPosition();				Coordinates myPosition = api.me().getPosition();						Direction targetDirection = Direction.getDirection(targetPosition, myPosition);				if(targetDirection != null) {					//We have a clear shot on the target					api.shoot(targetDirection);				}			}				System.out.println(&quot;Position: &quot; + api.me().getPosition());		}				System.out.println(&quot;Disconnected from server:\n\t&quot; + api.getConnectionStatus());	}}
+			}			// Move randomly, this will be overwritten if we can see someone.			int direction = (int) (Math.random() * 4);			api.move(Direction.values()[direction]);
+				// See if there is a tank in our field of view,			// and if there is select it.			Tank targetTank = null;			for(Tank tank : api.getVisibleTanks()){				targetTank = tank;			}				// If we can see a tank, lets shoot it.			if(targetTank != null){				Coordinates targetPosition = targetTank.getPosition();				Coordinates myPosition = api.me().getPosition();						Direction targetDirection = Direction.getDirection(targetPosition, myPosition);				if(targetDirection != null) {					//We have a clear shot on the target					api.shoot(targetDirection);				}			}				System.out.println(&quot;Position: &quot; + api.me().getPosition());		}				System.out.println(&quot;Disconnected from server:\n\t&quot; + api.getConnectionStatus());	}}
 </code></pre>
 	</div>
 	<div class="tab-pane" id="basic">
@@ -212,6 +213,12 @@ import java.io.IOException;
 				<td>1</td>
 				<td>Byte</td>
 				<td>0 if the player is dead, 1 if the player is dead. There will be no more data to follow if this value is 0.</td>
+			</tr>
+			<tr>
+				<td>ammoRemaining</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The amount of ammunition you have remaining.</td>
 			</tr>
 			<tr>
 				<td>xPos</td>
@@ -253,8 +260,9 @@ import java.io.IOException;
 			<tr>
 				<td>tankData</td>
 				<td>numberOfTanks</td>
-				<td>(Byte, Byte)</td>
-				<td>The x and y coordinates of a tank that can be seen. No guarantees are made about the order of the tanks.</td>
+				<td>(Byte, Byte, Byte)</td>
+				<td>The x and y coordinates and a unique ID of a tank that can be seen. 
+				No guarantees are made about the order of the tanks. If a tank disconnects it's ID may be re-used</td>
 			</tr>
 			<tr>
 				<td>numberOfShots</td>
@@ -268,6 +276,18 @@ import java.io.IOException;
 				<td>(Byte, Byte, Byte)</td>
 				<td>The x and y coordinates followed by the direction of the shot. The values for
 				specific directions are shown below.</td>
+			</tr>
+			<tr>
+				<td>numberOfAmmoPickups</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The number of ammo pickups in the game</td>
+			</tr>
+			<tr>
+				<td>ammoPickupData</td>
+				<td>numberOfAmmoPickups</td>
+				<td>(Byte, Byte)</td>
+				<td>The x and y coordinates of the pickup</td>
 			</tr>
 		</table>
 		
@@ -331,7 +351,7 @@ import java.io.IOException;
 		<pre><code>
 import java.io.IOException;
 
-import brownshome.scriptwars.game.Network;
+import brownshome.scriptwars.connection.Network;
 
 /**
  * This is an example of reading data from the server. We avoid using the pre-built Tank and
@@ -379,6 +399,8 @@ public class ExampleTankAIBasic {
 				continue;
 			}
 			
+			int ammo = network.getByte();
+			
 			int xPos = network.getByte();
 			int yPos = network.getByte();
 			
@@ -394,10 +416,11 @@ public class ExampleTankAIBasic {
 			
 			int noTanks = network.getByte();
 			
-			int[][] tanks = new int[noTanks][2]; //An array holding the X and Y positions of each tank
+			int[][] tanks = new int[noTanks][3]; //An array holding the X, Y and ID of each tank
 			for(int i = 0; i &lt; noTanks; i++) {
 				tanks[i][0] = network.getByte();
 				tanks[i][1] = network.getByte();
+				tanks[i][2] = network.getByte();
 			}
 			
 			int noShots = network.getByte();
@@ -407,6 +430,13 @@ public class ExampleTankAIBasic {
 				shots[i][0] = network.getByte();
 				shots[i][1] = network.getByte();
 				shots[i][2] = network.getByte();
+			}
+			
+			int noAmmo = network.getByte();
+			int[][] ammoPickups = new int[noAmmo][2];
+			for(int i = 0; i &lt; noAmmo; i++) {
+				ammoPickups[i][0] = network.getByte();
+				ammoPickups[i][1] = network.getByte();
 			}
 			
 			//For the actual AI, we shall hug the left wall and keep moving around, should keep things interesting

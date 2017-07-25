@@ -5,20 +5,23 @@ import brownshome.scriptwars.game.Player;
 
 public class Tank {
 	public final static int MAX_AMMO = 10;
-	public static final int REGEN_RATE = 5;
 		
 	private Player<?> owner;
 	//the direction of the last move
 	private Direction direction;
 	private World world;
 	private Coordinates position;
-	private int ammo = MAX_AMMO * REGEN_RATE;
+	private int ammo = MAX_AMMO;
 	private boolean hasMoved = false;
+	private int clientID;
+	
+	public Tank(Coordinates coordinates) {
+		position = coordinates;
+	}
 	
 	public Tank(Network network) {
-		int x = network.getByte();
-		int y = network.getByte();
-		position = new Coordinates(x, y);
+		position = new Coordinates(network);
+		clientID = network.getByte();
 	}
 	
 	protected Tank(Coordinates coordinates, Player<?> owner, World world) {
@@ -83,18 +86,16 @@ public class Tank {
 	}
 
 	protected boolean removeAmmo() {
-		if(ammo >= Tank.REGEN_RATE) {
-			ammo -= Tank.REGEN_RATE;
+		if(ammo >= 1) {
+			ammo -= 1;
 			return true;
 		}
 		
 		return false;
 	}
 
-	protected void returnAmmo() {
-		if(ammo < MAX_AMMO * Tank.REGEN_RATE) {
-			ammo++;
-		}
+	protected void refilAmmo() {
+		ammo = MAX_AMMO;
 	}
 
 	protected void clearHasMoved() {
@@ -103,5 +104,13 @@ public class Tank {
 
 	protected boolean hasMoved() {
 		return hasMoved;
+	}
+	
+	public int clientID() {
+		return clientID;
+	}
+
+	public int ammo() {
+		return ammo;
 	}
 }

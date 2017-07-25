@@ -143,8 +143,11 @@ public class Player<CONNECTION> {
 
 	/** Only ever call this from one thread, the game thread */
 	public void addScore(int i) {
-		game.flagScores();
 		score = score + i;
+		
+		if(score < 0) score = 0;
+		
+		game.flagScores();
 	}
 	
 	public int getScore() {

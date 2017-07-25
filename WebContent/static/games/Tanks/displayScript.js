@@ -57,14 +57,14 @@ TankGameDisplayHandler.prototype.getStaticSprite = function(data, x, y) {
 
 TankGameDisplayHandler.prototype.getDynamicSprite = function(data, sx, sy, ex, ey) {
 	switch(data) {
-		case 2: return new ImageSprite(sx, sy, ex, ey, 0, this, "bullet");
-		case 3: return undefined;
+		case 0: return new ImageSprite(sx, sy, ex, ey, 0, this, "bullet");
+		case 1: return new ImageSprite(sx, sy, ex, ey, 1, this, "ammoPickup");
 	}
 	
 	if(!this.idList)
 		return undefined;
 		
-	let id = this.idList[data - 4]; /** No 4 is player 1 */
+	let id = this.idList[data - 2]; /** No 2 is player 0 */
 	
 	if(id == 0)
 		return undefined;
@@ -77,5 +77,6 @@ function onLoad() {
 	displayHandler = new TankGameDisplayHandler();
 	ImageSprite.frameTime = 250; //TODO sync this value from the server, maybe using jsp?
 	ImageSprite.regesterSprite("bullet", "../static/games/Tanks/bullet.png");
+	ImageSprite.regesterSprite("ammoPickup", "../static/games/Tanks/ammoPickup.png");
 	displayHandler.startRender();
 }

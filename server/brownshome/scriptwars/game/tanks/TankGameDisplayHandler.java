@@ -13,6 +13,14 @@ import brownshome.scriptwars.game.Player;
 public class TankGameDisplayHandler extends GridDisplayHandler {
 	private static final byte PLAYER_ID_BYTE = GridDisplayHandler.FREE_ID;
 	
+	public static enum StaticSprites {
+		NOTHING, WALL;
+	}
+	
+	public static enum DynamicSprites {
+		SHOT, AMMO, TANK_START;
+	}
+	
 	public TankGameDisplayHandler(TankGame game) {
 		super(game);
 	}

@@ -48,6 +48,7 @@ public class NormalAI {
 				continue;
 			}
 			
+			network.getByte();
 			int xPos = network.getByte();
 			int yPos = network.getByte();
 			
@@ -67,6 +68,7 @@ public class NormalAI {
 			for(int i = 0; i < noTanks; i++) {
 				tanks[i][0] = network.getByte();
 				tanks[i][1] = network.getByte();
+				network.getByte();
 			}
 			
 			int noShots = network.getByte();
