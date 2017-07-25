@@ -53,6 +53,7 @@ public class Shot {
 		if(tank != null) {
 			tank.kill();
 			owner.getOwner().addScore(1);
+			owner.refilAmmo();
 		}
 	}
 	

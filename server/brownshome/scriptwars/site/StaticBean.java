@@ -18,10 +18,6 @@ public class StaticBean {
 		return String.valueOf(Shot.SPEED);
 	}
 	
-	public String getTankGameRegen() {
-		return String.valueOf(Tank.REGEN_RATE);
-	}
-	
 	public BotDifficulty[] getDifficulties() {
 		return BotDifficulty.values();
 	}

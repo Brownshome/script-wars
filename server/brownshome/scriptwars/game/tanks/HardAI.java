@@ -8,7 +8,6 @@ public class HardAI {
 	private Random rand = new Random();
 	private LinkedHashSet<Coordinates> priority = new LinkedHashSet<>();
 	private Coordinates last = null;
-	private int ammo = 50;
 	
 	public static void main(String[] args) throws IOException {
 		new HardAI(Integer.parseInt(args[0]));
@@ -23,15 +22,11 @@ public class HardAI {
 				continue;
 			}
 			
-			ammo++;
-			ammo = Math.max(50, ammo);
-			
 			if(first) {
 				fillPriorityList();
 				first = false;
 			}
 			
-			flagViewed();
 			if(api.me().getPosition().equals(last)) {
 				priority.clear();
 				fillPriorityList();
@@ -41,34 +36,12 @@ public class HardAI {
 			
 			pathTo(getNextCoord());
 			
-			if(ammo >= 5)
+			if(api.getAmmo() > 0)
 				shootBadGuys();
 			
 			avoidBullets();
-			
-			if(api.getAction() == Action.SHOOT)
-				ammo -= 5;
-			
+
 			//api.printAction();
-		}
-	}
-	
-	private void flagCoord(Coordinates coord) {
-		priority.remove(coord);
-		priority.add(coord);
-	}
-	
-	//Needs to be updated with the new ruleset
-	private void flagViewed() {
-		World map = api.getMap();
-		
-		flagCoord(api.me().getPosition());
-		
-		for(Direction dir : Direction.values()) {
-			Coordinates coord = api.me().getPosition();
-			while(!map.isWall(coord = dir.move(coord))) {
-				flagCoord(coord);
-			}
 		}
 	}
 	
@@ -76,17 +49,16 @@ public class HardAI {
 		return priority.iterator().next();
 	}
 	
+	private void flagCoord(Coordinates coord) {
+		priority.remove(coord);
+		priority.add(coord);
+	}
+	
 	private void fillPriorityList() {
 		List<Coordinates> array = new ArrayList<>();
 		
 		World map = api.getMap();
-		for(int x = 0; x < map.getWidth(); x++) {
-			for(int y = 0; y < map.getHeight(); y++) {
-				if(!map.isWall(x, y)) {
-					array.add(new Coordinates(x, y));
-				}
-			}
-		}
+		array.addAll(map.getAmmoPickups());
 		
 		Collections.shuffle(array);
 		priority.addAll(array);

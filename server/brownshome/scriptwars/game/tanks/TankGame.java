@@ -25,6 +25,7 @@ import brownshome.scriptwars.game.Player;
 
 public class TankGame extends Game {
 	public static final int PLAYER_COUNT = 8;
+	private static final int NUMBER_OF_AMMO_PICKUPS = 5;
 	
 	private final List<Player<?>> players = Arrays.asList(new Player[PLAYER_COUNT]);
 	private World world;
@@ -67,6 +68,7 @@ public class TankGame extends Game {
 	@Override
 	public void tick() {
 		world.finalizeMovement();
+		world.pickupAmmo();
 		world.moveShots();
 		world.fireTanks();
 		world.spawnPlayers();
@@ -74,13 +76,22 @@ public class TankGame extends Game {
 
 	@Override
 	public int getDataSize() {
-		//bytes + worldsize + bulletData
-		return 7 + getMaximumPlayers() * 2 + world.getDataSize() + Tank.MAX_AMMO * getMaximumPlayers() * 3;
+		return 
+				9                                             //Headers and single values
+				+ getMaximumPlayers() * 3                     //Tank x, y, id
+				+ world.getDataSize()                         //World data
+				+ Tank.MAX_AMMO * getMaximumPlayers() * 3     //Shot data x, y, direction
+				+ numberOfAmmoPickups() * 2;                  //Ammo pickups x, y
+	}
+
+	protected int numberOfAmmoPickups() {
+		return NUMBER_OF_AMMO_PICKUPS;
 	}
 
 	/**
 	 * 
 	 * byte: 0/1 alive or dead
+	 * byte: ammoRemaining
 	 * byte: x
 	 * byte: y
 	 * byte: width
@@ -92,6 +103,7 @@ public class TankGame extends Game {
 	 * players * {
 	 * 	byte: x
 	 * 	byte: y
+	 *	byte: id
 	 * }
 	 * 
 	 * byte: shots
@@ -99,6 +111,12 @@ public class TankGame extends Game {
 	 * 	byte: x
 	 * 	byte: y
 	 * 	byte: direction
+	 * }
+	 * 
+	 * byte: ammoPickups
+	 * shots * {
+	 *  byte: x
+	 *  byte: y
 	 * }
 	 */
 	@Override
@@ -109,6 +127,8 @@ public class TankGame extends Game {
 		
 		if(isAlive) {
 			Tank tank = world.getTank(player);
+			
+			data.put((byte) tank.ammo());
 			
 			data.put((byte) tank.getPosition().getX());
 			data.put((byte) tank.getPosition().getY());
@@ -121,8 +141,10 @@ public class TankGame extends Game {
 			Collection<Tank> visibleTanks = world.getVisibleTanks(player);
 			data.put((byte) visibleTanks.size());
 			for(Tank otherTank : visibleTanks) {
+				int slot = getIndex(otherTank.getOwner());
 				data.put((byte) otherTank.getPosition().getX());
 				data.put((byte) otherTank.getPosition().getY());
+				data.put((byte) slot);
 			}
 			
 			Collection<Shot> shots = world.getShots();
@@ -131,6 +153,12 @@ public class TankGame extends Game {
 				data.put((byte) shot.getPosition().getX());
 				data.put((byte) shot.getPosition().getY());
 				data.put((byte) shot.getDirection().ordinal());
+			}
+			
+			Collection<Coordinates> ammoPickups = world.getAmmoPickups();
+			data.put((byte) ammoPickups.size());
+			for(Coordinates pickup : ammoPickups) {
+				data.put((byte) pickup.getX()).put((byte) pickup.getY());
 			}
 		}
 		
@@ -142,9 +170,6 @@ public class TankGame extends Game {
 		if(!world.isAlive(player))
 			world.spawnTank(player);
 		
-		//0: do nothing
-		//1: move
-		//2: shoot
 		Action action = Action.values()[data.get()];
 		switch(action) {
 		case MOVE:
@@ -256,9 +281,9 @@ public class TankGame extends Game {
 		for(int x = 0; x < world.getWidth(); x++) {
 			for(int y = 0; y < world.getHeight(); y++) {
 				if(world.isWall(x, y))
-					grid[y][x] = 1;
+					grid[y][x] = (byte) TankGameDisplayHandler.StaticSprites.WALL.ordinal();
 				else 
-					grid[y][x] = 0;
+					grid[y][x] = (byte) TankGameDisplayHandler.StaticSprites.NOTHING.ordinal();
 			}
 		}
 		

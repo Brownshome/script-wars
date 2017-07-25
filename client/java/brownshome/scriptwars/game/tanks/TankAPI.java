@@ -20,6 +20,7 @@ public class TankAPI {
 	private Network _network;
 	private boolean _isAlive;
 	private Tank _me;
+	private int _ammo;
 	
 	private Action _action = Action.NOTHING;
 	private Direction _direction = null;
@@ -60,6 +61,13 @@ public class TankAPI {
 		return _isAlive;
 	}
 	
+	/** 
+	 * Returns the amount of ammo that you have left 
+	 **/
+	public int getAmmo() {
+		return _ammo;
+	}
+	
 	/**
 	 * This is the main API loop.
 	 * This should be called from a while loop inside which is
@@ -76,7 +84,8 @@ public class TankAPI {
 
 		_isAlive = _network.getByte() == 1;
 		if(_isAlive) {
-			_me = new Tank(_network);
+			_ammo = _network.getByte();
+			_me = new Tank(new Coordinates(_network));
 			_map = new World(_network);
 		} else {
 			_me = null;

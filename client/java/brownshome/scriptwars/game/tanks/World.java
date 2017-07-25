@@ -1,15 +1,7 @@
 package brownshome.scriptwars.game.tanks;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -22,8 +14,10 @@ public class World {
 	private Map<Player<?>, Tank> tanks = new HashMap<>();
 	private Set<Tank> clientTanks = new HashSet<>();
 	private boolean[][] map;
+	
 	private Tank[][] tankMap;
 	private Shot[][] shotMap;
+	private Set<Coordinates> ammoPickup = new HashSet<>();
 	
 	private Set<Tank> tanksToFire = new HashSet<>();
 	private Set<Player<?>> playersToSpawn = new HashSet<>();
@@ -72,6 +66,12 @@ public class World {
 			Shot shot = new Shot(network);
 			shots.add(shot);
 			addToShotMap(shot);
+		}
+		
+		int ammoCount = network.getByte();
+		for(int i = 0; i < ammoCount; i++) {
+			Coordinates coord = new Coordinates(network);
+			ammoPickup.add(coord);
 		}
 	}
 
@@ -130,8 +130,6 @@ public class World {
 		tank.move(direction);
 		setTank(tank.getPosition(), tank);
 	}
-
-
 
 	protected void fireNextTick(Player<?> player) {
 		tanksToFire.add(getTank(player));
@@ -197,11 +195,38 @@ public class World {
 		finalizeMovement();
 	}
 	
-	protected void fireTanks() {
+	protected void pickupAmmo() {
 		for(Tank tank : tanks.values()) {
-			tank.returnAmmo();
+			if(ammoPickup.remove(tank.getPosition())) {
+				tank.refilAmmo();
+			}
 		}
 		
+		try {
+			while(ammoPickup.size() < game.numberOfAmmoPickups()) {
+				ammoPickup.add(getAmmoSpawnCoordinate());
+			}
+		} catch(IllegalStateException e) { /*No valid spawn slots*/ }
+	}
+
+	private Coordinates getAmmoSpawnCoordinate() {
+		List<Coordinates> possibleSpawns = new ArrayList<>(getWidth() * getHeight());
+		
+		for(int x = 0; x < getWidth(); x++) {
+			for(int y = 0; y < getHeight(); y++) {
+				Coordinates coord = new Coordinates(x, y);
+				if(!isWall(coord) && getTank(coord) == null) {
+					possibleSpawns.add(coord);
+				}
+			}
+		}
+		
+		if(possibleSpawns.isEmpty()) throw new IllegalStateException();
+		
+		return possibleSpawns.get(new Random().nextInt(possibleSpawns.size()));
+	}
+
+	protected void fireTanks() {
 		for(Tank tank : tanksToFire) {
 			fireTank(tank);
 		}
@@ -247,6 +272,7 @@ public class World {
 		Tank otherTank = getTank(bulletSpawn);
 		if(otherTank != null) {
 			tank.getOwner().addScore(1);
+			tank.refilAmmo();
 			otherTank.kill();
 			deadShotsToRender.add(shot);
 			return;
@@ -522,8 +548,6 @@ public class World {
 		return true;
 	}
 	
-	private static final byte PLAYER_START = 4;
-	
 	private class TankGridItem implements GridItem {
 		private final Coordinates start, end;
 		private final byte code;
@@ -537,7 +561,7 @@ public class World {
 				start = end = tank.getPosition();
 			}
 			
-			code = (byte) (game.getIndex(tank.getOwner()) + PLAYER_START);
+			code = (byte) (game.getIndex(tank.getOwner()) + TankGameDisplayHandler.DynamicSprites.TANK_START.ordinal());
 		}
 		
 		@Override public byte code() { return code; }
@@ -553,9 +577,21 @@ public class World {
 			end = shot.getPosition();
 		}
 
-		@Override public byte code() { return 2; }
+		@Override public byte code() { return (byte) TankGameDisplayHandler.DynamicSprites.SHOT.ordinal(); }
 		@Override public Coordinates start() { return start; }
 		@Override public Coordinates end() { return end; }
+	}
+	
+	public static class AmmoPickupGridItem implements GridItem {
+		private final Coordinates position;
+		
+		public AmmoPickupGridItem(Coordinates position) {
+			this.position = position;
+		}
+
+		@Override public byte code() { return (byte) TankGameDisplayHandler.DynamicSprites.AMMO.ordinal(); }
+		@Override public Coordinates start() { return position; }
+		@Override public Coordinates end() { return position; }
 	}
 	
 	public void displayWorld(TankGameDisplayHandler handler) {
@@ -577,6 +613,10 @@ public class World {
 		
 		for(Tank tank : deadTanksToRender) {
 			items.add(new TankGridItem(tank));
+		}
+		
+		for(Coordinates pickup : ammoPickup) {
+			items.add(new AmmoPickupGridItem(pickup));
 		}
 		
 		deadTanksToRender.clear();
@@ -622,5 +662,13 @@ public class World {
 
 	boolean[][] getMap() {
 		return map;
+	}
+
+	public Collection<Coordinates> getAmmoPickups() {
+		return ammoPickup;
+	}
+	
+	public boolean isAmmoPickup(Coordinates coord) {
+		return ammoPickup.contains(coord);
 	}
 }
