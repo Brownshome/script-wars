@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.catalina.mapper.MappingData;
+
 public class GameType {
 	static interface GameCreator {
 		Game get() throws GameCreationException;
@@ -42,6 +44,7 @@ public class GameType {
 	private boolean isBetaGame;
 	private Language language;
 	private Difficulty difficulty;
+	private Map<String, BotFunction> serverBots;
 	
 	private ReentrantReadWriteLock gamesLock = new ReentrantReadWriteLock();
 	private Collection<Game> games = new ArrayList<>();
@@ -51,6 +54,7 @@ public class GameType {
 		this(clazz, false, Language.ANY, difficulty);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public GameType(Class<? extends Game> clazz, boolean isBeta, Language language, Difficulty difficulty) throws GameCreationException {
 		this.isBetaGame = isBeta;
 		this.difficulty = difficulty;
@@ -87,6 +91,12 @@ public class GameType {
 			description = (String) clazz.getMethod("getDescription").invoke(null);
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
 			throw new GameCreationException("Game " + clazz.getSimpleName() + " did not define \'static String getDescription()\'.", e);
+		}
+		
+		try {
+			serverBots = (Map<String, BotFunction>) clazz.getMethod("getBotFunctions").invoke(null);
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+			throw new GameCreationException("Game " + clazz.getSimpleName() + " did not define \'static Map<String, BotFunction> getBotFunctions()\'.", e);
 		}
 	}
 	
@@ -172,5 +182,20 @@ public class GameType {
 	
 	public boolean isBetaGame() {
 		return isBetaGame;
+	}
+
+	/** Returns the main function of the requested bot, throwing an IllegalArgumentException if there is none */
+	public BotFunction getServerBot(String name) throws UnknownServerBotException {
+		BotFunction function = serverBots.get(name);
+		if(function == null)
+			throw new UnknownServerBotException(name);
+		
+		return function;
+	}
+	
+	public List<String> getDifficulties() {
+		List<String> result = new ArrayList<>(serverBots.keySet());
+		result.sort(null);
+		return result;
 	}
 }

@@ -1,7 +1,9 @@
-package brownshome.scriptwars.game.tanks;
+package brownshome.scriptwars.game.tanks.ai;
 
 import java.io.IOException;
 import java.util.*;
+
+import brownshome.scriptwars.game.tanks.*;
 
 public class HardAI {
 	private TankAPI api;

@@ -13,15 +13,17 @@ public class RequestBotServlet extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		String rawGameSlot = req.getParameter("slot");
-		String gameName = req.getParameter("name");
+		String botName = req.getParameter("name");
 
 		try {
 			int slot = Integer.parseInt(rawGameSlot);
-			BotDifficulty.valueOf(gameName).start(Game.getGame(slot));
+			Game.getGame(slot).startServerBot(botName);
 		} catch(NullPointerException | ArrayIndexOutOfBoundsException | NumberFormatException ex) {
 			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid slot ID");
 		} catch(OutOfIDsException ooide) {
 			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "That game is full");
+		} catch (UnknownServerBotException e) {
+			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
 		}
 	}
 }

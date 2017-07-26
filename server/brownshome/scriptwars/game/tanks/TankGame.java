@@ -5,9 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 
 import javax.imageio.ImageIO;
@@ -15,11 +13,8 @@ import javax.imageio.ImageIO;
 import brownshome.scriptwars.connection.ConnectionHandler;
 import brownshome.scriptwars.connection.InvalidIDException;
 import brownshome.scriptwars.connection.UDPConnectionHandler;
-import brownshome.scriptwars.game.DisplayHandler;
-import brownshome.scriptwars.game.Game;
-import brownshome.scriptwars.game.GameType;
-import brownshome.scriptwars.game.OutOfIDsException;
-import brownshome.scriptwars.game.Player;
+import brownshome.scriptwars.game.*;
+import brownshome.scriptwars.game.tanks.ai.*;
 
 /* Each tick shots are moved x spaces. Then tanks shoot. Then tanks move */
 
@@ -193,6 +188,17 @@ public class TankGame extends Game {
 		return "A tactical 2D tank game with stealth mechanics.";
 	}
 
+	public static Map<String, BotFunction> getBotFunctions() {
+		Map<String, BotFunction> mapping = new HashMap<>();
+		mapping.put("Hard AI", HardAI::main);
+		mapping.put("Random AI", RandomAI::main);
+		mapping.put("Simple AI", SimpleAI::main);
+		mapping.put("Scared AI", ScaredAI::main);
+		//mapping.put("Aggressive AI", AggressiveAI::main);
+		
+		return mapping;
+	}
+	
 	@Override
 	public void displayGame() {
 		TankGameDisplayHandler handler = getDisplayHandler();

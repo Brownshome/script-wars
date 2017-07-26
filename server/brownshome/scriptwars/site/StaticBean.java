@@ -1,6 +1,6 @@
 package brownshome.scriptwars.site;
 
-import java.util.Collection;
+import java.util.*;
 
 import brownshome.scriptwars.game.*;
 import brownshome.scriptwars.game.tanks.*;
@@ -16,9 +16,5 @@ public class StaticBean {
 	
 	public String getTankGameShotSpeed() {
 		return String.valueOf(Shot.SPEED);
-	}
-	
-	public BotDifficulty[] getDifficulties() {
-		return BotDifficulty.values();
 	}
 }

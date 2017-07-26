@@ -13,8 +13,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.logging.Level;
 
-import brownshome.scriptwars.connection.ConnectionHandler;
-import brownshome.scriptwars.connection.InvalidIDException;
+import brownshome.scriptwars.connection.*;
 import brownshome.scriptwars.server.Server;
 
 /** The interface that all played games must implement. */
@@ -385,5 +384,25 @@ public abstract class Game {
 		
 		updatePlayerList = false;
 		return true;
+	}
+	
+	public void startServerBot(String name) throws UnknownServerBotException, OutOfIDsException {
+		BotFunction function = getType().getServerBot(name);
+
+		int ID = getID(MemoryConnectionHandler.instance().getProtocolByte());
+
+		if(ID == -1)
+			throw new OutOfIDsException();
+
+		Thread aiThread = new Thread(() -> {
+			try {
+				function.start(new String[] {String.valueOf(ID)});
+			} catch (Exception e) {
+				Server.LOG.log(Level.WARNING, "Error in server bot " + name, e);
+			}
+		}, name + "@" + ID + " AI thread");
+
+		aiThread.setDaemon(true);
+		aiThread.start();
 	}
 }
