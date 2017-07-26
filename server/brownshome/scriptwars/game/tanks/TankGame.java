@@ -190,10 +190,10 @@ public class TankGame extends Game {
 
 	public static Map<String, BotFunction> getBotFunctions() {
 		Map<String, BotFunction> mapping = new HashMap<>();
-		mapping.put("Hard AI", HardAI::main);
+		//mapping.put("Hard AI", HardAI::main);
 		mapping.put("Random AI", RandomAI::main);
 		mapping.put("Simple AI", SimpleAI::main);
-		mapping.put("Scared AI", ScaredAI::main);
+		//mapping.put("Scared AI", ScaredAI::main);
 		//mapping.put("Aggressive AI", AggressiveAI::main);
 		
 		return mapping;
