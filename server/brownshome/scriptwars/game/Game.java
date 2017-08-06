@@ -288,6 +288,12 @@ public abstract class Game {
 		if(state == GameState.WAITING && !isJudgeGame)
 			start();
 		
+		if(isJudgeGame) {
+			synchronized(this) {
+				notifyAll();
+			}
+		}
+		
 		onPlayerChange();
 	}
 	
@@ -296,56 +302,51 @@ public abstract class Game {
 	 *  This method is synchronised on the game object, making it so that no network operations can occur while the game is not sleeping
 	 * 
 	 *  FOR INTERNAL USE ONLY */
-	private void gameLoop() {
+	private synchronized void gameLoop() {
 		int tickCount = 0;
 
 		while((!isFinite() || tickCount++ < lifeSpan) && !Server.shouldStop()) {
-			synchronized(this) {
+			long lastTick = System.currentTimeMillis(); //keep this the first line.
 
-				long lastTick = System.currentTimeMillis(); //keep this the first line.
+			if(!isJudgeGame && activePlayers.stream().allMatch(Player::isServerSide)) {
+				break; //End the game, the only bots left are server-side bots
+			}
 
-				if(!isJudgeGame && activePlayers.stream().allMatch(Player::isServerSide)) {
-					break; //End the game, the only bots left are server-side bots
+			tick();
+
+			if(getDisplayHandler() != null) displayGame();
+
+			sendData();
+			waitForResponses(lastTick + timeout);
+
+			long timeToSleep;
+
+			//Never sleep in a judging game
+			while((timeToSleep = lastTick - System.currentTimeMillis() + getTickRate()) > 0 && !isJudgeGame) {
+				try {
+					wait(timeToSleep); //keep this the last line. (wait is used to give up this object's monitor). Possible replace this with sleep and used blocks or locks instead
+				} catch (InterruptedException e) {
+					break;
 				}
+			} 
 
-				tick();
-
-				if(getDisplayHandler() != null) displayGame();
-
-				sendData();
-				waitForResponses(lastTick + timeout);
-
-				long timeToSleep;
-
-				//Never sleep in a judging game
-				while((timeToSleep = lastTick - System.currentTimeMillis() + getTickRate()) > 0 && !isJudgeGame) {
-					try {
-						wait(timeToSleep); //keep this the last line. (wait is used to give up this object's monitor). Possible replace this with sleep and used blocks or locks instead
-					} catch (InterruptedException e) {
-						break;
-					}
-				} 
-
-				//Give it 20ms of lee-way
-				if(timeToSleep < -100) {
-					Server.LOG.log(Level.WARNING, "Game \'" + getClass().getName() + "\' is ticking too slowly.");
-				}
+			//Give it 20ms of lee-way
+			if(timeToSleep < -100) {
+				Server.LOG.log(Level.WARNING, "Game \'" + getClass().getName() + "\' is ticking too slowly.");
 			}
 		}
 
-		synchronized(this) {
-			endGame();
+		endGame();
 
-			activeGamesLock.writeLock().lock();
-			try {
-				gameIDPool.free(slot);
-				activeGames[slot] = null;
-			} finally {
-				activeGamesLock.writeLock().unlock();
-			}
+		activeGamesLock.writeLock().lock();
+		try {
+			gameIDPool.free(slot);
+			activeGames[slot] = null;
+		} finally {
+			activeGamesLock.writeLock().unlock();
 		}
 	}
-	
+
 	protected boolean isFinite() {
 		return isJudgeGame;
 	}
@@ -371,6 +372,22 @@ public abstract class Game {
 		return thread;
 	}
 
+	/** Waits until the game is full, then starts the game 
+	 * @throws InterruptedException */
+	public synchronized Thread startWhenReady(int timeout) throws InterruptedException {
+		long limit = timeout + System.currentTimeMillis();
+		
+		while(isSpaceForPlayer()) {
+			long k;
+			if((k = limit - System.currentTimeMillis()) <= 0)
+				break;
+			
+			wait(k);
+		}
+		
+		return start();
+	}
+	
 	/** Returns a byte used to identify this game. */
 	public int getSlot() {
 		return slot;

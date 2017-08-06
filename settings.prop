@@ -1,0 +1,8 @@
+#Settings file for the judge system.
+#Sun Aug 06 23:56:33 NZST 2017
+rounds=10
+game=Tanks
+gameLength=10000
+timeout=50
+fillerBot=Simple AI
+peoplePerGame=8

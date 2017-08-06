@@ -30,6 +30,13 @@ public final class StandaloneJudge {
 			try(InputStream stream = Files.newInputStream(settingsFile, StandardOpenOption.CREATE)) {
 				settings.load(stream);
 			}
+		} else {
+			settings.setProperty("game", TankGame.getName());
+			settings.setProperty("timeout", "50");
+			settings.setProperty("rounds", "10");
+			settings.setProperty("gameLength", "10000");
+			settings.setProperty("peoplePerGame", "8");
+			settings.setProperty("fillerBot", "Simple AI");
 		}
 		
 		StandaloneJudge judge = new StandaloneJudge(settings);
@@ -71,8 +78,7 @@ public final class StandaloneJudge {
 	private final Map<String, Contestant> mapping = new HashMap<>();
 	private final GameType type;
 	private final int timeout;
-	private final int roundsPerLayer;
-	private final double layerPercentage;
+	private final int rounds;
 	private final int peoplePerGame;
 	private final Contestant fillerContestant;
 	private final int gameLength;
@@ -104,21 +110,31 @@ public final class StandaloneJudge {
 				try {
 					function.start(new String[] {Integer.toUnsignedString(id)});
 				} catch (Exception e) {
-					Server.LOG.log(Level.WARNING, "Error in server bot " + name, e);
+					Server.LOG.log(Level.WARNING, "Error in bot " + name, e);
 				}
 				
 				score.addAndGet(game.getPlayer(id & 0xff).getScore());
 			}, name + "@" + id + " AI thread");
+			
+			aiThread.setDaemon(true);
 			aiThread.start();
 			
 			threads.add(aiThread);
 		}
 
-		public void terminate() {
+		public void terminate(long limit) {
 			for(Thread t : threads) {
-				if(t.isAlive())
-					t.stop(); //We have to use stop here to cause broken bots to die. It should be thread safe as the only shared state is the command queue, which will have already been killed from the server side.
+				long k;
+				try {
+					if((k = limit - System.currentTimeMillis()) > 0)
+						t.join(k);
+					
+					if(t.isAlive())
+						t.stop();
+				} catch (InterruptedException e) {}
 			}
+			
+			threads.clear();
 		}
 		
 		@Override
@@ -132,9 +148,8 @@ public final class StandaloneJudge {
 		
 		type = GameType.getGameType(settings.getProperty("game", TankGame.getName()));
 		timeout = Integer.parseInt(settings.getProperty("timeout", "50"));
-		roundsPerLayer = Integer.parseInt(settings.getProperty("roundsPerLayer", "100"));
-		layerPercentage = Double.parseDouble(settings.getProperty("layerPercentage", "0.5"));
-		gameLength = Integer.parseInt(settings.getProperty("gameLength", "5000"));
+		rounds = Integer.parseInt(settings.getProperty("rounds", "10"));
+		gameLength = Integer.parseInt(settings.getProperty("gameLength", "10000"));
 		peoplePerGame = Integer.parseInt(settings.getProperty("peoplePerGame", "8"));
 		String fillerBot = settings.getProperty("fillerBot", "Simple AI");
 		fillerContestant = new Contestant(type.getServerBot(fillerBot));
@@ -151,56 +166,46 @@ public final class StandaloneJudge {
 	}
 	
 	private void runCompetition() throws GameCreationException, InterruptedException {
-		List<Contestant> alive = new ArrayList<>(mapping.values());
-		
-		while(alive.size() > 1) {
-			int numberOfGames = (alive.size() - 1) / peoplePerGame + 1;
-			Game[] games = new Game[numberOfGames];
-			
-			for(int r = 0; r < roundsPerLayer; r++) {
-				System.out.println("Round " + r);
-				
-				for(int i = 0; i < numberOfGames; i++) {
-					games[i] = type.createJudgingGame(gameLength, timeout);
-				}
+		List<Contestant> contestants = new ArrayList<>(mapping.values());
 
-				for(int i = 0; i < alive.size(); i++) {
-					alive.get(i).join(games[i / peoplePerGame]);
-				}
+		int numberOfGames = (contestants.size() - 1) / peoplePerGame + 1;
+		Game[] games = new Game[numberOfGames];
 
-				for(int i = 0; i < peoplePerGame * games.length - alive.size(); i++) {
-					fillerContestant.join(games[games.length - 1]);
-				}
+		for(int r = 0; r < rounds; r++) {
+			System.out.println("Round " + r);
 
-				Thread.sleep(100);
+			for(int i = 0; i < numberOfGames; i++) {
+				games[i] = type.createJudgingGame(gameLength, timeout);
+			}
 
-				List<Thread> gameThreads = new ArrayList<>();
-				for(Game game : games) {
-					gameThreads.add(game.start());
-				}
+			for(int i = 0; i < contestants.size(); i++) {
+				contestants.get(i).join(games[i / peoplePerGame]);
+			}
 
-				//Wait for games to finish
-				for(Thread thread : gameThreads) {
-					thread.join();
-				}
+			for(int i = 0; i < peoplePerGame * games.length - contestants.size(); i++) {
+				fillerContestant.join(games[games.length - 1]);
+			}
 
-				//Give clients time to close of their own accord, then murder them. This should given them time to find their scores.
-				Thread.sleep(100);
+			List<Thread> gameThreads = new ArrayList<>();
+			for(Game game : games) {
+				gameThreads.add(game.startWhenReady(100));
+			}
 
-				//All contestants should be finished
-				for(Contestant c : alive) {
-					c.terminate();
-				}
+			//Wait for games to finish
+			for(Thread thread : gameThreads) {
+				thread.join();
+			}
+
+			long now = System.currentTimeMillis();
+
+			//All contestants should be finished
+			for(Contestant c : contestants) {
+				c.terminate(now + 100);
 			}
 			
-			//Sort in ascending order
-			alive.sort((a, b) -> b.score.get() - a.score.get());
-			
-			int cutoff = Math.max(1, (int) (layerPercentage * (alive.size() - 1))); //Ensure that there is at least one item left in the competition.
-			alive.subList(cutoff, alive.size()).clear();
+			Collections.shuffle(contestants);
 		}
 		
-		List<Contestant> contestants = new ArrayList<>(mapping.values());
 		contestants.sort((a, b) -> b.score.get() - a.score.get());
 		System.out.println(contestants);
 	}
