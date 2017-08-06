@@ -178,7 +178,11 @@ public class World {
 				}
 			}
 			
-			if(tanksToRollBack.isEmpty()) {	
+			if(tanksToRollBack.isEmpty()) {
+				for(Tank t : tanks.values()) {
+					t.clearHasMoved();
+				}
+				
 				return;
 			}
 		}
@@ -553,7 +557,7 @@ public class World {
 		private final byte code;
 		
 		public TankGridItem(Tank tank) {
-			if(tank.hasMoved()) {
+			if(tank.getDirection() != null) { //Direction is used to free up hasMoved
 				Direction dir = tank.getDirection().opposite();
 				end = tank.getPosition();
 				start = dir.move(end);
@@ -600,7 +604,6 @@ public class World {
 		Collection<GridItem> items = new ArrayList<>();
 		for(Tank tank : tanks.values()) {
 			items.add(new TankGridItem(tank));
-			tank.clearHasMoved();
 		}
 		
 		for(Shot shot : shots) {
