@@ -18,6 +18,10 @@ public class GameType {
 		Game get() throws GameCreationException;
 	}
 	
+	static interface JudgeGameCreator {
+		Game get(int ticks, int timeout) throws GameCreationException;
+	}
+	
 	private static Map<String, GameType> publicGames = new HashMap<>();
 	
 	public static void addType(Class<? extends Game> clazz, Difficulty difficulty) throws GameCreationException {
@@ -39,6 +43,7 @@ public class GameType {
 	}
 	
 	private GameCreator constructor;
+	private JudgeGameCreator judgeConstructor;
 	private String name;
 	private String description;
 	private boolean isBetaGame;
@@ -72,6 +77,27 @@ public class GameType {
 			try {
 				Game.getActiveGamesLock().writeLock().lock();
 				Game game = constructor.newInstance(this);
+				game.addToSlot();
+				return game;
+			} catch (OutOfIDsException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+				throw new GameCreationException("Unable to instantiate game", e);
+			} finally {
+				Game.getActiveGamesLock().writeLock().unlock(); //This will always be executed, even if the function returns normally
+			}
+		};
+		
+		Constructor<? extends Game> judgeConstructor;
+		
+		try {
+			judgeConstructor = clazz.getConstructor(GameType.class, Integer.TYPE, Integer.TYPE);
+		} catch (NoSuchMethodException | SecurityException e) {
+			throw new GameCreationException("Game " + clazz.getSimpleName() + " did not have a suitable constructor.", e);
+		}
+		
+		this.judgeConstructor = (ticks, timeout) -> {
+			try {
+				Game.getActiveGamesLock().writeLock().lock();
+				Game game = judgeConstructor.newInstance(this, ticks, timeout);
 				game.addToSlot();
 				return game;
 			} catch (OutOfIDsException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
@@ -144,6 +170,18 @@ public class GameType {
 			}
 
 			Game availableGame = constructor.get();
+			games.add(availableGame);
+			signalListUpdate();
+			return availableGame;
+		} finally {
+			gamesLock.writeLock().unlock();
+		}
+	}
+	
+	public Game createJudgingGame(int ticks, int timeout) throws GameCreationException {
+		gamesLock.writeLock().lock();
+		try {
+			Game availableGame = judgeConstructor.get(ticks, timeout);
 			games.add(availableGame);
 			signalListUpdate();
 			return availableGame;

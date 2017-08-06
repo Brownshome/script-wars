@@ -45,6 +45,15 @@ public class TankGame extends Game {
 		this(MapGenerator.getGenerator().withSize(25, 25).generate(), type);
 	}
 	
+	public TankGame(GameType type, int ticks, int timeout) throws OutOfIDsException {
+		this(MapGenerator.getGenerator().withSize(25, 25).generate(), type, ticks, timeout);
+	}
+	
+	public TankGame(boolean[][] map, GameType type, int ticks, int timeout) throws OutOfIDsException {
+		super(type, ticks, timeout);
+		this.world = new World(map, this);
+	}
+
 	@Override
 	public boolean hasPerPlayerData() {
 		return true;
