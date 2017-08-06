@@ -37,13 +37,15 @@ public final class StandaloneJudge {
 			settings.setProperty("gameLength", "10000");
 			settings.setProperty("peoplePerGame", "8");
 			settings.setProperty("fillerBot", "Simple AI");
+			
+			try(OutputStream stream = Files.newOutputStream(settingsFile, StandardOpenOption.CREATE)) {
+				settings.store(stream, "Settings file for the judge system.");
+			}
 		}
 		
 		StandaloneJudge judge = new StandaloneJudge(settings);
 		
-		try(OutputStream stream = Files.newOutputStream(settingsFile, StandardOpenOption.CREATE)) {
-			settings.store(stream, "Settings file for the judge system.");
-		}
+		
 		
 		Path players = Paths.get("players");
 		URLClassLoader classLoader = new URLClassLoader(new URL[] {players.toUri().toURL()});
