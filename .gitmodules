@@ -1,0 +1,3 @@
+[submodule "submodules/snake"]
+	path = submodules/snake
+	url = https://github.com/liamtbrand/snake.git
