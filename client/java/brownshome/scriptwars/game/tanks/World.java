@@ -215,7 +215,7 @@ public class World {
 		for(int x = 0; x < getWidth(); x++) {
 			for(int y = 0; y < getHeight(); y++) {
 				Coordinates coord = new Coordinates(x, y);
-				if(!isWall(coord) && getTank(coord) == null) {
+				if(!isWall(coord) && getTank(coord) == null && !ammoPickup.contains(coord)) {
 					possibleSpawns.add(coord);
 				}
 			}
