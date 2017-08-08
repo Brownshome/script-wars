@@ -57,7 +57,7 @@ public class Shot {
 			Coordinates oldPosition = direction.opposite().move(position);
 			Shot swap = world.getShot(oldPosition);
 
-			if(swap.direction.opposite() == direction) {
+			if(swap != null && swap.direction.opposite() == direction) {
 				isDead = true;
 				swap.isDead = true;
 				return;

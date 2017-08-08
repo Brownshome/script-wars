@@ -70,18 +70,17 @@ public class Tank {
 
 	/** Moves then tank to it's next position and sets the hasMoved flag */
 	private void preTickMove() {
-		shouldRenderMove = true;
-		
 		Coordinates newCoord = direction.move(position);
 		if(world.isWall(newCoord)) {
 			clearAction();
 			return;
 		}
 		
+		shouldRenderMove = true;
 		position = newCoord;
 	}
 
-	private void clearAction() {
+	protected void clearAction() {
 		action = Action.NOTHING;
 	}
 	
@@ -90,16 +89,16 @@ public class Tank {
 	protected void finalizeShot() {
 		//Fires a shot if there is no other tank shooting into the space where the shot would go.
 		//This method also kills any tanks that get shot immediately
-		boolean canShoot = true;
+		boolean canShoot = action == Action.SHOOT;
 		boolean hasBeenShot = false;
-		Coordinates coordinatesOfShot = direction.move(position);
+		Coordinates coordinatesOfShot = action == Action.SHOOT ? direction.move(position) : null;
 		
 		Tank shooter = null;
 		for(Direction dir : Direction.values()) {
 			Tank tank = world.getTank(dir.move(position));
 			if(tank != null && tank.action == Action.SHOOT && tank.direction == dir.opposite()) {
 				//We got shot
-				world.addDeadGridItem(Shot.makeVirtualGridItem(position, coordinatesOfShot));
+				world.addDeadGridItem(Shot.makeVirtualGridItem(tank.position, position));
 				
 				if(!hasBeenShot) {
 					shooter = tank;
@@ -109,9 +108,12 @@ public class Tank {
 				}
 			}
 			
-			tank = world.getTank(dir.move(coordinatesOfShot));
-			if(tank != null && tank.action == Action.SHOOT && tank.direction == dir.opposite()) {
-				canShoot = false;
+			if(canShoot) {
+				tank = world.getTank(dir.move(coordinatesOfShot));
+				if(tank != null && tank.action == Action.SHOOT && tank.direction == dir.opposite()) {
+					world.addDeadGridItem(Shot.makeVirtualGridItem(position, coordinatesOfShot));
+					canShoot = false;
+				}
 			}
 		}
 		
@@ -149,7 +151,7 @@ public class Tank {
 				Coordinates oldPosition = direction.opposite().move(position);
 				Tank swap = world.getTank(oldPosition);
 				
-				if(swap.direction.opposite() == direction) {
+				if(swap != null && swap.direction.opposite() == direction) {
 					assert action == Action.MOVE || swap.action == Action.MOVE;
 					
 					rollBack();

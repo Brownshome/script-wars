@@ -113,6 +113,9 @@ public class World {
 		
 		//Spawn players
 		spawnPlayers();
+		
+		for(Tank t : tanks.values())
+			t.clearAction();
 	}
 
 	protected void addDeadGridItem(GridItem item) {
@@ -120,7 +123,7 @@ public class World {
 	}
 	
 	public Tank getTank(Coordinates c) {
-		return tanks.get(c);
+		return tankMap.get(c);
 	}
 
 	public Shot getShot(Coordinates c) {
@@ -216,7 +219,10 @@ public class World {
 			}
 				
 			iterator.remove();
-			addTankToMap(new Tank(coord, player, this));
+			
+			Tank tank = new Tank(coord, player, this);
+			tanks.put(player, tank);
+			addTankToMap(tank);
 		}
 	}
 
