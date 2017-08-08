@@ -34,7 +34,7 @@ abstract class ServerAI {
 	final boolean pathTo(Predicate<Coordinates> test) {
 		Map<Coordinates, Direction> link = new HashMap<>();
 		Set<Coordinates> toBeExplored = new HashSet<>();
-		toBeExplored.add(api.me().getPosition());
+		toBeExplored.add(api.getCurrentPosition());
 		Set<Coordinates> explored = new HashSet<>();
 		int timeFromNow = 0;
 		
@@ -53,7 +53,7 @@ abstract class ServerAI {
 							Direction back = link.get(current).opposite();
 							current = back.move(current);
 							
-							if(current.equals(api.me().getPosition())) {
+							if(current.equals(api.getCurrentPosition())) {
 								api.move(back.opposite());
 								return true;
 							}
@@ -79,7 +79,7 @@ abstract class ServerAI {
 		
 		for(Tank tank : api.getVisibleTanks()) {
 			Direction dir;
-			if((dir = Direction.getDirection(tank.getPosition(), api.me().getPosition())) != null) {
+			if((dir = Direction.getDirection(tank.getPosition(), api.getCurrentPosition())) != null) {
 				api.shoot(dir);
 				return;
 			}
@@ -91,7 +91,7 @@ abstract class ServerAI {
 		//Shoot bullets
 		//Avoid people
 		
-		Coordinates currentPosition = api.me().getPosition();
+		Coordinates currentPosition = api.getCurrentPosition();
 		Set<Direction> safeDirections = new HashSet<>();
 		Set<Direction> semiSafeDirections = new HashSet<>();
 		

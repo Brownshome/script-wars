@@ -71,11 +71,7 @@ public class TankGame extends Game {
 
 	@Override
 	public void tick() {
-		world.finalizeMovement();
-		world.pickupAmmo();
-		world.moveShots();
-		world.fireTanks();
-		world.spawnPlayers();
+		world.tick();
 	}
 
 	@Override
@@ -177,14 +173,14 @@ public class TankGame extends Game {
 		Action action = Action.values()[data.get()];
 		switch(action) {
 		case MOVE:
-			world.moveTank(player, Direction.values()[data.get()]);
+		case SHOOT:
+			if(!world.isAlive(player))
+				throw new IllegalArgumentException("It is not legal to shoot or move while you are dead.");
+			
+			Tank tank = world.getTank(player);
+			tank.setNextAction(Direction.values()[data.get()], action);
 			break;
 		case NOTHING:
-			break;
-		case SHOOT:
-			Tank tank = world.getTank(player);
-			tank.setDirection(Direction.values()[data.get()]);
-			world.fireNextTick(player);
 			break;
 		}
 	}
@@ -258,9 +254,8 @@ public class TankGame extends Game {
 			assert false : "That player does not exist";
 		}
 		
-		
 		if(world.isAlive(player))
-			world.removeTank(player);
+			world.removeTank(world.getTank(player));
 	}
 
 	@Override

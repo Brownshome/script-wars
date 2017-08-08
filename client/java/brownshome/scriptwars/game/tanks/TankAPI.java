@@ -19,7 +19,7 @@ public class TankAPI {
 	private World _map;
 	private Network _network;
 	private boolean _isAlive;
-	private Tank _me;
+	private Coordinates _currentPosition;
 	private int _ammo;
 	
 	private Action _action = Action.NOTHING;
@@ -85,10 +85,10 @@ public class TankAPI {
 		_isAlive = _network.getByte() == 1;
 		if(_isAlive) {
 			_ammo = _network.getByte();
-			_me = new Tank(new Coordinates(_network));
+			_currentPosition = new Coordinates(_network);
 			_map = new World(_network);
 		} else {
-			_me = null;
+			_currentPosition = null;
 			_map = null;
 		}
 
@@ -161,11 +161,11 @@ public class TankAPI {
 	}
 	
 	/**
-	 * Returns the tank object for the current player.
+	 * Returns the current position of the player.
 	 * @return
 	 */
-	public Tank me(){
-		return _me;
+	public Coordinates getCurrentPosition(){
+		return _currentPosition;
 	}
 	
 	/**
