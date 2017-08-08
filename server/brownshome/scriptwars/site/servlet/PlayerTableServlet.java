@@ -14,7 +14,7 @@ import brownshome.scriptwars.game.Game;
 public class PlayerTableServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-		int gameCode = Integer.parseInt(request.getServletMapping().getMatchValue());
+		int gameCode = Integer.parseInt(URLUtil.extractMatch(request));
 		Game game = Game.getGame(gameCode);
 		
 		request.setAttribute("game", game);

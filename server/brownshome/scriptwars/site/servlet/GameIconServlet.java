@@ -15,7 +15,7 @@ import brownshome.scriptwars.game.GameType;
 public class GameIconServlet extends HttpServlet {	
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String gameName = request.getServletMapping().getMatchValue();
+		String gameName = URLUtil.extractMatch(request);
 		GameType type = GameType.getGameType(gameName);
 		
 		if(type == null) {

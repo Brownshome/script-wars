@@ -12,7 +12,7 @@ import brownshome.scriptwars.game.GameType;
 public class GameServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-		String gameName = request.getServletMapping().getMatchValue();
+		String gameName = URLUtil.extractMatch(request);
 		GameType type = GameType.getGameType(gameName);
 		
 		if(type == null) {

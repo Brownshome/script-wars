@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.apache.catalina.mapper.MappingData;
-
 public class GameType {
 	static interface GameCreator {
 		Game get() throws GameCreationException;

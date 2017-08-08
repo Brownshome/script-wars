@@ -13,6 +13,7 @@ public class Tank {
 	private Coordinates position;
 	private int ammo = MAX_AMMO;
 	private boolean hasMoved = false;
+	private boolean shouldRenderMove = false;
 	private int clientID;
 	
 	public Tank(Coordinates coordinates) {
@@ -52,7 +53,9 @@ public class Tank {
 		}
 		
 		position = newCoord;
+		
 		hasMoved = true;
+		shouldRenderMove = true;
 		
 		return true;
 	}
@@ -78,6 +81,7 @@ public class Tank {
 		
 		position = direction.opposite().move(position);
 		hasMoved = false;
+		shouldRenderMove = false;
 		return;
 	}
 
@@ -101,6 +105,10 @@ public class Tank {
 	protected void clearHasMoved() {
 		hasMoved = false;
 	}
+	
+	protected void clearRenderMoved() {
+		shouldRenderMove = false;
+	}
 
 	protected boolean hasMoved() {
 		return hasMoved;
@@ -112,5 +120,9 @@ public class Tank {
 
 	public int ammo() {
 		return ammo;
+	}
+
+	protected boolean shouldRenderMove() {
+		return shouldRenderMove;
 	}
 }

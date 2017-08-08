@@ -557,10 +557,11 @@ public class World {
 		private final byte code;
 		
 		public TankGridItem(Tank tank) {
-			if(tank.getDirection() != null) { //Direction is used to free up hasMoved
+			if(tank.shouldRenderMove()) { //Direction is used to free up hasMoved
 				Direction dir = tank.getDirection().opposite();
 				end = tank.getPosition();
 				start = dir.move(end);
+				tank.clearRenderMoved();
 			} else {
 				start = end = tank.getPosition();
 			}
