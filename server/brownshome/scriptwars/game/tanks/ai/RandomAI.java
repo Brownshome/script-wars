@@ -31,7 +31,7 @@ public class RandomAI extends ServerAI {
 			// If we can see a tank, lets shoot it.
 			if(targetTank != null){
 				Coordinates targetPosition = targetTank.getPosition();
-				Coordinates myPosition = api.me().getPosition();
+				Coordinates myPosition = api.getCurrentPosition();
 
 				Direction targetDirection = Direction.getDirection(targetPosition, myPosition);
 				if(targetDirection != null) {
@@ -40,7 +40,7 @@ public class RandomAI extends ServerAI {
 				}
 			}
 
-			//System.out.println("Position: " + api.me().getPosition());
+			//System.out.println("Position: " + api.getCurrentPosition());
 		}
 
 		if(args.length == 0)
