@@ -33,6 +33,7 @@ public class Shot {
 	}
 	
 	private boolean isDead = false;
+	private boolean didDieSwapping = false;
 	
 	/**
 	 * Returns true if the shot should be destroyed, this method defers the actual killing of the tanks later so
@@ -61,6 +62,12 @@ public class Shot {
 			if(swap != null && swap.direction.opposite() == direction) {
 				isDead = true;
 				swap.isDead = true;
+				
+				//To avoid the shots swapping over each other we stop both of them at this position. This will
+				//need to be changed later if we add fractional rendering
+				didDieSwapping = true;
+				swap.didDieSwapping = true;
+				
 				return;
 			}
 
@@ -74,7 +81,10 @@ public class Shot {
 	/** Kills any tanks that would be shot */
 	protected void completeTick() {
 		if(isDead) {
-			world.addDeadGridItem(getRenderItem());
+			if(!didDieSwapping) {
+				world.addDeadGridItem(getRenderItem());
+			}
+			
 			world.removeShotFromMap(this);
 			return;
 		}
@@ -84,6 +94,9 @@ public class Shot {
 			world.removeTank(tank);
 			tank.kill();
 			owner.awardKill();
+			
+			isDead = true;
+			completeTick();
 		}
 	}
 	
