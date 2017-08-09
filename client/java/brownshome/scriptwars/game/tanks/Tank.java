@@ -108,7 +108,7 @@ public class Tank {
 				}
 			}
 			
-			if(canShoot) {
+			if(canShoot && dir != direction.opposite()) {
 				tank = world.getTank(dir.move(coordinatesOfShot));
 				if(tank != null && tank.action == Action.SHOOT && tank.direction == dir.opposite()) {
 					world.addDeadGridItem(Shot.makeVirtualGridItem(position, coordinatesOfShot));
@@ -141,7 +141,7 @@ public class Tank {
 		//Check for tanks in the space we are trying to move into, if it is not us we need to move back ourselves and the other colliding tank.
 		//The tank map gets rebuilt after all tanks have rolled back
 		
-		//We must do this for stationary tanks as they may be overiden by moving tanks.
+		//We must do this for stationary tanks as they may be overridden by moving tanks.
 		//Also swapping tanks need to be checked for
 		
 		Tank other = world.getTank(position);
@@ -164,7 +164,7 @@ public class Tank {
 			return false;
 		}
 		
-		assert action == Action.MOVE || other.action == Action.MOVE;
+		assert other != null && (action == Action.MOVE || other.action == Action.MOVE);
 		
 		other.rollBack();
 		rollBack();
@@ -201,6 +201,7 @@ public class Tank {
 		
 		position = direction.opposite().move(position);
 		shouldRenderMove = false;
+		world.addTankToMap(this);
 		clearAction();
 	}
 

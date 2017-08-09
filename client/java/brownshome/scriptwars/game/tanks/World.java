@@ -95,15 +95,19 @@ public class World {
 		
 		//Move Shots
 		//A decoupled array to avoid conmodexceptions
-		Shot[] coldShots = shotMap.values().toArray(new Shot[0]);
-		for(Shot s : coldShots) s.updatePrevious();
-		
-		for(int i = 0; i < Shot.SPEED; i++) {
-			shotMap.clear();
-			for(Shot s : coldShots) s.tickShot();
-			for(Shot s : coldShots) s.detectCollisions();
-			for(Shot s : coldShots) s.completeTick();
-			coldShots = shotMap.values().toArray(new Shot[0]);
+		if(!shotMap.isEmpty()) {
+			Shot[] coldShots = shotMap.values().toArray(new Shot[0]);
+			for(Shot s : coldShots) s.updatePrevious();
+
+			for(int i = 0; i < Shot.SPEED; i++) {
+				shotMap.clear();
+				for(Shot s : coldShots) s.tickShot();
+				coldShots = shotMap.values().toArray(new Shot[0]);
+				
+				for(Shot s : coldShots) s.detectCollisions();
+				for(Shot s : coldShots) s.completeTick();
+				coldShots = shotMap.values().toArray(new Shot[0]);
+			}
 		}
 		
 		//Fire Tanks

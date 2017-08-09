@@ -42,6 +42,7 @@ public class Shot {
 		position = direction.move(position);
 
 		if(world.isWall(position)) {
+			world.addDeadGridItem(getRenderItem());
 			isDead = true;
 			return;
 		}
