@@ -192,11 +192,12 @@ public final class StandaloneJudge {
 			}
 
 			for(int i = 0; i < contestants.size(); i++) {
-				contestants.get(i).join(games[i / peoplePerGame]);
+				contestants.get(i).join(games[i % games.length]);
 			}
 
+			//Now fill in filler contestants from the back
 			for(int i = 0; i < peoplePerGame * games.length - contestants.size(); i++) {
-				fillerContestant.join(games[games.length - 1]);
+				fillerContestant.join(games[games.length - 1 - i % games.length]);
 			}
 
 			List<Thread> gameThreads = new ArrayList<>();
