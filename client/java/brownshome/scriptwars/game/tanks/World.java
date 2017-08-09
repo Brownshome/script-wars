@@ -82,6 +82,12 @@ public class World {
 			}
 		} while(keepTrying);
 		
+		tankMap.clear();
+
+		for(Tank tank : tanks.values()) {
+			addTankToMap(tank);
+		}
+		
 		//Pickup ammo
 		for(Tank tank : tanks.values()) {
 			tank.doAmmoPickups();
@@ -102,7 +108,7 @@ public class World {
 			for(int i = 0; i < Shot.SPEED; i++) {
 				shotMap.clear();
 				for(Shot s : coldShots) s.tickShot();
-				coldShots = shotMap.values().toArray(new Shot[0]);
+				coldShots = shotMap.values().toArray(new Shot[0]); //Don't move shots that hit a wall
 				
 				for(Shot s : coldShots) s.detectCollisions();
 				for(Shot s : coldShots) s.completeTick();

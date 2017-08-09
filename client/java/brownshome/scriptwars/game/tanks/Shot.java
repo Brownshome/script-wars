@@ -83,6 +83,11 @@ public class Shot {
 		if(isDead) {
 			if(!didDieSwapping) {
 				world.addDeadGridItem(getRenderItem());
+			} else {
+				position = direction.opposite().move(position);
+				if(!position.equals(previous)) {
+					world.addDeadGridItem(getRenderItem());
+				}
 			}
 			
 			world.removeShotFromMap(this);

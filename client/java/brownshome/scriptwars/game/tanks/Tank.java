@@ -63,7 +63,15 @@ public class Tank {
 	
 	private void preTickShoot() {
 		Coordinates spaceToShoot = direction.move(position);
-		if(world.isWall(spaceToShoot) || !removeAmmo()) {
+		
+		//Shots are used even if they shoot a wall. =
+		if(!removeAmmo()) {
+			clearAction();
+			return;
+		}
+		
+		if(world.isWall(spaceToShoot)) {
+			world.addDeadGridItem(Shot.makeVirtualGridItem(position, spaceToShoot));
 			clearAction();
 		}
 	}
@@ -87,43 +95,39 @@ public class Tank {
 	/** Places fired shots on the map, after this method, all shots will have been placed. Any shots that get shot
 	 * are removed and this method returns true if this tank is immediately shot. */
 	protected void finalizeShot() {
-		//Fires a shot if there is no other tank shooting into the space where the shot would go.
-		//This method also kills any tanks that get shot immediately
-		boolean canShoot = action == Action.SHOOT;
-		boolean hasBeenShot = false;
-		Coordinates coordinatesOfShot = action == Action.SHOOT ? direction.move(position) : null;
+		if(action != Action.SHOOT)
+			return;
 		
-		Tank shooter = null;
-		for(Direction dir : Direction.values()) {
-			Tank tank = world.getTank(dir.move(position));
-			if(tank != null && tank.action == Action.SHOOT && tank.direction == dir.opposite()) {
-				//We got shot
-				world.addDeadGridItem(Shot.makeVirtualGridItem(tank.position, position));
-				
-				if(!hasBeenShot) {
-					shooter = tank;
-					hasBeenShot = true;
-				} else {
-					shooter = null;
-				}
-			}
-			
-			if(canShoot && dir != direction.opposite()) {
-				tank = world.getTank(dir.move(coordinatesOfShot));
-				if(tank != null && tank.action == Action.SHOOT && tank.direction == dir.opposite()) {
-					world.addDeadGridItem(Shot.makeVirtualGridItem(position, coordinatesOfShot));
-					canShoot = false;
+		//Fires a shot if there is no other tank shooting into the space where the shot would go.
+		//And kills any other tanks that get shot
+		boolean canShoot = true;
+		Coordinates coordinatesOfShot = direction.move(position);
+		
+		//If there is anyone we are shooting kill them.
+		Tank tank;
+		if(canShoot && (tank = world.getTank(coordinatesOfShot)) != null) {
+			tank.kill();
+			awardKill();
+			canShoot = false;
+		} else {
+			//Check if anyone is shooting our bullet
+			for(Direction dir : Direction.values()) {
+				if(canShoot && dir != direction.opposite()) { //We must not check ourself
+					tank = world.getTank(dir.move(coordinatesOfShot));
+					if(tank != null && tank.action == Action.SHOOT && tank.direction == dir.opposite()) {
+						canShoot = false;
+						break;
+					}
 				}
 			}
 		}
 		
+		//If we shoot without being blocked generate a bullet
 		if(canShoot) {
 			world.addShotToMap(new Shot(coordinatesOfShot, this, world, direction));
-		}
-		
-		if(hasBeenShot && shooter != null) {
-			kill();
-			shooter.awardKill();
+		} else {
+			//If we were blocked generate a virtual bullet
+			world.addDeadGridItem(Shot.makeVirtualGridItem(position, coordinatesOfShot));
 		}
 	}
 	
