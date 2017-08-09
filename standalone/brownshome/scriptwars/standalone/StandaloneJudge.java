@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.*;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import brownshome.scriptwars.connection.MemoryConnectionHandler;
 import brownshome.scriptwars.game.*;
@@ -45,15 +46,25 @@ public final class StandaloneJudge {
 		
 		StandaloneJudge judge = new StandaloneJudge(settings);
 		
-		
-		
 		Path players = Paths.get("players");
-		URLClassLoader classLoader = new URLClassLoader(new URL[] {players.toUri().toURL()});
+		
+		if(!Files.exists(players)) {
+			Files.createDirectory(players);
+		}
+		
+		List<Path> paths = Files.walk(players).filter(Files::isRegularFile).collect(Collectors.toList());
+		
+		URLClassLoader classLoader = new URLClassLoader(paths.stream().map(p -> {
+			try {
+				return p.toUri().toURL();
+			} catch (MalformedURLException e1) { throw new RuntimeException(e1); }
+		}).toArray(URL[]::new));
 		
 		if(!Files.exists(players))
 			Files.createDirectory(players);
 		
-		Iterable<String> mainClasses = Files.walk(players).filter(Files::isRegularFile).map(p -> {
+		
+		Iterable<String> mainClasses = paths.stream().map(p -> {
 			Attributes attr;
 			try(JarFile file = new JarFile(p.toFile());) {
 				attr = file.getManifest().getMainAttributes();
@@ -66,7 +77,7 @@ public final class StandaloneJudge {
 
 				return main;
 			} catch (IOException e) {
-				System.out.println("Invalid JAR file: " + e.getMessage());
+				System.err.println("Invalid JAR file: " + e.getMessage());
 				return null;
 			}
 
@@ -162,7 +173,7 @@ public final class StandaloneJudge {
 			try {
 				mapping.put(mainClass, new Contestant(loader.loadClass(mainClass)));
 			} catch (NoSuchMethodException | ClassNotFoundException e) {
-				Server.LOG.log(Level.WARNING, "Bot " + mainClass + " failed to load " + e.getMessage());
+				Server.LOG.log(Level.WARNING, "Bot " + mainClass + " failed to load:\n" + e.toString());
 			}
 		}
 	}
@@ -174,7 +185,7 @@ public final class StandaloneJudge {
 		Game[] games = new Game[numberOfGames];
 
 		for(int r = 0; r < rounds; r++) {
-			System.out.println("Round " + r);
+			System.err.println("Round " + r);
 
 			for(int i = 0; i < numberOfGames; i++) {
 				games[i] = type.createJudgingGame(gameLength, timeout);
@@ -209,6 +220,6 @@ public final class StandaloneJudge {
 		}
 		
 		contestants.sort((a, b) -> b.score.get() - a.score.get());
-		System.out.println(contestants);
+		System.err.println(contestants);
 	}
 }

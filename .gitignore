@@ -21,3 +21,6 @@ hs_err_pid*
 WebContent/META-INF/MANIFEST.MF
 *.pydevproject
 settings\.prop
+
+/players/
+/settings.prop
