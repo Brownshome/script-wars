@@ -6,7 +6,7 @@ apply plugin: 'war'
 project.webAppDirName = 'WebContent'
 
 sourceSets {
-	main.java.srcDirs = ['server', 'client/java']    
+	main.java.srcDirs = ['server', 'client/java', 'submodules/snake/src']    
     client.java.srcDirs = ['client/java']
 	standalone.java.srcDirs = ['standalone']
 }
