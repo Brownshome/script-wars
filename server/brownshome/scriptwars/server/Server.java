@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 import brownshome.scriptwars.connection.*;
 import brownshome.scriptwars.game.*;
+import brownshome.scriptwars.game.snake.SnakeGame;
 import brownshome.scriptwars.game.tanks.TankGame;
 
 /** Main entrypoint of the server program. 
@@ -19,6 +20,7 @@ public class Server {
 	public static void initialize() {
 		try {
 			GameType.addType(TankGame.class, Difficulty.EASY);
+			GameType.addType(SnakeGame.class, Difficulty.MEDIUM);
 		} catch (GameCreationException gce) {
 			Server.LOG.log(Level.SEVERE, "Improperly built game files.", gce);
 		}

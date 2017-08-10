@@ -105,6 +105,8 @@ public abstract class Game {
 	 * 
 	 * @param player The player's data that is being requested. This will be null if {@link #hasPerPlayerData()} is false
 	 * @param data A {@link java.nio.ByteBuffer ByteBuffer} that the new data is to be written to.
+	 * 
+	 * @return true if there was data to send, false otherwise
 	 */
 	public abstract boolean getData(Player<?> player, ByteBuffer data);
 	
@@ -232,7 +234,7 @@ public abstract class Game {
 		ByteBuffer buffer = ByteBuffer.wrap(new byte[getDataSize()]);
 		
 		if(!hasPerPlayerData()) {
-			if(getData(null, buffer))
+			if(!getData(null, buffer))
 				return;
 			
 			buffer.flip();
