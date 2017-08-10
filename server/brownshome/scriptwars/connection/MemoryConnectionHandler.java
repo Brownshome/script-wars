@@ -1,13 +1,10 @@
 package brownshome.scriptwars.connection;
 
-import java.lang.reflect.*;
 import java.nio.ByteBuffer;
 import java.util.concurrent.SynchronousQueue;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 
-import brownshome.scriptwars.game.*;
-import brownshome.scriptwars.server.Server;
+import brownshome.scriptwars.game.Player;
 
 public class MemoryConnectionHandler extends ConnectionHandler<SynchronousQueue<ByteBuffer>> {
 	private static MemoryConnectionHandler instance;

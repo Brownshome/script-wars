@@ -20,7 +20,7 @@ public class PlayerIconServlet extends HttpServlet {
 		String rawID = "Unset";
 		
 		try {
-			rawID = request.getServletMapping().getMatchValue();
+			rawID = URLUtil.extractMatch(request);
 			int playerID = Integer.parseInt(rawID);
 			player = Player.getPlayerFromID(playerID);
 			

@@ -145,6 +145,8 @@ what you are doing the second approach may be more applicable.</p>
 		grid. 
 		<br>The <code>brownshome.scriptwars.game.tanks.Tank</code> class describes a tank in the game
 		world. 
+		<br>The <code>brownshome.scriptwars.game.tanks.World</code> class contains most of the methods that
+		can be used to interact with the map, such as the position of ammo pickups, shots and walls.
 		<br>The <code>brownshome.scriptwars.game.tanks.Action</code> class contains constants for
 		all the actions a tank can make. 
 		<br>The <code>brownshome.scriptwars.game.tanks.Coordinates</code>
@@ -159,7 +161,7 @@ what you are doing the second approach may be more applicable.</p>
 		actions you have set, it returns a boolean which will be false if the connection has failed for
 		some reason. The get data from the server using the functions in the API and use it to decide what
 		to do. Some useful functions are <code>getVisibleShots()</code>, <code>getVisibleTanks()</code>,
-		<code>isWall(Coordinates coordinate)</code> and <code>getTank(Coordinates coordinate)</code>. There
+		<code>getMap().isWall(Coordinates coordinate)</code> and <code>getMap().getTank(Coordinates coordinate)</code>. There
 		are other functions that may be useful; a link to the documentation is provided at the bottom of this section.
 		<br>
 		Once you have decided what action to take call either <code>move(Direction direction)</code>, 
@@ -183,7 +185,7 @@ import java.io.IOException;
 			if(!api.isAlive()) {
 				continue;
 			}			// Move randomly, this will be overwritten if we can see someone.			int direction = (int) (Math.random() * 4);			api.move(Direction.values()[direction]);
-				// See if there is a tank in our field of view,			// and if there is select it.			Tank targetTank = null;			for(Tank tank : api.getVisibleTanks()){				targetTank = tank;			}				// If we can see a tank, lets shoot it.			if(targetTank != null){				Coordinates targetPosition = targetTank.getPosition();				Coordinates myPosition = api.me().getPosition();						Direction targetDirection = Direction.getDirection(targetPosition, myPosition);				if(targetDirection != null) {					//We have a clear shot on the target					api.shoot(targetDirection);				}			}				System.out.println(&quot;Position: &quot; + api.me().getPosition());		}				System.out.println(&quot;Disconnected from server:\n\t&quot; + api.getConnectionStatus());	}}
+				// See if there is a tank in our field of view,			// and if there is select it.			Tank targetTank = null;			for(Tank tank : api.getVisibleTanks()){				targetTank = tank;			}				// If we can see a tank, lets shoot it.			if(targetTank != null){				Coordinates targetPosition = targetTank.getPosition();				Coordinates myPosition = api.getCurrentPosition();						Direction targetDirection = Direction.getDirection(targetPosition, myPosition);				if(targetDirection != null) {					//We have a clear shot on the target					api.shoot(targetDirection);				}			}				System.out.println(&quot;Position: &quot; + api.getCurrentPosition());		}				System.out.println(&quot;Disconnected from server:\n\t&quot; + api.getConnectionStatus());	}}
 </code></pre>
 	</div>
 	<div class="tab-pane" id="basic">

@@ -29,12 +29,12 @@ public class HardAI {
 				first = false;
 			}
 			
-			if(api.me().getPosition().equals(last)) {
+			if(api.getCurrentPosition().equals(last)) {
 				priority.clear();
 				fillPriorityList();
 			}
 			
-			last = api.me().getPosition();
+			last = api.getCurrentPosition();
 			
 			pathTo(getNextCoord());
 			
@@ -67,7 +67,7 @@ public class HardAI {
 	}
 	
 	private void avoidBullets() {
-		Coordinates coord = api.me().getPosition();
+		Coordinates coord = api.getCurrentPosition();
 		
 		if(api.getAction() == Action.MOVE) {
 			if(!isSafe(api.getDirection().move(coord))) {
@@ -115,7 +115,7 @@ public class HardAI {
 	
 	private void shootBadGuys() {
 		int minDistance = Integer.MAX_VALUE;
-		Coordinates me = api.me().getPosition();
+		Coordinates me = api.getCurrentPosition();
 		Direction direction = null;
 		
 		for(Tank tank : api.getVisibleTanks()) {
@@ -136,12 +136,12 @@ public class HardAI {
 	}
 	
 	private int getDistance(Tank tank) {
-		return Math.abs(tank.getPosition().getX() - api.me().getPosition().getX()) +
-				Math.abs(tank.getPosition().getY() - api.me().getPosition().getY());
+		return Math.abs(tank.getPosition().getX() - api.getCurrentPosition().getX()) +
+				Math.abs(tank.getPosition().getY() - api.getCurrentPosition().getY());
 	}
 	
 	private void pathTo(Coordinates aim) {
-		if(aim.equals(api.me().getPosition())) {
+		if(aim.equals(api.getCurrentPosition())) {
 			return;
 		}
 		
@@ -156,7 +156,7 @@ public class HardAI {
 				for(Direction dir : Direction.values()) {
 					Coordinates next = dir.move(coord);
 					
-					if(api.me().getPosition().equals(next)) {
+					if(api.getCurrentPosition().equals(next)) {
 						api.move(dir.opposite());
 						return;
 					}

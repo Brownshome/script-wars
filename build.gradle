@@ -8,6 +8,7 @@ project.webAppDirName = 'WebContent'
 sourceSets {
 	main.java.srcDirs = ['server', 'client/java']    
     client.java.srcDirs = ['client/java']
+	standalone.java.srcDirs = ['standalone']
 }
 
 repositories {
@@ -16,15 +17,14 @@ repositories {
 
 dependencies {
     //idk why both of these are needed or why my code uses non-documented tomcat only API, I'll fix it later
-    providedCompile group: 'org.apache.tomcat', name: 'tomcat-catalina', version: '9.0.0.M18'
-    providedCompile group: 'org.apache.tomcat', name: 'tomcat-websocket', version: '9.0.0.M18'
+    providedCompile group: 'javax', name: 'javaee-api', version:'7.0'
 	
 	compile group: 'javax.servlet', name: 'jstl', version: '1.2'
 	
-	compile group: 'org.apache.tomcat', name: 'tomcat-catalina', version: '9.0.0.M18'
-    compile group: 'org.apache.tomcat', name: 'tomcat-websocket', version: '9.0.0.M18'
+	compile group: 'javax', name: 'javaee-api', version:'7.0'
 	
 	clientCompileOnly sourceSets.main.output
+	standaloneCompileOnly sourceSets.main.output
 }
 
 task clientPython(type: Zip) {
@@ -39,6 +39,18 @@ task clientJar(type: Jar) {
 
     from sourceSets.client.output
 	destinationDir = file("$buildDir/war/static")
+}
+
+task standaloneJar(type: Jar) {
+	archiveName 'standaloneJudge.jar'
+
+	from sourceSets.standalone.output 
+	from sourceSets.main.output
+	destinationDir = file("$buildDir/libs")
+
+	manifest {
+        attributes("Main-Class": "brownshome.scriptwars.standalone.StandaloneJudge")
+    }
 }
 
 task copyWar(dependsOn: war, type: Copy) {

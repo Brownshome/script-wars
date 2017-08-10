@@ -18,13 +18,13 @@ public class SimpleAI extends ServerAI {
 				continue;
 			}
 			
-			if(old != null && old.equals(api.me().getPosition())) {
+			if(old != null && old.equals(api.getCurrentPosition())) {
 				dir = dir.clockwise();
 			} else {
 				Direction left = dir.antiClockwise();
 				Direction back = dir.opposite();
 				Direction right = dir.clockwise();
-				Coordinates c = api.me().getPosition();
+				Coordinates c = api.getCurrentPosition();
 
 				//If there is a backleft block and a left space go left
 				//If there is a forward space go forward
@@ -43,7 +43,7 @@ public class SimpleAI extends ServerAI {
 			}
 			
 			api.move(dir);
-			old = api.me().getPosition();
+			old = api.getCurrentPosition();
 			
 			shootBadGuys();
 			avoidDirectBullets();

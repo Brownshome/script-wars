@@ -353,7 +353,7 @@ public class Network {
 			try {
 				ByteBuffer buffer;
 				
-				buffer = input.poll(1500, TimeUnit.MILLISECONDS);
+				buffer = input.take();//poll(1500, TimeUnit.MILLISECONDS);
 				
 				if(buffer == null)
 					throw new ConnectionException(ConnectionStatus.DROPPED);

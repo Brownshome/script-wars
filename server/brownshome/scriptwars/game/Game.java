@@ -62,6 +62,10 @@ public abstract class Game {
 	private volatile boolean sendPlayerScores = false;
 	private volatile boolean updatePlayerList = false;
 	
+	private final boolean isJudgeGame;
+	private final int lifeSpan;
+	private final int timeout;
+	
 	/** 
 	 * @return If the game sends specific data to each player
 	 */
@@ -117,8 +121,20 @@ public abstract class Game {
 	public abstract ConnectionHandler<?> getPreferedConnectionHandler();
 
 	protected Game(GameType type) {
+		isJudgeGame = false;
+		lifeSpan = 0;
+		timeout = 0;
 		this.type = type;
 		this.displayHandler = constructDisplayHandler();
+	}
+	
+	/** Used by the judge program */
+	protected Game(GameType type, int ticks, int timeout) {
+		this.type = type;
+		this.displayHandler = null;
+		lifeSpan = ticks;
+		isJudgeGame = true;
+		this.timeout = timeout;
 	}
 
 	protected abstract DisplayHandler constructDisplayHandler();
@@ -167,10 +183,12 @@ public abstract class Game {
 	 * @param p
 	 */
 	public void removePlayer(Player<?> p) {
-		playerIDPool.free(p.getSlot());
-		players[p.getSlot()] = null;
-		activePlayers.remove(p);
-		onPlayerChange();
+		if(!hasEnded()) {
+			playerIDPool.free(p.getSlot());
+			players[p.getSlot()] = null;
+			activePlayers.remove(p);
+			onPlayerChange();
+		}
 	}
 
 	public void waitForResponses(long cutoffTime) {
@@ -267,8 +285,14 @@ public abstract class Game {
 		
 		activePlayers.add(player);
 		
-		if(state == GameState.WAITING)
+		if(state == GameState.WAITING && !isJudgeGame)
 			start();
+		
+		if(isJudgeGame) {
+			synchronized(this) {
+				notifyAll();
+			}
+		}
 		
 		onPlayerChange();
 	}
@@ -279,38 +303,41 @@ public abstract class Game {
 	 * 
 	 *  FOR INTERNAL USE ONLY */
 	private synchronized void gameLoop() {
-		while(!Server.shouldStop()) {
+		int tickCount = 0;
+
+		while((!isFinite() || tickCount++ < lifeSpan) && !Server.shouldStop()) {
 			long lastTick = System.currentTimeMillis(); //keep this the first line.
-			
-			if(activePlayers.stream().allMatch(Player::isServerSide)) {
+
+			if(!isJudgeGame && activePlayers.stream().allMatch(Player::isServerSide)) {
 				break; //End the game, the only bots left are server-side bots
 			}
-			
+
 			tick();
-			
-			displayGame();
-			
+
+			if(getDisplayHandler() != null) displayGame();
+
 			sendData();
-			waitForResponses(lastTick + getTickRate());
-			
+			waitForResponses(lastTick + timeout);
+
 			long timeToSleep;
 
-			while((timeToSleep = lastTick - System.currentTimeMillis() + getTickRate()) > 0) {
+			//Never sleep in a judging game
+			while((timeToSleep = lastTick - System.currentTimeMillis() + getTickRate()) > 0 && !isJudgeGame) {
 				try {
 					wait(timeToSleep); //keep this the last line. (wait is used to give up this object's monitor). Possible replace this with sleep and used blocks or locks instead
 				} catch (InterruptedException e) {
 					break;
 				}
 			} 
-			
+
 			//Give it 20ms of lee-way
 			if(timeToSleep < -100) {
 				Server.LOG.log(Level.WARNING, "Game \'" + getClass().getName() + "\' is ticking too slowly.");
 			}
 		}
-		
+
 		endGame();
-		
+
 		activeGamesLock.writeLock().lock();
 		try {
 			gameIDPool.free(slot);
@@ -319,26 +346,48 @@ public abstract class Game {
 			activeGamesLock.writeLock().unlock();
 		}
 	}
-	
+
+	protected boolean isFinite() {
+		return isJudgeGame;
+	}
+
 	private void endGame() {
-		getDisplayHandler().endGame();
+		state = GameState.ENDED;
+		if(getDisplayHandler() != null) getDisplayHandler().endGame();
 		
 		Player<?>[] players = activePlayers.toArray(new Player<?>[activePlayers.size()]);
 		for(Player<?> player : players) {
 			player.endGame();
 		}
 		
-		state = GameState.ENDED;
 		getType().endGame(this);
 	}
 
-	public void start() {
+	public Thread start() {
 		state = GameState.RUNNING;
 		Thread thread = new Thread(this::gameLoop, getClass().getName() + " thread");
 		thread.setDaemon(true);
 		thread.start();
+		
+		return thread;
 	}
 
+	/** Waits until the game is full, then starts the game 
+	 * @throws InterruptedException */
+	public synchronized Thread startWhenReady(int timeout) throws InterruptedException {
+		long limit = timeout + System.currentTimeMillis();
+		
+		while(isSpaceForPlayer()) {
+			long k;
+			if((k = limit - System.currentTimeMillis()) <= 0)
+				break;
+			
+			wait(k);
+		}
+		
+		return start();
+	}
+	
 	/** Returns a byte used to identify this game. */
 	public int getSlot() {
 		return slot;

@@ -10,21 +10,16 @@ import brownshome.scriptwars.game.*;
 import brownshome.scriptwars.server.Server;
 
 public class World {
-	private List<Shot> shots = new LinkedList<>();
 	private Map<Player<?>, Tank> tanks = new HashMap<>();
-	private Set<Tank> clientTanks = new HashSet<>();
+	
 	private boolean[][] map;
 	
-	private Tank[][] tankMap;
-	private Shot[][] shotMap;
+	private Map<Coordinates, Shot> shotMap = new HashMap<>();
+	private Map<Coordinates, Tank> tankMap = new HashMap<>();
 	private Set<Coordinates> ammoPickup = new HashSet<>();
 	
-	private Set<Tank> tanksToFire = new HashSet<>();
 	private Set<Player<?>> playersToSpawn = new HashSet<>();
-	
-	private Collection<Shot> deadShotsToRender = new ArrayList<>();
-	Collection<Tank> deadTanksToRender = new ArrayList<>();
-	
+	private Collection<GridItem> deadGridItems = new ArrayList<>();
 	private TankGame game;
 	
 	protected World(boolean[][] map, TankGame game) {
@@ -32,8 +27,6 @@ public class World {
 		
 		this.map = map;
 		this.game = game;
-		tankMap = new Tank[map.length][map[0].length];
-		shotMap = new Shot[map.length][map[0].length];
 	}
 
 	/**
@@ -45,8 +38,6 @@ public class World {
 		int height = network.getByte();
 		
 		map = new boolean[height][width];
-		tankMap = new Tank[height][width];
-		shotMap = new Shot[height][width];
 		
 		for(boolean[] row : map) {
 			for(int x = 0; x < width; x++) {
@@ -54,18 +45,16 @@ public class World {
 			}
 		}
 		
-		int tanks = network.getByte();
-		for(int t = 0; t < tanks; t++) {
+		int noTanks = network.getByte();
+		for(int t = 0; t < noTanks; t++) {
 			Tank tank = new Tank(network);
-			tankMap[tank.getPosition().getY()][tank.getPosition().getX()] = tank;
-			clientTanks.add(tank);
+			addTankToMap(tank);
 		}
 		
 		int shotCount = network.getByte();
 		for(int s = 0; s < shotCount; s++) {
 			Shot shot = new Shot(network);
-			shots.add(shot);
-			addToShotMap(shot);
+			addShotToMap(shot);
 		}
 		
 		int ammoCount = network.getByte();
@@ -74,32 +63,83 @@ public class World {
 			ammoPickup.add(coord);
 		}
 	}
+	
+	protected void tick() {
+		//Move Tanks
+		boolean keepTrying;
+		do {
+			keepTrying = false;
+			
+			tankMap.clear();
 
-	/**
-	 * @param x
-	 * @param y
-	 * @return null if there is no tank, returns the tank otherwise
-	 */
-	public Tank getTank(int x, int y) {
-		return tankMap[y][x];
+			for(Tank tank : tanks.values()) {
+				addTankToMap(tank);
+			}
+			
+			keepTrying = false;
+			for(Tank tank : tanks.values()) {
+				keepTrying |= tank.finalizeMove();
+			}
+		} while(keepTrying);
+		
+		tankMap.clear();
+
+		for(Tank tank : tanks.values()) {
+			addTankToMap(tank);
+		}
+		
+		//Pickup ammo
+		for(Tank tank : tanks.values()) {
+			tank.doAmmoPickups();
+		}
+		
+		//Spawn ammo
+		try {
+			while(ammoPickup.size() < game.numberOfAmmoPickups())
+				ammoPickup.add(getAmmoSpawnCoordinate());
+		} catch(IllegalStateException ise) { /* No more places to spawn ammo */ }
+		
+		//Move Shots
+		//A decoupled array to avoid conmodexceptions
+		if(!shotMap.isEmpty()) {
+			Shot[] coldShots = shotMap.values().toArray(new Shot[0]);
+			for(Shot s : coldShots) s.updatePrevious();
+
+			for(int i = 0; i < Shot.SPEED; i++) {
+				shotMap.clear();
+				for(Shot s : coldShots) s.tickShot();
+				coldShots = shotMap.values().toArray(new Shot[0]); //Don't move shots that hit a wall
+				
+				for(Shot s : coldShots) s.detectCollisions();
+				for(Shot s : coldShots) s.completeTick();
+				coldShots = shotMap.values().toArray(new Shot[0]);
+			}
+		}
+		
+		//Fire Tanks
+		Tank[] coldTanks = tanks.values().toArray(new Tank[0]);
+		for(Tank t : coldTanks) t.finalizeShot();
+		for(Tank t : coldTanks) t.removeIfDead();
+		
+		//Spawn players
+		spawnPlayers();
+		
+		for(Tank t : tanks.values())
+			t.clearAction();
 	}
 
-	public Shot getShot(int x, int y) {
-		return shotMap[y][x];
+	protected void addDeadGridItem(GridItem item) {
+		deadGridItems.add(item);
 	}
 	
 	public Tank getTank(Coordinates c) {
-		return getTank(c.getX(), c.getY());
+		return tankMap.get(c);
 	}
 
 	public Shot getShot(Coordinates c) {
-		return getShot(c.getX(), c.getY());
+		return shotMap.get(c);
 	}
 	
-	private void setTank(Coordinates c, Tank tank) {
-		tankMap[c.getY()][c.getX()] = tank;
-	}
-
 	public boolean isWall(Coordinates c) {
 		return isWall(c.getX(), c.getY());
 	}
@@ -109,7 +149,7 @@ public class World {
 	}
 
 	public Collection<Shot> getShots() {
-		return shots;
+		return shotMap.values();
 	}
 
 	public int getWidth() {
@@ -119,103 +159,14 @@ public class World {
 	public int getHeight() {
 		return map.length;
 	}
-
-	protected void moveTank(Player<?> player, Direction direction) {
-		if(!isAlive(player))
-			throw new IllegalStateException("You are not alive, you cannot move.");
-		
-		Tank tank = tanks.get(player);
-		tank.getPosition();
-		
-		tank.move(direction);
-		setTank(tank.getPosition(), tank);
-	}
-
-	protected void fireNextTick(Player<?> player) {
-		tanksToFire.add(getTank(player));
-	}
-
-	//Check if every tank is in the spot they think they are. For any tanks that
-	//are overwrote roll them back as well as the tank overriding them. Then repeat.
-	protected void finalizeMovement() {
-		Set<Tank> tanksToRollBack = new HashSet<>();
-		
-		for(Tank tank : tanks.values()) {
-			Tank other = getTank(tank.getPosition());
-			if(other != tank) {
-				if(other != null)
-					tanksToRollBack.add(other);
-				
-				tanksToRollBack.add(tank);
-			}
-		}
-		
-		//clear tankMap
-		tankMap = new Tank[getHeight()][getWidth()];		
-		
-		if(tanksToRollBack.isEmpty()) {
-			//CHECK FOR TANKS SWAPPING POSITIONS
-			//For each tank, if it moved. Check if there is a tank on it's old space
-			//that just moved from it's space.
-			
-			for(Tank tank : tanks.values())
-				setTank(tank.getPosition(), tank);
-			
-			for(Tank tank : tanks.values()) {
-				if(tank.hasMoved()) {
-					Coordinates space = tank.getPosition();
-					Coordinates oldSpace = tank.getDirection().opposite().move(tank.getPosition());
-
-					Tank otherTank = getTank(oldSpace);
-					if(
-							otherTank != null
-							&& otherTank.hasMoved()
-							&& otherTank.getDirection().opposite() == tank.getDirection()
-					) {
-						tanksToRollBack.add(tank);
-						tanksToRollBack.add(otherTank);
-					}
-				}
-			}
-			
-			if(tanksToRollBack.isEmpty()) {	
-				return;
-			}
-		}
-		
-		for(Tank tank : tanksToRollBack) {
-			tank.rollBack();
-		}
-		
-		for(Tank tank : tanks.values()) {
-			setTank(tank.getPosition(), tank);
-		}
-		
-		//at most we recurse MAX_PLAYERS times. No risk of stack overflow
-		finalizeMovement();
-	}
 	
-	protected void pickupAmmo() {
-		for(Tank tank : tanks.values()) {
-			if(ammoPickup.remove(tank.getPosition())) {
-				tank.refilAmmo();
-			}
-		}
-		
-		try {
-			while(ammoPickup.size() < game.numberOfAmmoPickups()) {
-				ammoPickup.add(getAmmoSpawnCoordinate());
-			}
-		} catch(IllegalStateException e) { /*No valid spawn slots*/ }
-	}
-
 	private Coordinates getAmmoSpawnCoordinate() {
 		List<Coordinates> possibleSpawns = new ArrayList<>(getWidth() * getHeight());
 		
 		for(int x = 0; x < getWidth(); x++) {
 			for(int y = 0; y < getHeight(); y++) {
 				Coordinates coord = new Coordinates(x, y);
-				if(!isWall(coord) && getTank(coord) == null) {
+				if(!isWall(coord) && getTank(coord) == null && !ammoPickup.contains(coord)) {
 					possibleSpawns.add(coord);
 				}
 			}
@@ -225,152 +176,9 @@ public class World {
 		
 		return possibleSpawns.get(new Random().nextInt(possibleSpawns.size()));
 	}
-
-	protected void fireTanks() {
-		for(Tank tank : tanksToFire) {
-			fireTank(tank);
-		}
-		
-		tanksToFire.clear();
-		
-		//Check to see if any shots are in the same spot, delete them
-		Set<Shot> shotsToRemove = new HashSet<>();
-		for(Shot shot : shots) {
-			Shot other = getShot(shot.getPosition());
-			if(other != shot) {
-				shotsToRemove.add(other);
-				shotsToRemove.add(shot);
-				deadShotsToRender.add(other);
-				deadShotsToRender.add(shot);
-			}
-		}
-		
-		shots.removeIf(s -> {
-			if(shotsToRemove.contains(s)) {
-				removeShotFromMap(s);
-				return true;
-			}
-			
-			return false;
-		});
-	}
 	
-	private void fireTank(Tank tank) {
-		Direction direction = tank.getDirection();
-		Coordinates bulletSpawn = direction.move(tank.getPosition());
-		
-		if(!tank.removeAmmo())
-			return;
-		
-		Shot shot = new Shot(bulletSpawn, tank, this, direction);
-		
-		if(isWall(bulletSpawn)) {
-			deadShotsToRender.add(shot);
-			return;
-		}
-		
-		Tank otherTank = getTank(bulletSpawn);
-		if(otherTank != null) {
-			tank.getOwner().addScore(1);
-			tank.refilAmmo();
-			otherTank.kill();
-			deadShotsToRender.add(shot);
-			return;
-		}
-		
-		shots.add(shot);
-		addToShotMap(shot);
-	}
-
-	private void addToShotMap(Shot shot) {
-		shotMap[shot.getPosition().getY()][shot.getPosition().getX()] = shot;
-	}
-	
-	protected void moveShots() {
-		shots.forEach(Shot::updatePrevious);
-		for(int i = 0; i < Shot.SPEED; i++) {
-			moveShotsOnce();
-		}
-	}
-	
-	private void moveShotsOnce() {
-		//Delete shots that are swapping
-		//Delete shots that will collide
-		//Move shots, taking into account walls and such things
-		
-		List<Shot> deadShots = new ArrayList<>(shots.size());
-		
-		//Check swapping
-		shots.removeIf(s -> {
-			Shot other;
-			Coordinates nextPos = s.getDirection().move(s.getPosition());
-			
-			//There is a shot in nextPos and it is coming towards us.
-			if((other = getShot(nextPos)) != null && other.getDirection().opposite() == s.getDirection()) {
-				deadShots.add(s);
-				return true;
-			}
-			
-			return false;
-		});
-		
-		for(Shot s : deadShots) {
-			removeShotFromMap(s);
-			//TODO have the shots collide at the half extents
-		}
-		
-		deadShots.clear();
-		
-		//Check for collisions
-		shots.removeIf(s -> {
-			Coordinates nextPos = s.getDirection().move(s.getPosition());
-			if(isWall(nextPos)) {
-				deadShots.add(s);
-				return true;
-			}
-			
-			//Check every direction into the new space other than the one we came from
-			for(Direction dir = s.getDirection().opposite().clockwise(); dir != s.getDirection().opposite(); dir = dir.clockwise()) {
-				Shot other = getShot(dir.move(nextPos));
-				if(other != null && other.getDirection().opposite() == dir) {
-					deadShots.add(s);
-					return true;
-				}
-			}
-			
-			return false;
-		});
-		
-		for(Shot s : deadShots) {
-			removeShotFromMap(s);
-			s.tickShot(); //Make the position of the shot correct
-			deadShotsToRender.add(s);
-		}
-		
-		deadShots.clear();
-		
-		shots.removeIf(s -> {
-			removeShotFromMap(s);
-			
-			if(s.tickShot()) {
-				deadShots.add(s);
-				deadShotsToRender.add(s);
-				return true;
-			} else {
-				addToShotMap(s);
-			}
-			
-			return false;
-		});
-		
-		for(Shot s : deadShots) {
-			s.completeTick();
-		}
-	}
-
-	private void removeShotFromMap(Shot shot) {
-		if(shotMap[shot.getPosition().getY()][shot.getPosition().getX()] == shot)
-			shotMap[shot.getPosition().getY()][shot.getPosition().getX()] = null;
+	protected void removeShotFromMap(Shot shot) {
+		shotMap.remove(shot.getPosition());
 	}
 
 	protected boolean isAlive(Player<?> player) {
@@ -421,9 +229,10 @@ public class World {
 			}
 				
 			iterator.remove();
+			
 			Tank tank = new Tank(coord, player, this);
 			tanks.put(player, tank);
-			setTank(coord, tank);
+			addTankToMap(tank);
 		}
 	}
 
@@ -458,7 +267,7 @@ public class World {
 		
 		float rank = 0;
 		
-		for(Shot shot : shots) {
+		for(Shot shot : getShots()) {
 			Coordinates shotCoord = shot.getPosition();
 			if(Direction.getDirection(coord, shotCoord) == shot.getDirection()) {
 				int timeSurvived = 10;
@@ -507,7 +316,7 @@ public class World {
 		return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY());
 	}
 	
-	private boolean canSee(Coordinates a, Coordinates b) {
+	public boolean canSee(Coordinates a, Coordinates b) {
 		int dx = 0;
 		if(a.getX() < b.getX()) dx = 1;
 		if(a.getX() > b.getX()) dx = -1;
@@ -548,41 +357,7 @@ public class World {
 		return true;
 	}
 	
-	private class TankGridItem implements GridItem {
-		private final Coordinates start, end;
-		private final byte code;
-		
-		public TankGridItem(Tank tank) {
-			if(tank.hasMoved()) {
-				Direction dir = tank.getDirection().opposite();
-				end = tank.getPosition();
-				start = dir.move(end);
-			} else {
-				start = end = tank.getPosition();
-			}
-			
-			code = (byte) (game.getIndex(tank.getOwner()) + TankGameDisplayHandler.DynamicSprites.TANK_START.ordinal());
-		}
-		
-		@Override public byte code() { return code; }
-		@Override public Coordinates start() { return start; }
-		@Override public Coordinates end() { return end; }
-	}
-	
-	public static class ShotGridItem implements GridItem {
-		private final Coordinates start, end;
-		
-		public ShotGridItem(Shot shot) {
-			start = shot.getPrevious();
-			end = shot.getPosition();
-		}
-
-		@Override public byte code() { return (byte) TankGameDisplayHandler.DynamicSprites.SHOT.ordinal(); }
-		@Override public Coordinates start() { return start; }
-		@Override public Coordinates end() { return end; }
-	}
-	
-	public static class AmmoPickupGridItem implements GridItem {
+	private static class AmmoPickupGridItem implements GridItem {
 		private final Coordinates position;
 		
 		public AmmoPickupGridItem(Coordinates position) {
@@ -594,40 +369,32 @@ public class World {
 		@Override public Coordinates end() { return position; }
 	}
 	
-	public void displayWorld(TankGameDisplayHandler handler) {
-		//TODO add dead shots and tanks
-		
+	protected void displayWorld(TankGameDisplayHandler handler) {
 		Collection<GridItem> items = new ArrayList<>();
 		for(Tank tank : tanks.values()) {
-			items.add(new TankGridItem(tank));
-			tank.clearHasMoved();
+			items.add(tank.getRenderItem());
 		}
 		
-		for(Shot shot : shots) {
-			items.add(new ShotGridItem(shot));
+		for(Shot shot : getShots()) {
+			items.add(shot.getRenderItem());
 		}
 		
-		for(Shot shot : deadShotsToRender) {
-			items.add(new ShotGridItem(shot)); //This includes shots that never existed
-		}
-		
-		for(Tank tank : deadTanksToRender) {
-			items.add(new TankGridItem(tank));
-		}
+		items.addAll(deadGridItems);
 		
 		for(Coordinates pickup : ammoPickup) {
 			items.add(new AmmoPickupGridItem(pickup));
 		}
 		
-		deadTanksToRender.clear();
-		deadShotsToRender.clear();
+		deadGridItems.clear();
 		
 		handler.setDynamicItems(items);
 	}
 	
+	/** Removes a tank and all of it's shots from the game */
 	protected void removeTank(Tank tank) {
-		removeTank(tank.getOwner());
-		
+		tanks.remove(tank.getOwner());
+		tankMap.remove(tank.getPosition());
+		getShots().removeIf(t -> t.getOwner() == tank);
 	}
 
 	protected Tank getTank(Player<?> player) {
@@ -636,28 +403,6 @@ public class World {
 
 	protected int getDataSize() {
 		return (getWidth() * getHeight() - 1) / Byte.SIZE + 1;
-	}
-
-	protected void removeTank(Player<?> player) {
-		Tank tank = tanks.remove(player);
-		setTank(tank.getPosition(), null);
-		
-		shots.removeIf(s -> {
-			if(s.getOwner() == tank) {
-				removeShotFromMap(s);
-				return true;
-			}
-			
-			return false;
-		});
-	}
-
-	/**
-	 * Only use on the client side, do not edit.
-	 * @return The tanks.
-	 */
-	public Collection<Tank> getTanks() {
-		return clientTanks;
 	}
 
 	boolean[][] getMap() {
@@ -670,5 +415,22 @@ public class World {
 	
 	public boolean isAmmoPickup(Coordinates coord) {
 		return ammoPickup.contains(coord);
+	}
+
+	protected boolean removeAmmoPickup(Coordinates position) {
+		return ammoPickup.remove(position);
+	}
+
+	protected void addTankToMap(Tank tank) {
+		tankMap.put(tank.getPosition(), tank);
+	}
+	
+	protected void addShotToMap(Shot shot) {
+		shotMap.put(shot.getPosition(), shot);
+	}
+	
+	/** Returns the collection of tanks that the player can see. Do not edit. */
+	public Collection<Tank> getTanks() {
+		return tankMap.values();
 	}
 }
