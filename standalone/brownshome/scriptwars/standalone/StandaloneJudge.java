@@ -1,12 +1,16 @@
 package brownshome.scriptwars.standalone;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.file.*;
 import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.*;
 import java.util.logging.Level;
@@ -99,12 +103,13 @@ public final class StandaloneJudge {
 	private final class Contestant {
 		private final BotFunction function;
 		private final String name;
-		private AtomicInteger score;
+		
+		private SortedMap<String, Integer> stats = Collections.synchronizedSortedMap(new TreeMap<>());
+		
 		private List<Thread> threads = new ArrayList<>();
 		
 		public Contestant(Class<?> clazz) throws NoSuchMethodException {
 			name = clazz.getName();
-			score = new AtomicInteger();
 			
 			Method m = clazz.getMethod("main", String[].class);
 			function = s -> m.invoke(null, (Object) s);
@@ -112,7 +117,6 @@ public final class StandaloneJudge {
 		
 		public Contestant(BotFunction serverBot) {
 			function = serverBot;
-			score = new AtomicInteger();
 			name = "filler bot";
 		}
 
@@ -126,7 +130,15 @@ public final class StandaloneJudge {
 					Server.LOG.log(Level.WARNING, "Error in bot " + name, e);
 				}
 				
-				score.addAndGet(game.getPlayer(id & 0xff).getScore());
+				Player player = game.getPlayer(id & 0xff);
+				
+				Map<String, Integer> gameStats = game.getStats(player);
+				gameStats.put("Score", player.getScore());
+				
+				for(Entry<String, Integer> e : gameStats.entrySet()) {
+					stats.merge(e.getKey(), e.getValue(), (a, b) -> a + b);
+				}
+				
 			}, name + "@" + id + " AI thread");
 			
 			aiThread.setDaemon(true);
@@ -152,11 +164,27 @@ public final class StandaloneJudge {
 		
 		@Override
 		public String toString() {
-			return name + ": " + score;
+			String s = name;
+			for(Integer i : stats.values()) {
+				s += ", " + i;
+			}
+			
+			return s;
+		}
+
+		public String getHeader() {
+			String s = "Bot Name";
+			for(String category : stats.keySet()) {
+				s += ", " + category;
+			}
+			
+			return s;
 		}
 	}
 	
-	private StandaloneJudge(Properties settings) throws UnknownServerBotException {
+	private StandaloneJudge(Properties settings) throws UnknownServerBotException, FileNotFoundException {
+		System.setOut(new PrintStream("/dev/null"));
+		
 		Server.initialize();
 		
 		type = GameType.getGameType(settings.getProperty("game", TankGame.getName()));
@@ -178,7 +206,7 @@ public final class StandaloneJudge {
 		}
 	}
 	
-	private void runCompetition() throws GameCreationException, InterruptedException {
+	private void runCompetition() throws GameCreationException, InterruptedException, IOException {
 		List<Contestant> contestants = new ArrayList<>(mapping.values());
 
 		int numberOfGames = (contestants.size() - 1) / peoplePerGame + 1;
@@ -192,11 +220,12 @@ public final class StandaloneJudge {
 			}
 
 			for(int i = 0; i < contestants.size(); i++) {
-				contestants.get(i).join(games[i / peoplePerGame]);
+				contestants.get(i).join(games[i % games.length]);
 			}
 
+			//Now fill in filler contestants from the back
 			for(int i = 0; i < peoplePerGame * games.length - contestants.size(); i++) {
-				fillerContestant.join(games[games.length - 1]);
+				fillerContestant.join(games[games.length - 1 - i % games.length]);
 			}
 
 			List<Thread> gameThreads = new ArrayList<>();
@@ -219,7 +248,13 @@ public final class StandaloneJudge {
 			Collections.shuffle(contestants);
 		}
 		
-		contestants.sort((a, b) -> b.score.get() - a.score.get());
-		System.err.println(contestants);
+		contestants.sort((a, b) -> b.stats.get("Score") - b.stats.get("Score"));
+		
+		List<String> output = new ArrayList<>();
+		output.add(contestants.get(0).getHeader());
+		
+		contestants.forEach(c -> output.add(c.toString()));
+		
+		Files.write(Paths.get("results.csv"), output, StandardOpenOption.CREATE);
 	}
 }

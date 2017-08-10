@@ -433,4 +433,8 @@ public class World {
 	public Collection<Tank> getTanks() {
 		return tankMap.values();
 	}
+
+	protected TankGame getGame() {
+		return game;
+	}
 }
