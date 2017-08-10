@@ -183,7 +183,9 @@ public final class StandaloneJudge {
 	}
 	
 	private StandaloneJudge(Properties settings) throws UnknownServerBotException, FileNotFoundException {
-		System.setOut(new PrintStream("/dev/null"));
+		System.setOut(new PrintStream(new OutputStream() {
+			@Override public void write(int d) throws IOException {}
+		}));
 		
 		Server.initialize();
 		
