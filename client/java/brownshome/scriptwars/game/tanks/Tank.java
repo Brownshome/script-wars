@@ -70,6 +70,8 @@ public class Tank {
 			return;
 		}
 		
+		world.getGame().getStatsObject(owner).shotFired();
+		
 		if(world.isWall(spaceToShoot)) {
 			world.addDeadGridItem(Shot.makeVirtualGridItem(position, spaceToShoot));
 			clearAction();
@@ -78,8 +80,11 @@ public class Tank {
 
 	/** Moves then tank to it's next position and sets the hasMoved flag */
 	private void preTickMove() {
+		world.getGame().getStatsObject(owner).move();
+		
 		Coordinates newCoord = direction.move(position);
 		if(world.isWall(newCoord)) {
+			world.getGame().getStatsObject(owner).failedMove();
 			clearAction();
 			return;
 		}
@@ -132,7 +137,7 @@ public class Tank {
 	}
 	
 	protected void awardKill() {
-		owner.addScore(1);
+		world.getGame().getStatsObject(owner).kill();
 		refilAmmo();
 	}
 
@@ -180,14 +185,16 @@ public class Tank {
 	}
 
 	protected void doAmmoPickups() {
-		if(world.removeAmmoPickup(position))
+		if(world.removeAmmoPickup(position)) {
 			refilAmmo();
+			world.getGame().getStatsObject(owner).ammoPickedUp();
+		}
 	}
 	
 	protected void kill() {
 		isDead = true;
 		world.addDeadGridItem(getRenderItem());
-		owner.addScore(-1);
+		world.getGame().getStatsObject(owner).death();
 	}
 
 	@Override
@@ -203,6 +210,7 @@ public class Tank {
 		if(action != Action.MOVE)
 			return;
 		
+		world.getGame().getStatsObject(owner).failedMove();
 		position = direction.opposite().move(position);
 		shouldRenderMove = false;
 		world.addTankToMap(this);

@@ -23,12 +23,17 @@ public class TankGame extends Game {
 	private static final int NUMBER_OF_AMMO_PICKUPS = 5;
 	
 	private final List<Player<?>> players = Arrays.asList(new Player[PLAYER_COUNT]);
+	private final Map<Player<?>, TankStats> stats = new HashMap<>();
 	private World world;
 	
 	public TankGame(boolean[][] map, GameType type) throws OutOfIDsException {
 		super(type);
 		this.world = new World(map, this);
 		this.getDisplayHandler().putStaticGrid(getStaticGrid());
+	}
+	
+	protected TankStats getStatsObject(Player<?> player) {
+		return stats.get(player);
 	}
 	
 	@Override
@@ -227,6 +232,7 @@ public class TankGame extends Game {
 			assert false : "Too many players";
 		}
 		
+		stats.put(player, new TankStats(player));
 		world.spawnTank(player);
 	}
 
@@ -298,5 +304,20 @@ public class TankGame extends Game {
 		}
 		
 		return grid;
+	}
+
+	@Override
+	public Map<String, Integer> getStats(Player<?> player) {
+		Map<String, Integer> statsMapping = new HashMap<>();
+		TankStats statsObject = stats.get(player);
+		
+		statsMapping.put("Ammo Picked Up", statsObject.getAmmoPickedUp());
+		statsMapping.put("Deaths", statsObject.getDeaths());
+		statsMapping.put("Kills", statsObject.getKills());
+		statsMapping.put("Moves Attempted", statsObject.getMovesMade());
+		statsMapping.put("Shots Fired", statsObject.getShotsFired());
+		statsMapping.put("Moves Failed", statsObject.getMovesFailed());
+		
+		return statsMapping;
 	}
 }

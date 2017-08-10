@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
@@ -118,6 +119,9 @@ public abstract class Game {
 	/** Called after each tick to get data to display on the website. */
 	protected abstract void displayGame();
 
+	/** Returns a mapping from stats to scores */
+	public abstract Map<String, Integer> getStats(Player<?> player);
+	
 	public abstract ConnectionHandler<?> getPreferedConnectionHandler();
 
 	protected Game(GameType type) {
