@@ -8,7 +8,7 @@ Script Wars is a AI design competition designed for university software students
 
 ## How to contribute
 While I would like to keep the development of the core system to myself there are several opportunities to speed this project along.
-* Creating a new game by extending the [Game class](https://github.com/Brownshome/script-wars/blob/master/server/brownshome/scriptwars/server/game/Game.java). This requires no specialist knowledge or advanced java skills and the class is, or at least will be soon, well documented. All this needs is a cool idea.
+* Creating a new game by extending the [Game class](https://github.com/Brownshome/script-wars/blob/master/server/brownshome/scriptwars/game/Game.java). This requires no specialist knowledge or advanced java skills and the class is, or at least will be soon, well documented. All this needs is a cool idea.
 * Write more client libraries. At the moment the only client API is written in Java. The server is built to be language agnostic but I do need language specific libraries. The protocol for the connection is documented and relatively simple. I would prefer more widly used languages but feel free to build one for your favorite esoteric printer garbage lookalike, looking at you [Malbolge](https://en.wikipedia.org/wiki/Malbolge).
 
 For any of the items above submit a pull request or get in contact depending on how much work you are planning to do. As for contributing other features or fixes use your common sense. Ask me first before you start anything big in case it is A) already being implemented or B) not wanted. For small fixes or requests submit an issue as at this stage the code base is too fluid for pull requests to be worth anything for small fixes.
