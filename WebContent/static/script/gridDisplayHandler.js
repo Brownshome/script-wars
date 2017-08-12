@@ -133,7 +133,7 @@ ImageSprite.prototype.render = function() {
 	
 	//Maybe should cache Date.now this leads to every item being animated differently
 	const dt = (Date.now() - this.displayHandler.dynamicObjects.lastUpdate) / ImageSprite.frameTime;
-	const lerp = Math.max(dt, 1);
+	const lerp = Math.min(dt, 1);
 
 	const x = this.ex * lerp + this.sx * (1 - lerp);
 	const y = this.ey * lerp + this.sy * (1 - lerp);
