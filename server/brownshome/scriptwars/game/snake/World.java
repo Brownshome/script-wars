@@ -32,6 +32,7 @@ public class World {
 	
 	public World() {
 		snakes = new HashMap<Player<?>, AbstractSnake>();
+		owners = new HashMap<AbstractSnake, Player<?>>();
 	}
 	
 	private void assertSnakeExists(Player<?> player) throws WorldException {

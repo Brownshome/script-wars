@@ -16,7 +16,6 @@ import com.liamtbrand.snake.controller.AbstractSnake;
 import com.liamtbrand.snake.game.Engine;
 import com.liamtbrand.snake.model.IMapModel;
 import com.liamtbrand.snake.model.ISnakeModel.Direction;
-import com.liamtbrand.snake.model.concrete.BasicMapModel;
 import com.liamtbrand.snake.model.concrete.Stage;
 
 import brownshome.scriptwars.connection.ConnectionHandler;
@@ -27,18 +26,19 @@ import brownshome.scriptwars.game.Game;
 import brownshome.scriptwars.game.GameType;
 import brownshome.scriptwars.game.Player;
 import brownshome.scriptwars.game.snake.World.WorldException;
+import brownshome.scriptwars.game.snakes.TestMap;
 
 public class SnakeGame extends Game {
 	private final Engine engine;
 	private World world;
 	
-	public final byte BYTE_LENGTH = 8;
+	public final int BYTE_LENGTH = 8;
 	
 	//Used on the website
 	public SnakeGame(GameType type) {
 		super(type);
 		world = new World();
-		engine = new Engine(new Stage(null));
+		engine = new Engine(new Stage(new TestMap()));
 		setupEngine();
 	}
 
@@ -51,7 +51,7 @@ public class SnakeGame extends Game {
 	}
 
 	private void setupEngine() {
-		engine.stage = new Stage(new BasicMapModel());
+		engine.stage = new Stage(new TestMap());
 	}
 	
 	@Override
@@ -75,7 +75,7 @@ public class SnakeGame extends Game {
 	}
 
 	public static String getName() {
-		return "Snake";
+		return "Snakes";
 	}
 
 	public static String getDescription() {
@@ -164,32 +164,38 @@ public class SnakeGame extends Game {
 		// Build the data for the map.
 		IMapModel map = engine.stage.getMap();
 		
+		ByteBuffer buff;
+		
+		buff = ByteBuffer.wrap(new byte[getMapDataSize()]);
+		
 		// First two bytes give the size of the map.
 		// Casting to bytes. Max map size on networked games is 256 by 256.
 		if((int) ((byte) map.getWidth()) != map.getWidth()) {
 			// Signal some problem!
 		}
-		data.put((byte) map.getWidth());
-		data.put((byte) map.getHeight());
+		buff.put((byte) map.getWidth());
+		buff.put((byte) map.getHeight());
 		
-		byte b = 0;
-		byte ptr = 0;
+		byte b = (int) 0;
+		int ptr = 0;
 		
 		// Map data, bits, packed into bytes.
-		for(int x = 0; x < map.getWidth(); x++) {
-			for(int y = 0; y < map.getHeight(); y++) {
-				if (ptr >= BYTE_LENGTH) {
-					data.put(b);
-					b = 0; ptr = 0;
+		for(int y = 0; y < map.getHeight(); y++) {
+			for(int x = 0; x < map.getWidth(); x++) {
+				b |= ( map.isWall(x, y) ? 1 : 0 ) << ptr++;
+				//System.out.print((b & (1 << (ptr-1))) >> (ptr-1));
+				if (ptr == BYTE_LENGTH) {
+					buff.put(b);
+					b = (int) 0; ptr = 0;
 				}
-				b |= (map.isWall(x, y) ? (1 << ptr++) : (0 << ptr++));
 			}
+			//System.out.println("");
 		}
 		if(b != 0) { // Remember any remaining bits if we haven't added them yet.
-			data.put(b);
+			buff.put(b);
 		}
-		
-		ByteBuffer buff;
+		buff.flip();
+		data.put(buff);
 		
 		// Build the data for the players.
 		Iterator<AbstractSnake> snakeIterator = engine.stage.getSnakeIterator();
@@ -220,7 +226,7 @@ public class SnakeGame extends Game {
 		// Build the data for the game objects.
 		Iterator<AbstractGameObject> goIterator = engine.stage.getGameObjectIterator();
 		buff = ByteBuffer.wrap(new byte[getGameObjectsDataSize()]); // TODO optimize this.
-		short objects = (int) 0;
+		byte objects = (int) 0;
 		AbstractGameObject object;
 		while(goIterator.hasNext()) {
 			object = goIterator.next();
@@ -231,7 +237,7 @@ public class SnakeGame extends Game {
 				objects++;
 			}
 		}
-		data.putShort(objects);
+		data.put(objects);
 		buff.flip();
 		data.put(buff); // Add the object data to the buffer.
 		
@@ -249,13 +255,15 @@ public class SnakeGame extends Game {
 		// Incoming data from player:
 		// Player's move: direction.
 		// .ordinal() on Direction.
+		if(data.hasRemaining()) {
 		
-		Direction direction = Direction.values()[data.get()];
-		try {
-			world.getSnake(player).model.setDirection(direction);
-		} catch (WorldException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Direction direction = Direction.values()[data.get()];
+			try {
+				world.getSnake(player).model.setDirection(direction);
+			} catch (WorldException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 	}
