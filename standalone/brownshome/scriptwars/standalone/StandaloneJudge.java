@@ -154,8 +154,10 @@ public final class StandaloneJudge {
 					if((k = limit - System.currentTimeMillis()) > 0)
 						t.join(k);
 					
-					if(t.isAlive())
+					if(t.isAlive()) {
 						t.stop();
+						System.err.println("Had to kill " + name);
+					}
 				} catch (InterruptedException e) {}
 			}
 			
@@ -250,13 +252,11 @@ public final class StandaloneJudge {
 			Collections.shuffle(contestants);
 		}
 		
-		contestants.sort((a, b) -> b.stats.get("Score") - b.stats.get("Score"));
-		
 		List<String> output = new ArrayList<>();
 		output.add(contestants.get(0).getHeader());
 		
 		contestants.forEach(c -> output.add(c.toString()));
 		
-		Files.write(Paths.get("results.csv"), output, StandardOpenOption.CREATE);
+		Files.write(Paths.get("results.csv"), output, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 	}
 }
