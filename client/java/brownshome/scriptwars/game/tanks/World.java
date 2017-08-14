@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+import brownshome.scriptwars.connection.ConnectionUtil;
+import brownshome.scriptwars.connection.ConnectionUtil.BooleanWriter;
 import brownshome.scriptwars.connection.Network;
 import brownshome.scriptwars.game.*;
 import brownshome.scriptwars.server.Server;
@@ -195,23 +197,15 @@ public class World {
 	}
 
 	protected void writeWorld(ByteBuffer data) {
-		byte buffer = 0;
-		int index = 0;
+		ConnectionUtil.BooleanWriter writer = new ConnectionUtil.BooleanWriter(data);
 		
 		for(boolean[] row : map) {
 			for(boolean isWall : row) {
-					buffer |= (isWall ? 1 : 0) << index++;
-					if(index == 8) {
-						index = 0;
-						data.put(buffer);
-						buffer = 0;
-					}
+				writer.writeBoolean(isWall);
 			}
 		}
 		
-		if(index != 0) {
-			data.put(buffer);
-		}
+		writer.flush();
 	}
 
 	protected void spawnTank(Player<?> player) {

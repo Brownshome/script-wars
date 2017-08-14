@@ -1,14 +1,21 @@
 package brownshome.scriptwars.game.snakes;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 
 import com.liamtbrand.snake.controller.IStage;
-import com.liamtbrand.snake.model.IMapModel;
-import com.liamtbrand.snake.model.ISnakeModel.Direction;
+import com.liamtbrand.snake.model.IGameObjectModel.Type;
 import com.liamtbrand.snake.model.concrete.Stage;
-import com.liamtbrand.snake.model.concrete.test.TestMap;
 
 import brownshome.scriptwars.connection.Network;
+import brownshome.scriptwars.game.Direction;
+import brownshome.scriptwars.game.Coordinates;
 
 public class TestAI {
 	private static Network network;
@@ -16,43 +23,59 @@ public class TestAI {
 	private static IStage stage;
 	
 	public static void main(String[] args) throws IOException {
-		
-		IMapModel model = new BasicMapModel(20,20);
-		stage = new Stage(model);
-		
-		String idString = "65536";
-
-		int id;
-		id = Integer.parseInt(idString);
+		int id = 65536;
 
 		network = new Network(id, "localhost", "Test AI");
-		Direction direction = Direction.NORTH;
+		Direction direction = Direction.UP;
 		System.out.println("Connecting");
-
+		
 		while(network.nextTick()) {
+			stage = new Stage(new BasicMapModel(network));
 			
-			// Get Map
-			int mapWidth = network.getByte() & (0xff);
-			int mapHeight = network.getByte() & (0xff);
-			//System.out.println("Map Width: "+mapWidth+", Map Height: "+mapHeight);
-			int ptr = 8;
-			int BYTE_LENGTH = 8;
-			byte b = 0;
-			BasicMapModel map = (BasicMapModel) stage.getMap();
-			for(int y = 0; y < mapHeight; y++) {
-				for(int x = 0; x < mapWidth; x++) {
-					if (ptr == BYTE_LENGTH) {
-						b = (byte) network.getByte();
-						ptr = 0;
-					}
-					map.setWall(x, y, (b & (1 << ptr)) >> ptr == 1 );
-					ptr++;
-				}
+			ClientSnake[] snakes = new ClientSnake[network.getByte()];
+			ClientSnake me = null;
+			for(int i = 0; i < snakes.length; i++) {
+				snakes[i] = new ClientSnake(network);
+				if(snakes[i].getID() == id)
+					me = snakes[i];
 			}
 			
-			while(network.hasData()) { // flush the data.
-				network.getByte();
-				//System.out.println(network.getByte());
+			EnumMap<Type, List<ClientGameObject>> map = new EnumMap<>(Type.class);
+			for(Type type : Type.values())
+				map.put(type, new ArrayList<>());
+			
+			int objects = network.getByte();
+			for(int i = 0; i < objects; i++) {
+				ClientGameObject cgo = new ClientGameObject(network);
+				map.get(cgo.type).add(cgo);
+			}
+			
+			Queue<Coordinates> queue = new ArrayDeque<>();
+			Map<Coordinates, Direction> route = new HashMap<>();
+			queue.add(me.getHead());
+
+			loop:
+			while(!queue.isEmpty()) {
+				Coordinates coord = queue.remove();
+
+				for(Direction dir : Direction.values()) {
+					Coordinates c = dir.move(coord);
+
+					if(stage.getMap().isWall(c.getX(), c.getY()) && !route.containsKey(c)) {
+						Direction getTo = dir;
+						if(route.containsKey(coord)) {
+							getTo = route.get(coord);
+						}
+
+						route.put(c, getTo);
+						queue.add(c);
+
+						if(map.get(Type.FOOD).stream().anyMatch(cgo -> cgo.coord.equals(c))) {
+							direction = getTo;
+							break loop;
+						}
+					}
+				}
 			}
 			
 			network.sendByte(direction.ordinal());
