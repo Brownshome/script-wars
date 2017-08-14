@@ -108,7 +108,7 @@ public class World {
 				position = new Coordinates(snake.model.getSegmentX(0), snake.model.getSegmentY(0));
 				items.add(new SnakeHeadItem(position));
 				for(int i = 1; i < snake.model.getLength(); i++) {
-					position = new Coordinates(snake.model.getSegmentX(i),snake.model.getSegmentY(0));
+					position = new Coordinates(snake.model.getSegmentX(i),snake.model.getSegmentY(i));
 					items.add(new SnakeSegmentItem(position));
 				}
 			}

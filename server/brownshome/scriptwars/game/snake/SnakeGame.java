@@ -226,8 +226,9 @@ public class SnakeGame extends Game {
 					owner = world.getOwner(snake);
 					buff.putInt(owner.getID()); // id
 					buff.put((byte) snake.model.getLength()); // length
+					System.out.println(snake.model.getLength());
 					for(int i = 0; i < snake.model.getLength(); i++) { // segments
-						buff.put((byte) snake.model.getSegmentX(i)); 
+						buff.put((byte) snake.model.getSegmentX(i));
 						buff.put((byte) snake.model.getSegmentY(i));
 					}
 					
@@ -283,7 +284,7 @@ public class SnakeGame extends Game {
 		// .ordinal() on Direction.
 		if(data.hasRemaining()) {
 		
-			Direction direction = Direction.values()[data.get()];
+			Direction direction = Direction.values()[data.get()%4];
 			try {
 				world.getSnake(player).model.setDirection(direction);
 			} catch (WorldException e) {
