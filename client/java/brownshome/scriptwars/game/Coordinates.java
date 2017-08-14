@@ -1,4 +1,4 @@
-package brownshome.scriptwars.game.tanks;
+package brownshome.scriptwars.game;
 
 import brownshome.scriptwars.connection.Network;
 

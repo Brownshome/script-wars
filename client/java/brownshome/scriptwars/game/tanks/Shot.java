@@ -1,6 +1,8 @@
 package brownshome.scriptwars.game.tanks;
 
 import brownshome.scriptwars.connection.Network;
+import brownshome.scriptwars.game.Coordinates;
+import brownshome.scriptwars.game.Direction;
 import brownshome.scriptwars.game.GridItem;
 
 public class Shot {

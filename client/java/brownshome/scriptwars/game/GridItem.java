@@ -1,7 +1,5 @@
 package brownshome.scriptwars.game;
 
-import brownshome.scriptwars.game.tanks.Coordinates;
-
 public interface GridItem {
 	/**
 	 * The code is the number that will be passed to the javascript engine

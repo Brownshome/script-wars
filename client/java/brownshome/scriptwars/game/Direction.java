@@ -1,4 +1,4 @@
-package brownshome.scriptwars.game.tanks;
+package brownshome.scriptwars.game;
 
 public enum Direction {
 	UP(0, -1),
