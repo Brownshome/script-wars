@@ -13,6 +13,7 @@ import javax.imageio.ImageIO;
 
 import com.liamtbrand.snake.controller.AbstractGameObject;
 import com.liamtbrand.snake.controller.AbstractSnake;
+import com.liamtbrand.snake.controller.concrete.Snake;
 import com.liamtbrand.snake.engine.Engine;
 import com.liamtbrand.snake.engine.mechanic.AbstractMechanic;
 import com.liamtbrand.snake.engine.mechanic.SpawnFoodMechanic;
@@ -226,7 +227,6 @@ public class SnakeGame extends Game {
 					owner = world.getOwner(snake);
 					buff.putInt(owner.getID()); // id
 					buff.put((byte) snake.model.getLength()); // length
-					System.out.println(snake.model.getLength());
 					for(int i = 0; i < snake.model.getLength(); i++) { // segments
 						buff.put((byte) snake.model.getSegmentX(i));
 						buff.put((byte) snake.model.getSegmentY(i));
