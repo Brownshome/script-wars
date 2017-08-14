@@ -1,21 +1,15 @@
 package brownshome.scriptwars.game.snakes;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 
 import com.liamtbrand.snake.controller.IStage;
 import com.liamtbrand.snake.model.IGameObjectModel.Type;
 import com.liamtbrand.snake.model.concrete.Stage;
 
 import brownshome.scriptwars.connection.Network;
-import brownshome.scriptwars.game.Direction;
 import brownshome.scriptwars.game.Coordinates;
+import brownshome.scriptwars.game.Direction;
 
 public class TestAI {
 	private static Network network;
@@ -40,6 +34,11 @@ public class TestAI {
 					me = snakes[i];
 			}
 			
+			if(me == null) {
+				network.sendByte(0);
+				continue;
+			}
+			
 			EnumMap<Type, List<ClientGameObject>> map = new EnumMap<>(Type.class);
 			for(Type type : Type.values())
 				map.put(type, new ArrayList<>());
@@ -60,8 +59,8 @@ public class TestAI {
 
 				for(Direction dir : Direction.values()) {
 					Coordinates c = dir.move(coord);
-
-					if(stage.getMap().isWall(c.getX(), c.getY()) && !route.containsKey(c)) {
+					
+					if(isValid(c) && !stage.getMap().isWall(c.getX(), c.getY()) && !route.containsKey(c)) {
 						Direction getTo = dir;
 						if(route.containsKey(coord)) {
 							getTo = route.get(coord);
@@ -82,6 +81,10 @@ public class TestAI {
 		}
 		
 		System.out.println(network.getConnectionStatus()); //This function may not be available on some languages.
+	}
+
+	private static boolean isValid(Coordinates c) {
+		return c.getX() > 0 && c.getY() > 0 && c.getX() < stage.getMap().getWidth() && c.getY() < stage.getMap().getHeight();
 	}
 	
 }

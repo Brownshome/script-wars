@@ -23,6 +23,7 @@ import com.liamtbrand.snake.model.concrete.test.TestMap;
 
 import brownshome.scriptwars.connection.ConnectionHandler;
 import brownshome.scriptwars.connection.ConnectionUtil;
+import brownshome.scriptwars.connection.InvalidIDException;
 import brownshome.scriptwars.connection.UDPConnectionHandler;
 import brownshome.scriptwars.game.BotFunction;
 import brownshome.scriptwars.game.DisplayHandler;
@@ -260,6 +261,13 @@ public class SnakeGame extends Game {
 		data.put(buff); // Add the object data to the buffer.
 		
 		return true;
+	}
+	
+	@Override
+	public void addPlayer(Player<?> player) throws InvalidIDException {
+		world.spawnSnake(player, engine);
+		
+		super.addPlayer(player);
 	}
 
 	@Override
