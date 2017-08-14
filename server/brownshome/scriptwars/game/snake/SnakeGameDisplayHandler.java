@@ -18,13 +18,13 @@ public class SnakeGameDisplayHandler extends GridDisplayHandler {
 	}
 	
 	public static enum GridItemSprites {
-		UNRECOGNISED, FOOD, SNAKE_HEAD, SNAKE_SEGMENT;
+		FOOD, SNAKE_HEAD, SNAKE_SEGMENT, WORMHOLE;
 	}
 	
-	public static abstract class AbstractPositionedGridItem implements GridItem {
+	public static class PositionedGridItem implements GridItem {
 		protected Coordinates position;
 		protected byte code;
-		public AbstractPositionedGridItem(Coordinates position, byte code) {
+		public PositionedGridItem(Coordinates position, byte code) {
 			this.position = position;
 			this.code = code;
 		}
@@ -33,35 +33,26 @@ public class SnakeGameDisplayHandler extends GridDisplayHandler {
 		public Coordinates end() { return position; } // TODO : Why is this not tracked by the display class?
 	}
 	
-	public static class UnrecognisedGridItem extends AbstractPositionedGridItem {
-
-		public UnrecognisedGridItem(Coordinates position) {
-			super(position, (byte) GridItemSprites.UNRECOGNISED.ordinal());
-		}
-	}
-	
-	public static class FoodGridItem extends AbstractPositionedGridItem {
-		public FoodGridItem(Coordinates position) {
-			super(position, (byte) GridItemSprites.FOOD.ordinal());
-		}
-	}
-	
-	public static class SnakeHeadItem extends AbstractPositionedGridItem {
+	public static class SnakeHeadItem extends PositionedGridItem {
 		public SnakeHeadItem(Coordinates position) {
 			super(position, (byte) GridItemSprites.SNAKE_HEAD.ordinal());
 		}
 	}
 	
-	public static class SnakeSegmentItem extends AbstractPositionedGridItem {
+	public static class SnakeSegmentItem extends PositionedGridItem {
 		public SnakeSegmentItem(Coordinates position) {
 			super(position, (byte) GridItemSprites.SNAKE_SEGMENT.ordinal());
 		}
 	}
 
-	public GridItem getRenderObject(Coordinates position,Type type) {
+	public GridItem getGridItem(Coordinates position,Type type) {
 		switch (type) {
+			case FOOD:
+				return new PositionedGridItem(position, (byte) GridItemSprites.FOOD.ordinal());
+			case WORMHOLE:
+				return new PositionedGridItem(position, (byte) GridItemSprites.WORMHOLE.ordinal());
 			default:
-				return new UnrecognisedGridItem(position);
+				return null;
 		}
 	}
 
