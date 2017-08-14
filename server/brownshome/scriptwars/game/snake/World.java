@@ -20,7 +20,6 @@ import brownshome.scriptwars.game.tanks.Coordinates;
 
 import brownshome.scriptwars.game.snake.SnakeGameDisplayHandler.SnakeHeadItem;
 import brownshome.scriptwars.game.snake.SnakeGameDisplayHandler.SnakeSegmentItem;
-import brownshome.scriptwars.game.snake.SnakeGameDisplayHandler.FoodGridItem;
 
 /**
  * This tracks the players snakes in the game.
@@ -123,34 +122,11 @@ public class World {
 			
 			if(!object.destroyed()) {
 				position = new Coordinates(object.model.getX(),object.model.getY());
-				items.add(handler.getRenderObject(position,object.model.getType()));
+				items.add(handler.getGridItem(position,object.model.getType()));
 			}
 		}
 		
 		handler.setDynamicItems(items);
-		
-		// for now we will just leave it empty, just draw static map.
-		
-		/*
-		
-		for(Tank tank : tanks.values()) {
-			items.add(tank.getRenderItem());
-		}
-		
-		for(Shot shot : getShots()) {
-			items.add(shot.getRenderItem());
-		}
-		
-		items.addAll(deadGridItems);
-		
-		for(Coordinates pickup : ammoPickup) {
-			items.add(new AmmoPickupGridItem(pickup));
-		}
-		
-		deadGridItems.clear();
-		
-		handler.setDynamicItems(items);
-		*/
 	}
 	
 }
