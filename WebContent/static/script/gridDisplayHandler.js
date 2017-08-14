@@ -103,6 +103,33 @@ function GridSprite(x, y, layer, displayHandler) {
 
 GridSprite.maxLayer = 0;
 
+function ColouredBlock(sx, sy, ex, ey, layer, displayHandler, colour) {
+	GridSprite.call(this, ex, ey, layer, displayHandler);
+	
+	this.sx = sx;
+	this.sy = sy;
+	this.ex = ex;
+	this.ey = ey;
+}
+
+ColouredBlock.prototype = Object.create(ColouredBlock.prototype);
+ColouredBlock.prototype.constructor = ColouredBlock;
+
+ColouredBlock.prototype.render = function() {
+	const displayHandler = this.displayHandler;
+
+	const x = this.sx
+	const y = this.sy;
+	
+	displayHandler.context.fillStyle = this.colour; 
+	displayHandler.context.fillRect(
+			this.displayHandler.convertX(x), 
+			this.displayHandler.convertY(y), 
+			this.displayHandler.size,
+			this.displayHandler.size
+	);
+}
+
 function ImageSprite(sx, sy, ex, ey, layer, displayHandler, imageName) {
 	GridSprite.call(this, ex, ey, layer, displayHandler);
 	
@@ -132,7 +159,7 @@ ImageSprite.prototype.render = function() {
 	 */
 	
 	//Maybe should cache Date.now this leads to every item being animated differently
-	const dt = (Date.now() - this.displayHandler.dynamicObjects.lastUpdate) / ImageSprite.frameTime;
+	const dt = (Date.now() - this.displayHandler.dynamicObjects.lastUpdate) / GridSprite.frameTime;
 	const lerp = Math.max(dt, 1);
 
 	const x = this.ex * dt + this.sx * (1 - dt);
