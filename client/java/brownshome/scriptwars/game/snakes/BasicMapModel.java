@@ -11,8 +11,8 @@ public class BasicMapModel implements IMapModel {
 	private final int height;
 	
 	public BasicMapModel(Network network) {
-		width = getWidth();
-		height = getHeight();
+		width = network.getByte();
+		height = network.getByte();
 		data = new boolean[height][width];
 		
 		for(int y = 0; y < width; y++) {
