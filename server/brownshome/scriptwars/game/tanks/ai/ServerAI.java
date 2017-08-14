@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Predicate;
 
+import brownshome.scriptwars.game.Coordinates;
+import brownshome.scriptwars.game.Direction;
 import brownshome.scriptwars.game.tanks.*;
 
 //Shoot bad guys

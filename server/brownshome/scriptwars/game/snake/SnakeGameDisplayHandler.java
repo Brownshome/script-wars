@@ -2,10 +2,10 @@ package brownshome.scriptwars.game.snake;
 
 import com.liamtbrand.snake.model.IGameObjectModel.Type;
 
+import brownshome.scriptwars.game.Coordinates;
 import brownshome.scriptwars.game.Game;
 import brownshome.scriptwars.game.GridDisplayHandler;
 import brownshome.scriptwars.game.GridItem;
-import brownshome.scriptwars.game.tanks.Coordinates;
 
 public class SnakeGameDisplayHandler extends GridDisplayHandler {
 

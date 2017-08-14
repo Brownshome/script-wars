@@ -3,6 +3,8 @@ package brownshome.scriptwars.game.tanks.ai;
 import java.io.IOException;
 import java.util.Scanner;
 
+import brownshome.scriptwars.game.Coordinates;
+import brownshome.scriptwars.game.Direction;
 import brownshome.scriptwars.game.tanks.*;
 
 public class RandomAI extends ServerAI {

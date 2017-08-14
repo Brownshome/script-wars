@@ -14,10 +14,9 @@ import com.liamtbrand.snake.model.ISnakeModel;
 import com.liamtbrand.snake.model.ISnakeModel.Direction;
 import com.liamtbrand.snake.model.concrete.BasicSnakeModel;
 
+import brownshome.scriptwars.game.Coordinates;
 import brownshome.scriptwars.game.GridItem;
 import brownshome.scriptwars.game.Player;
-import brownshome.scriptwars.game.tanks.Coordinates;
-
 import brownshome.scriptwars.game.snake.SnakeGameDisplayHandler.SnakeHeadItem;
 import brownshome.scriptwars.game.snake.SnakeGameDisplayHandler.SnakeSegmentItem;
 

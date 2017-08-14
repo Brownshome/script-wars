@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.Collection;
 
 import brownshome.scriptwars.connection.*;
+import brownshome.scriptwars.game.Coordinates;
+import brownshome.scriptwars.game.Direction;
 
 /**
  * This is a wrapper over the Network class that gives an API to control the Tank.
