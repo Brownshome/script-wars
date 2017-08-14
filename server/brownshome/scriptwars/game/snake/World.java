@@ -77,7 +77,7 @@ public class World {
 	public void spawnSnake(Player<?> player, Engine engine) {
 		// TODO make this choose a suitable spawn based on the map and current snakes, etc.
 		int spawnx = 2;
-		int spawny = 4;
+		int spawny = 7;
 		Direction spawnDirection = Direction.EAST;
 		int spawnLength = 3;
 		ISnakeModel model = new BasicSnakeModel(spawnx, spawny, spawnDirection, spawnLength);
