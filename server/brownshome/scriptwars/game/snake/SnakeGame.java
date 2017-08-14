@@ -13,7 +13,9 @@ import javax.imageio.ImageIO;
 
 import com.liamtbrand.snake.controller.AbstractGameObject;
 import com.liamtbrand.snake.controller.AbstractSnake;
-import com.liamtbrand.snake.game.Engine;
+import com.liamtbrand.snake.engine.Engine;
+import com.liamtbrand.snake.engine.mechanic.AbstractMechanic;
+import com.liamtbrand.snake.engine.mechanic.SpawnFoodMechanic;
 import com.liamtbrand.snake.model.IMapModel;
 import com.liamtbrand.snake.model.ISnakeModel.Direction;
 import com.liamtbrand.snake.model.concrete.Stage;
@@ -72,6 +74,7 @@ public class SnakeGame extends Game {
 
 	private void setupEngine() {
 		engine.stage = new Stage(new TestMap());
+		AbstractMechanic spawnFood = new SpawnFoodMechanic(engine);
 	}
 	
 	@Override
