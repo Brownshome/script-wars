@@ -2,6 +2,8 @@ package brownshome.scriptwars.game.tanks;
 
 import brownshome.scriptwars.connection.Network;
 
+// TODO
+// Since this is used in both games for display, it may need to be moved to a separate package
 public class Coordinates {
 	private final int x;
 	private final int y;

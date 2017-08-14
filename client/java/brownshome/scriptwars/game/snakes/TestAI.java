@@ -34,7 +34,7 @@ public class TestAI {
 			// Get Map
 			int mapWidth = network.getByte() & (0xff);
 			int mapHeight = network.getByte() & (0xff);
-			System.out.println("Map Width: "+mapWidth+", Map Height: "+mapHeight);
+			//System.out.println("Map Width: "+mapWidth+", Map Height: "+mapHeight);
 			int ptr = 8;
 			int BYTE_LENGTH = 8;
 			byte b = 0;
@@ -51,7 +51,8 @@ public class TestAI {
 			}
 			
 			while(network.hasData()) { // flush the data.
-				System.out.println(network.getByte());
+				network.getByte();
+				//System.out.println(network.getByte());
 			}
 			
 			network.sendByte(direction.ordinal());

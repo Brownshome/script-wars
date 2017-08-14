@@ -17,6 +17,7 @@ import com.liamtbrand.snake.game.Engine;
 import com.liamtbrand.snake.model.IMapModel;
 import com.liamtbrand.snake.model.ISnakeModel.Direction;
 import com.liamtbrand.snake.model.concrete.Stage;
+import com.liamtbrand.snake.model.concrete.test.TestMap;
 
 import brownshome.scriptwars.connection.ConnectionHandler;
 import brownshome.scriptwars.connection.UDPConnectionHandler;
@@ -26,7 +27,6 @@ import brownshome.scriptwars.game.Game;
 import brownshome.scriptwars.game.GameType;
 import brownshome.scriptwars.game.Player;
 import brownshome.scriptwars.game.snake.World.WorldException;
-import brownshome.scriptwars.game.snakes.TestMap;
 
 public class SnakeGame extends Game {
 	private final Engine engine;
@@ -40,14 +40,33 @@ public class SnakeGame extends Game {
 		world = new World();
 		engine = new Engine(new Stage(new TestMap()));
 		setupEngine();
+		getDisplayHandler().putStaticGrid(getStaticGrid());
 	}
 
 	//Used by the judging server
 	public SnakeGame(GameType type, int ticks, int timeout) {
 		super(type, ticks, timeout);
 		world = new World();
-		engine = new Engine(new Stage(null));
+		engine = new Engine(new Stage(new TestMap()));
 		setupEngine();
+		getDisplayHandler().putStaticGrid(getStaticGrid());
+	}
+	
+	// Generate static grid from map.
+	byte[][] getStaticGrid() {
+		// Grid is x y flipped.
+		byte[][] grid = new byte[engine.stage.getMap().getHeight()][engine.stage.getMap().getWidth()];
+		
+		for(int x = 0; x < engine.stage.getMap().getWidth(); x++) {
+			for(int y = 0; y < engine.stage.getMap().getHeight(); y++) {
+				if(engine.stage.getMap().isWall(x, y))
+					grid[y][x] = (byte) SnakeGameDisplayHandler.StaticSprites.WALL.ordinal();
+				else 
+					grid[y][x] = (byte) SnakeGameDisplayHandler.StaticSprites.NOTHING.ordinal();
+			}
+		}
+		 
+		return grid;
 	}
 
 	private void setupEngine() {
@@ -267,10 +286,18 @@ public class SnakeGame extends Game {
 		}
 		
 	}
+	
+	@Override
+	public SnakeGameDisplayHandler getDisplayHandler() {
+		return (SnakeGameDisplayHandler) super.getDisplayHandler();
+	}
 
 	@Override
 	protected void displayGame() {
-		assert false;
+		SnakeGameDisplayHandler dh = getDisplayHandler();
+		
+		world.displayWorld(dh,engine);
+		dh.sendUpdates();
 	}
 
 	@Override
@@ -280,10 +307,6 @@ public class SnakeGame extends Game {
 
 	@Override
 	protected DisplayHandler constructDisplayHandler() {
-		assert false;
-		
-		//Something like return new SnakeGameDisplayHandler();
-		
-		return null;
+		return new SnakeGameDisplayHandler(this);
 	}
 }
