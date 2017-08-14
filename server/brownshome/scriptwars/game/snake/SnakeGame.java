@@ -20,6 +20,7 @@ import com.liamtbrand.snake.model.concrete.Stage;
 import com.liamtbrand.snake.model.concrete.test.TestMap;
 
 import brownshome.scriptwars.connection.ConnectionHandler;
+import brownshome.scriptwars.connection.ConnectionUtil;
 import brownshome.scriptwars.connection.UDPConnectionHandler;
 import brownshome.scriptwars.game.BotFunction;
 import brownshome.scriptwars.game.DisplayHandler;
@@ -128,7 +129,7 @@ public class SnakeGame extends Game {
 		while(snakeIterator.hasNext()) {
 			snake = snakeIterator.next();
 			if(!snake.destroyed()) {
-				snakesSize += 2; // Snake id, length.
+				snakesSize += Integer.BYTES + Byte.BYTES; // Snake id, length.
 				snakesSize += snake.model.getLength() * 2; // length: segmentx, segmenty
 			}
 		}
@@ -195,31 +196,23 @@ public class SnakeGame extends Game {
 		buff.put((byte) map.getWidth());
 		buff.put((byte) map.getHeight());
 		
-		byte b = (int) 0;
-		int ptr = 0;
-		
+		ConnectionUtil.BooleanWriter writer = new ConnectionUtil.BooleanWriter(buff);
 		// Map data, bits, packed into bytes.
 		for(int y = 0; y < map.getHeight(); y++) {
 			for(int x = 0; x < map.getWidth(); x++) {
-				b |= ( map.isWall(x, y) ? 1 : 0 ) << ptr++;
-				//System.out.print((b & (1 << (ptr-1))) >> (ptr-1));
-				if (ptr == BYTE_LENGTH) {
-					buff.put(b);
-					b = (int) 0; ptr = 0;
-				}
+				writer.writeBoolean(map.isWall(x, y));
 			}
-			//System.out.println("");
 		}
-		if(b != 0) { // Remember any remaining bits if we haven't added them yet.
-			buff.put(b);
-		}
+		
+		writer.flush();
+		
 		buff.flip();
 		data.put(buff);
 		
 		// Build the data for the players.
 		Iterator<AbstractSnake> snakeIterator = engine.stage.getSnakeIterator();
 		buff = ByteBuffer.wrap(new byte[getSnakesDataSize()]);
-		byte snakes = (int) 0;
+		int snakes = 0;
 		AbstractSnake snake;
 		Player<?> owner;
 		while(snakeIterator.hasNext()) {
@@ -227,18 +220,21 @@ public class SnakeGame extends Game {
 			if(!snake.destroyed()) {
 				try {
 					owner = world.getOwner(snake);
-					buff.put((byte) owner.getID()); // id
+					buff.putInt(owner.getID()); // id
 					buff.put((byte) snake.model.getLength()); // length
 					for(int i = 0; i < snake.model.getLength(); i++) { // segments
 						buff.put((byte) snake.model.getSegmentX(i)); 
 						buff.put((byte) snake.model.getSegmentY(i));
 					}
+					
+					snakes++;
 				} catch (WorldException e) {
 					// Problem getting snake, let's just ignore it for now...
 				}
 			}
 		}
-		data.put(snakes);
+		
+		data.put((byte) snakes);
 		buff.flip();
 		data.put(buff); // Add the snake data to the buffer.
 		

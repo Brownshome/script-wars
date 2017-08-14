@@ -110,6 +110,7 @@ function ColouredBlock(sx, sy, ex, ey, layer, displayHandler, colour) {
 	this.sy = sy;
 	this.ex = ex;
 	this.ey = ey;
+	this.colour = colour;
 }
 
 ColouredBlock.prototype = Object.create(ColouredBlock.prototype);

@@ -2,16 +2,24 @@ package brownshome.scriptwars.game.snakes;
 
 import com.liamtbrand.snake.model.IMapModel;
 
+import brownshome.scriptwars.connection.Network;
+import brownshome.scriptwars.game.Coordinates;
+
 public class BasicMapModel implements IMapModel {
+	private final boolean[][] data;
+	private final int width;
+	private final int height;
 	
-	public int data[][];
-	public int width;
-	public int height;
-	
-	public BasicMapModel(int width, int height) {
-		this.width = width;
-		this.height = height;
-		this.data = new int[width][height];
+	public BasicMapModel(Network network) {
+		width = getWidth();
+		height = getHeight();
+		data = new boolean[height][width];
+		
+		for(int y = 0; y < width; y++) {
+			for(int x = 0; x < height; x++) {
+				data[y][x] = network.getBoolean();
+			}
+		}
 	}
 	
 	@Override
@@ -26,10 +34,10 @@ public class BasicMapModel implements IMapModel {
 	
 	@Override
 	public boolean isWall(int x, int y) {
-		return ( data[x][y] == 1 ? true : false );
+		return data[y][x];
 	}
 	
-	public void setWall(int x, int y, boolean isWall) {
-		data[x][y] = ( isWall ? 1 : 0 );
+	public boolean isWall(Coordinates coord) {
+		return isWall(coord.getX(), coord.getY());
 	}
 }
