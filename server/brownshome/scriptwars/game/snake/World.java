@@ -8,7 +8,9 @@ import java.util.Map;
 
 import com.liamtbrand.snake.controller.AbstractGameObject;
 import com.liamtbrand.snake.controller.AbstractSnake;
+import com.liamtbrand.snake.controller.concrete.FoodObject;
 import com.liamtbrand.snake.controller.concrete.Snake;
+import com.liamtbrand.snake.controller.concrete.WormholeObject;
 import com.liamtbrand.snake.engine.Engine;
 import com.liamtbrand.snake.model.ISnakeModel;
 import com.liamtbrand.snake.model.ISnakeModel.Direction;
@@ -96,7 +98,8 @@ public class World {
 		Direction spawnDirection = Direction.EAST;
 		int spawnLength = 3;
 		ISnakeModel model = new BasicSnakeModel(spawnx, spawny, spawnDirection, spawnLength);
-		AbstractSnake snake = new Snake(model);
+		AbstractSnake snake;
+		snake = new Snake(model);
 		engine.stage.addSnake(snake);
 		this.registerSnake(player, snake);
 	}
