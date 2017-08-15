@@ -273,11 +273,6 @@ public class SnakeGame extends Game {
 
 	@Override
 	public void processData(ByteBuffer data, Player<?> player) {
-		//assert false;
-		
-		if(!world.hasSnake(player)) {
-			world.spawnSnake(player, engine);
-		}
 		
 		try {
 			if(!world.isAlive(player)) {
@@ -293,7 +288,9 @@ public class SnakeGame extends Game {
 		// .ordinal() on Direction.
 		if(data.hasRemaining()) {
 		
-			Direction direction = Direction.values()[data.get()%4];
+			int raw = data.get();
+			int ordinal = Math.abs(raw) % 4; // Ordinal value should be +ve and between 0 and 3 inclusive.
+			Direction direction = Direction.values()[ordinal];
 			try {
 				world.getSnake(player).model.setDirection(direction);
 			} catch (WorldException e) {
