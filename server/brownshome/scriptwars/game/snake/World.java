@@ -69,6 +69,21 @@ public class World {
 		return snakes.containsKey(player);
 	}
 	
+	private void registerSnake(Player<?> player, AbstractSnake snake) {
+		// If we already have a registered snake, deregister it.
+		if(snakes.containsKey(player)) {
+			AbstractSnake oldSnake;
+			oldSnake = snakes.get(player);
+			snakes.remove(player);
+			if(owners.containsKey(oldSnake)) {
+				owners.remove(oldSnake);
+			}
+		}
+		// Register the new snake
+		snakes.put(player, snake);
+		owners.put(snake, player);
+	}
+	
 	/**
 	 * Puts a snake on the stage of the passed engine.
 	 * @param player
@@ -83,8 +98,7 @@ public class World {
 		ISnakeModel model = new BasicSnakeModel(spawnx, spawny, spawnDirection, spawnLength);
 		AbstractSnake snake = new Snake(model);
 		engine.stage.addSnake(snake);
-		snakes.put(player, snake);
-		owners.put(snake, player);
+		this.registerSnake(player, snake);
 	}
 	
 	public Player<?> getOwner(AbstractSnake snake) throws WorldException {

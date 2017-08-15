@@ -279,6 +279,15 @@ public class SnakeGame extends Game {
 			world.spawnSnake(player, engine);
 		}
 		
+		try {
+			if(!world.isAlive(player)) {
+				world.spawnSnake(player, engine);
+			}
+		} catch (WorldException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		// Incoming data from player:
 		// Player's move: direction.
 		// .ordinal() on Direction.

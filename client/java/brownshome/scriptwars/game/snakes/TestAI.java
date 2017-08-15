@@ -51,7 +51,7 @@ public class TestAI {
 			
 			Queue<Coordinates> queue = new ArrayDeque<>();
 			Map<Coordinates, Direction> route = new HashMap<>();
-			queue.add(me.getHead());
+			queue.add(me.getHead()); // TODO fix null pointer exception if snake dies.
 
 			loop:
 			while(!queue.isEmpty()) {
