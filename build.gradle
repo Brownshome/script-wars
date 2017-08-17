@@ -41,6 +41,13 @@ task clientJar(type: Jar) {
 	destinationDir = file("$buildDir/war/static")
 }
 
+task clientCSharp(type: Zip) {
+	archiveName 'script-wars-csharp.zip'
+	
+	from "client/csharp";
+	destinationDir = file("$buildDir/war/static")
+}
+
 task standaloneJar(type: Jar) {
 	archiveName 'standaloneJudge.jar'
 
@@ -99,6 +106,7 @@ javadoc {
 war {
 	dependsOn clientJar
 	dependsOn clientPython
+	dependsOn clientCSharp
 	dependsOn javadoc
 	
 	archiveName 'ROOT.war'
