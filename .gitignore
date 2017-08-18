@@ -26,3 +26,5 @@ settings\.prop
 /settings.prop
 
 results\.csv
+
+client/python/__pycache__/
