@@ -6,12 +6,23 @@ using Syroot.BinaryData;
 
 namespace ScriptWars.Connection
 {
+    /// <summary>
+    /// Manages a network connection to the Script Wars server.
+    /// </summary>
     public class Network
     {
+        /// <summary>
+        /// Buffer size to use for responses from the server.
+        /// </summary>
         private const int MaxOutputSize = 1024;
+
         private const int UdpProtocol = 1;
-        private const int UdpPort = 35565;
         private const int TcpProtocol = 2;
+
+        /// <summary>
+        /// Server port to use for <see cref="UdpConnection"/>.
+        /// </summary>
+        private const int UdpPort = 35565;
 
         private readonly int _id;
         private readonly Connection _connection;
@@ -168,6 +179,10 @@ namespace ScriptWars.Connection
             return boolValue;
         }
 
+        /// <summary>
+        /// Read a short from the last server tick.
+        /// </summary>
+        /// <returns>Short from response.</returns>
         public short ReadShort()
         {
             return _dataIn.ReadInt16();

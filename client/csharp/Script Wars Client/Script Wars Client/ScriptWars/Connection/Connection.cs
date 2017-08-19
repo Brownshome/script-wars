@@ -3,19 +3,23 @@ using System.Text;
 
 namespace ScriptWars.Connection
 {
-    public abstract class Connection
+    /// <summary>
+    /// Base connection to Script Wars server.
+    /// </summary>
+    /// <author></author>
+    internal abstract class Connection
     {
         private const int SuccessResponseCode = 0;
         private const int ErrorResponseCode = 1;
         private const int FailedToKeepUpResponseCode = 2;
         private const int ErrorInBufferResponseCode = 255;
-        
+
         /// <summary>
         /// Send data to the connected Script Wars server.
         /// </summary>
         /// <param name="data">Data to send.</param>
         public abstract void SendData(byte[] data);
-        
+
         /// <summary>
         /// Receive data from the connected Script Wars server.
         /// </summary>
@@ -30,23 +34,23 @@ namespace ScriptWars.Connection
         protected void CheckResponseCode(BinaryReader responseReader)
         {
             var responseCode = responseReader.ReadByte();
-            
+
             switch (responseCode)
             {
                 case ErrorResponseCode:
                     throw new ConnectionException(ConnectionStatus.Disconnected);
-                    
+
                 case FailedToKeepUpResponseCode:
                     throw new ConnectionException(ConnectionStatus.FailedToKeepUp);
-                    
+
                 case ErrorInBufferResponseCode:
                     var length = responseReader.ReadInt16();
                     var messageBytes = responseReader.ReadBytes(length);
                     throw new ConnectionException(ConnectionStatus.Error, Encoding.UTF8.GetString(messageBytes));
-                    
+
                 case SuccessResponseCode:
                     break;
-                    
+
                 default:
                     throw new ConnectionException(ConnectionStatus.Error, "Unknown response code " + responseCode);
             }
