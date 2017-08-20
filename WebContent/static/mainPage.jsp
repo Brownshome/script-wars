@@ -77,6 +77,7 @@
 				<div class="list-group">
 					<a class="list-group-item" href="${root}/static/script-wars-client.jar">Java library</a>
 					<a class="list-group-item" href="${root}/static/script-wars-python.zip">Python library</a>
+					<a class="list-group-item" href="${root}/static/script-wars-csharp.zip">C# library</a>
 				</div>
 			</div>
 			</div>
