@@ -13,12 +13,12 @@ namespace ScriptWars.Games.Tanks
         /// <summary>
         /// The width of the map in squares.
         /// </summary>
-        public int Width => _map.GetLength(0);
+        public int Width => _map.GetLength(1);
 
         /// <summary>
         /// The height of the map in squares.
         /// </summary>
-        public int Height => _map.GetLength(1);
+        public int Height => _map.GetLength(0);
 
         /// <summary>
         /// Positions of all ammo packs on the map.
@@ -48,12 +48,12 @@ namespace ScriptWars.Games.Tanks
             int width = network.ReadByte();
             int height = network.ReadByte();
 
-            _map = new bool[width, height];
+            _map = new bool[height, width];
 
             // Wall positions
-            for (var i = 0; i < Width; i++)
-            for (var j = 0; j < Height; j++)
-                _map[j, i] = network.ReadBool();
+            for (var i = 0; i < Height; i++)
+            for (var j = 0; j < Width; j++)
+                _map[i, j] = network.ReadBool();
 
             // Tanks
             int tankCount = network.ReadByte();
@@ -102,7 +102,7 @@ namespace ScriptWars.Games.Tanks
         /// <returns>Whether or not <paramref name="position"/> holds a wall.</returns>
         public bool IsWall(Coordinates position)
         {
-            return _map[position.X, position.Y];
+            return _map[position.Y, position.X];
         }
     }
 }
