@@ -37,6 +37,7 @@ namespace ScriptWars.Games.Tanks
 
         private readonly bool[,] _map;
         private readonly IDictionary<Coordinates, Tank> _tankMap = new Dictionary<Coordinates, Tank>();
+        private readonly IDictionary<Coordinates, Shot> _shotMap = new Dictionary<Coordinates, Shot>();
 
         /// <summary>
         /// Read the game world from the server tick response.
@@ -66,13 +67,12 @@ namespace ScriptWars.Games.Tanks
 
             // Shots
             int shotCount = network.ReadByte();
-            var shots = new List<Shot>();
             for (var i = 0; i < shotCount; i++)
             {
                 var shot = new Shot(network);
-                shots.Add(shot);
+                _shotMap.Add(shot.Position, shot);
             }
-            Shots = new ReadOnlyCollection<Shot>(shots);
+            Shots = new ReadOnlyCollection<Shot>(_shotMap.Values.ToList());
 
             // Ammo
             int ammoCount = network.ReadByte();
@@ -93,6 +93,16 @@ namespace ScriptWars.Games.Tanks
         public Tank GetTank(Coordinates position)
         {
             return _tankMap.TryGetValue(position, out var tank) ? tank : null;
+        }
+
+        /// <summary>
+        /// Get the <see cref="Shot"/> at a particular position.
+        /// </summary>
+        /// <param name="position">Position to look for a <see cref="Shot"/> at.</param>
+        /// <returns><see cref="Shot"/> data or null if there is no shot at <paramref name="position"/>.</returns>
+        public Shot GetShot(Coordinates position)
+        {
+            return _shotMap.TryGetValue(position, out var shot) ? shot : null;
         }
 
         /// <summary>
