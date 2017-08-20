@@ -17,7 +17,7 @@ namespace ScriptWars.Games.Tanks
         /// <param name="y">Y coordinate.</param>
         public Coordinates(int x, int y)
         {
-            X = y;
+            X = x;
             Y = y;
         }
 
