@@ -103,14 +103,6 @@ namespace ScriptWars.Connection
                 ConnectionStatus = ConnectionStatus.Connected;
                 _dataOutStream.SetLength(MaxOutputSize);
 
-                var f = new FileInfo("D://hardai_cs.out");
-
-                using (var outstream = f.OpenWrite())
-                {
-                    var b = _dataOutStream.ToArray();
-                    outstream.Write(b, 0, b.Length);
-                }
-
                 _connection.SendData(_dataOutStream.ToArray());
                 InitialiseOutBuffer();
 
