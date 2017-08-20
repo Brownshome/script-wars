@@ -53,7 +53,7 @@ namespace ScriptWars.Games.Tanks
             // Wall positions
             for (var i = 0; i < _map.GetLength(0); i++)
             for (var j = 0; j < _map.GetLength(1); j++)
-                _map[i, j] = network.ReadBool();
+                _map[j, i] = network.ReadBool();
 
             // Tanks
             int tankCount = network.ReadByte();

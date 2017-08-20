@@ -170,10 +170,10 @@ namespace ScriptWars.Connection
                 streamOriginalPosition++;
             }
 
+            inStream.Seek(_boolBytePosition, SeekOrigin.Begin);
             int currentByte = _dataIn.ReadByte();
             var boolValue = (currentByte & _boolBit) != 0;
 
-            inStream.Seek(streamOriginalPosition, SeekOrigin.Begin);
             _boolBit <<= 1;
 
             return boolValue;
