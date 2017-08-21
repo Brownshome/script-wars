@@ -26,7 +26,7 @@
 		
 		<p>Script wars is a site where you can write small scripts, in any language you want. These scripts
 		then play simple games against the creations of other like-minded people, or if you are feeling
-		brave, my own personal concoctions, for honour and glory (and also the chance to replace the top AI).</p>
+		brave, my own personal concoctions, for honor and glory (and also the chance to replace the top AI).</p>
 			
 		<p>The games are designed to have simple rule-sets and yet have potential for innovation and deep 
 		tactics if you are feeling up to it. So while you can make something functional within 100 lines,
@@ -125,6 +125,7 @@
 			writing one when I was too lazy.</li>
 			<li><a href="https://github.com/Ravid12">Ravid</a> for introducing me to the wonderful world of Bootstrap and taking the
 			 first crack at the css.</li>
+			<li><a href="https://github.com/hchokshi">Harsh</a> for making the C# API.</li>
 		</ul>
 	</div>
 
