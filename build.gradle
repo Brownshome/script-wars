@@ -98,9 +98,8 @@ javadoc {
 	source = [sourceSets.main.allJava]
 	destinationDir = file("$docsDir/doc")
 	
-	configure(options) {
-		links = [ 'http://download.oracle.com/javase/8/docs/api/', 'http://download.oracle.com/javaee/7/api/' ]
-	}
+	options.links = [ 'http://download.oracle.com/javase/8/docs/api/', 'http://download.oracle.com/javaee/7/api/' ]
+	options.setMemberLevel JavadocMemberLevel.PUBLIC
 }
 
 war {
