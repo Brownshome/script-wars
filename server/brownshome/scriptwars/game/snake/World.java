@@ -71,16 +71,17 @@ public class World {
 		return snakes.containsKey(player);
 	}
 	
+	private void deregisterSnake(Player<?> player) {
+		if(snakes.containsKey(player)) {
+			owners.remove(snakes.get(player));
+			snakes.remove(player);
+		}
+	}
+	
 	private void registerSnake(Player<?> player, AbstractSnake snake) {
 		// If we already have a registered snake, deregister it.
-		if(snakes.containsKey(player)) {
-			AbstractSnake oldSnake;
-			oldSnake = snakes.get(player);
-			snakes.remove(player);
-			if(owners.containsKey(oldSnake)) {
-				owners.remove(oldSnake);
-			}
-		}
+		deregisterSnake(player);
+		
 		// Register the new snake
 		snakes.put(player, snake);
 		owners.put(snake, player);
@@ -100,8 +101,8 @@ public class World {
 		ISnakeModel model = new BasicSnakeModel(spawnx, spawny, spawnDirection, spawnLength);
 		AbstractSnake snake;
 		snake = new Snake(model);
-		engine.stage.addSnake(snake);
 		this.registerSnake(player, snake);
+		engine.stage.addSnake(snake);
 	}
 	
 	public Player<?> getOwner(AbstractSnake snake) throws WorldException {
