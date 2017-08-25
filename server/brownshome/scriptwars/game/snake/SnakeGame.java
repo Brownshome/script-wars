@@ -4,6 +4,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -36,6 +38,8 @@ import brownshome.scriptwars.game.snake.World.WorldException;
 public class SnakeGame extends Game {
 	private final Engine engine;
 	private World world;
+	
+	private final Collection<Player> playersToSpawn = new ArrayList<>();
 	
 	public final int BYTE_LENGTH = 8;
 	
@@ -96,7 +100,14 @@ public class SnakeGame extends Game {
 
 	@Override
 	protected void tick() {
+		
 		engine.tick();
+		
+		for(Player<?> player : playersToSpawn) {
+			world.spawnSnake(player, engine);
+		}
+		
+		playersToSpawn.clear();
 	}
 
 	public static String getName() {
@@ -266,21 +277,19 @@ public class SnakeGame extends Game {
 	
 	@Override
 	public void addPlayer(Player<?> player) throws InvalidIDException {
-		world.spawnSnake(player, engine);
+		playersToSpawn.add(player);
 		
 		super.addPlayer(player);
 	}
 
 	@Override
 	public void processData(ByteBuffer data, Player<?> player) {
-		
 		try {
 			if(!world.isAlive(player)) {
-				world.spawnSnake(player, engine);
+				playersToSpawn.add(player);
 			}
 		} catch (WorldException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			assert false : "This player was never spawned";
 		}
 		
 		// Incoming data from player:
@@ -294,8 +303,7 @@ public class SnakeGame extends Game {
 			try {
 				world.getSnake(player).model.setDirection(direction);
 			} catch (WorldException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				assert false : "This player was never spawned";
 			}
 		}
 		
