@@ -56,7 +56,7 @@ GridDisplayHandler.prototype.render = function() {
 			
 			if(this.dynamicObjects)
 				for(let i = 0; i < this.dynamicObjects.length; i++) {
-					if(this.dynamicObjects[i].layer == layer) this.dynamicObjects[i].render();
+					if(this.dynamicObjects[i] && this.dynamicObjects[i].layer == layer) this.dynamicObjects[i].render();
 				}
 		}
 	}

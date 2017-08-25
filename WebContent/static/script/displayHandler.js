@@ -92,7 +92,8 @@ DisplayHandler.prototype.updatePlayerScores = function(dataView) {
 		const id = dataView.getInt32(index * 8)
 		const score = dataView.getInt32(index * 8 + 4);
 		
-		document.getElementById("Score-" + id).innerHTML = score;
+		let player = document.getElementById("Score-" + id);
+		if(!player) player.innerHTML = score;
 	} 
 };
 
