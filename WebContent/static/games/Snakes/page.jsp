@@ -41,48 +41,13 @@ to move UP subtract one from your y coordinate.
 </div>
 <hr>
 
-<h2>Example Situations</h2>
-<div class="media"><div class="media-left">
-		<img class="media-object" src="${root}/static/games/Tanks/eg1.png" alt="Example 1" style="width:128px;height:128px;border:5px solid black">
-	</div><div class="media-body">
-		<p></p>
-</div></div>
-
-<div class="media"><div class="media-left">
-		<img class="media-object" src="${root}/static/games/Tanks/eg2.png" alt="Example 2" style="width:128px;height:128px;border:5px solid black">
-	</div><div class="media-body">
-		<p></p>
-</div></div>
-
-<div class="media"><div class="media-left">
-		<img class="media-object" src="${root}/static/games/Tanks/eg3.png" alt="Example 3" style="width:128px;height:128px;border:5px solid black">
-	</div><div class="media-body">
-		<p></p>
-</div></div>
-
-<div class="media"><div class="media-left">
-		<img class="media-object" src="${root}/static/games/Tanks/eg4.png" alt="Example 4" style="width:128px;height:128px;border:5px solid black">
-	</div><div class="media-body">
-		<p></p>
-</div></div>
-<hr>
-
 <h2>Data protocol</h2>
-<p>There are two different ways to connect to the game. The first is to use the custom
-made Java API kindly written by <a href="https://github.com/liamtbrand">Liam</a> to connect to the game. 
-The second is to use the Network class to connect to the game, this is the lower level API that
-all games use and allows access to the raw data sent from the server. The first option is more 
-recommended for general use, but if you are using a language other than Java or know 
-what you are doing the second approach may be more applicable.</p>
+<p>Currently the only option for connecting is to use the Network class.
+This is the lower level API that all games use and allows access to the raw data sent from the server.</p>
 
 <div class="panel panel-default"><div class="panel-body">
 <ul class="nav nav-tabs">
 	<li class="active">
-		<a href="#custom" data-toggle="tab">
-			<strong>High Level / Java</strong>
-		</a>
-	</li>
-	<li>
 		<a href="#basic" data-toggle="tab">
 			<strong>Low Level / Cross Code</strong>
 		</a>
@@ -90,67 +55,7 @@ what you are doing the second approach may be more applicable.</p>
 </ul>
 
 <div class="tab-content">
-	<div class="tab-pane active" id="custom">
-		<h3>High Level API</h3>
-	
-		<p>This is an API written by <a href="https://github.com/liamtbrand">Liam</a> to 
-		make the creation of Tank bots quicker. It handles the reading of the data 
-		and several common tasks for you to allow you to concentrate more on the 
-		more important things such as <strong>beating your opponents into submission.</strong></p>
-		
-		<p>There are several classes that you will need to pay attention to in order to use
-		this API:</p>
-		
-		<p>The <code>brownshome.scriptwars.game.tanks.Direction</code> class contains constants
-		for each direction and methods for manipulating coordinates and directions.
-		<br>The <code>brownshome.scriptwars.game.tanks.Shot</code> class describes a shot on the game
-		grid. 
-		<br>The <code>brownshome.scriptwars.game.tanks.Tank</code> class describes a tank in the game
-		world. 
-		<br>The <code>brownshome.scriptwars.game.tanks.World</code> class contains most of the methods that
-		can be used to interact with the map, such as the position of ammo pickups, shots and walls.
-		<br>The <code>brownshome.scriptwars.game.tanks.Action</code> class contains constants for
-		all the actions a tank can make. 
-		<br>The <code>brownshome.scriptwars.game.tanks.Coordinates</code>
-		class is an immutable (it cannot be edited) object containing the methods <code>int getX()</code>
-		and <code>int getY()</code> that represents a position on the game world. 
-		<br>Finally, the <code>brownshome.scriptwars.game.tanks.TankAPI</code> contains all the functions needed to interact
-		with the game server.</p>
-		
-		<p>First call the constructor <code>TankAPI(int id, String ip, String name)
-		</code> to create a <code>TankAPI</code> object to communicate with. At the start
-		of each loop call <code>nextTick()</code>. This method gets data from the server and sends any
-		actions you have set, it returns a boolean which will be false if the connection has failed for
-		some reason. The get data from the server using the functions in the API and use it to decide what
-		to do. Some useful functions are <code>getVisibleShots()</code>, <code>getVisibleTanks()</code>,
-		<code>getMap().isWall(Coordinates coordinate)</code> and <code>getMap().getTank(Coordinates coordinate)</code>. There
-		are other functions that may be useful; a link to the documentation is provided at the bottom of this section.
-		<br>
-		Once you have decided what action to take call either <code>move(Direction direction)</code>, 
-		<code>shoot(Direction direction)</code> or <code>doNothing()</code>. This will set what action
-		your tank will do when <code>nextTick()</code> is called.<p>
-		
-		<p class="text-center"><a class="btn btn-primary btn-lg" href="/doc/brownshome/scriptwars/game/tanks/TankAPI.html">Documentation</a></p>
-		
-		<h3>Example Code</h3>
-		<p>This is a basic AI showing how to use the classes. This AI will move randomly while shooting at 
-		any enemies it can see. The command to compile this AI is <code>javac -cp &quot;script-wars-client.jar&quot; 
-		ExampleTankAI.java</code> and the command to run this AI is <code>java -cp &quot;.;script-wars-client.jar&quot;
-		ExampleTankAI INSERT-ID-HERE</code></p>
-		
-<pre><code>
-import java.io.IOException;
-import brownshome.scriptwars.game.tanks.*;
-public class ExampleTankAI {	/**	 * The main method to start the AI and connect to the server.	 * 	 * args[0] should contain the game id.	 * You can request one from: http://script-wars.com/games/Tanks	 * by clicking the 'Join' button.	 * 	 * @param args The input arguments containing the ID allocated by the server	 * @throws IOException If we failed to connect to the server	 */	public static void main(String[] args) throws IOException {		// args[0] should contain the game id.		// You can request one from: http://script-wars.com/games/Tanks		// by clicking the 'Join' button				int id;		if(args.length &gt; 0){			id = Integer.valueOf(args[0]);		} else {			System.out.println(&quot;Usage: JAVACOMMAND serverid&quot;);			System.exit(1);			return;		}
-		TankAPI api = new TankAPI(id, &quot;www.script-wars.com&quot;, &quot;Example AI 1&quot;);
-		while(api.nextTick()) {
-			if(!api.isAlive()) {
-				continue;
-			}			// Move randomly, this will be overwritten if we can see someone.			int direction = (int) (Math.random() * 4);			api.move(Direction.values()[direction]);
-				// See if there is a tank in our field of view,			// and if there is select it.			Tank targetTank = null;			for(Tank tank : api.getVisibleTanks()){				targetTank = tank;			}				// If we can see a tank, lets shoot it.			if(targetTank != null){				Coordinates targetPosition = targetTank.getPosition();				Coordinates myPosition = api.getCurrentPosition();						Direction targetDirection = Direction.getDirection(targetPosition, myPosition);				if(targetDirection != null) {					//We have a clear shot on the target					api.shoot(targetDirection);				}			}				System.out.println(&quot;Position: &quot; + api.getCurrentPosition());		}				System.out.println(&quot;Disconnected from server:\n\t&quot; + api.getConnectionStatus());	}}
-</code></pre>
-	</div>
-	<div class="tab-pane" id="basic">
+	<div class="tab-pane active" id="basic">
 		<h3>Low Level API</h3>
 		<p>This is a simpler API that is used internally by all games and all
 		high level APIs. Due to it's simplicity it is sometimes the only API
@@ -164,7 +69,7 @@ import java.io.IOException;
 		
 		<p class="text-center"><a class="btn btn-primary btn-lg" href="${root}/doc/brownshome/scriptwars/connection/Network.html">Documentation</a></p>
 		
-		<p>For the tank game in particular the data received from the server is laid out in the table below.</p>
+		<p>For the snake game the data received from the server is laid out in the table below.</p>
 		<table class="table">
 			<tr>
 				<th>Name</th>
@@ -173,89 +78,80 @@ import java.io.IOException;
 				<th>Meaning</th>
 			</tr>
 			<tr>
-				<td>isAlive</td>
-				<td>1</td>
-				<td>Byte</td>
-				<td>0 if the player is dead, 1 if the player is dead. There will be no more data to follow if this value is 0.</td>
-			</tr>
-			<tr>
-				<td>ammoRemaining</td>
-				<td>1</td>
-				<td>Byte</td>
-				<td>The amount of ammunition you have remaining.</td>
-			</tr>
-			<tr>
-				<td>xPos</td>
-				<td>1</td>
-				<td>Byte</td>
-				<td>The x coordinate of the player.</td>
-			</tr>
-			<tr>
-				<td>yPos</td>
-				<td>1</td>
-				<td>Byte</td>
-				<td>The y coordinate of the player.</td>
-			</tr>
-			<tr>
-				<td>gridWidth</td>
+				<td>mapWidth</td>
 				<td>1</td>
 				<td>Byte</td>
 				<td>The width of the game grid.</td>
 			</tr>
 			<tr>
-				<td>gridHeight</td>
+				<td>mapHeight</td>
 				<td>1</td>
 				<td>Byte</td>
 				<td>The height of the game grid.</td>
 			</tr>
 			<tr>
 				<td>isWall</td>
-				<td>gridWidth * gridHeight</td>
+				<td>mapWidth * mapHeight</td>
 				<td>Boolean</td>
-				<td>true if there is a wall, false otherwise. The values are from top to bottom, left to right, row by row.
-				e.g. (0, 0) to (gridWidth - 1, 0) then (1, 0) ...</td>
+				<td>True if there is a wall, False otherwise. The values are from top to bottom, left to right, row by row. e.g. (0, 0) to (mapWidth - 1, 0) then (1, 0)</td>
 			</tr>
 			<tr>
-				<td>numberOfTanks</td>
+				<td>numberOfSnakes</td>
 				<td>1</td>
 				<td>Byte</td>
-				<td>The number of tanks that can be seen by the player.</td>
+				<td>The number of snakes to be received. For each snake, read the ID, the length, and then read the segments for the length of the snake.</td>
 			</tr>
 			<tr>
-				<td>tankData</td>
-				<td>numberOfTanks</td>
-				<td>(Byte, Byte, Byte)</td>
-				<td>The x and y coordinates and a unique ID of a tank that can be seen. 
-				No guarantees are made about the order of the tanks. If a tank disconnects it's ID may be re-used</td>
+				<td>snakeId</td>
+				<td>1</td>
+				<td>Byte (Integer?)</td>
+				<td>The ID of the snake we are reading.</td>
 			</tr>
 			<tr>
-				<td>numberOfShots</td>
+				<td>snakeLength</td>
+				<td>1</td>
+				<td>Byte (Integer?)</td>
+				<td>The length of the snake we are reading.</td>
+			</tr>
+			<tr>
+				<td>segmentX</td>
 				<td>1</td>
 				<td>Byte</td>
-				<td>The number of shots in the game</td>
+				<td>The x position on the grid of the current snakes nth segment.</td>
 			</tr>
 			<tr>
-				<td>shotData</td>
-				<td>numberOfShots</td>
-				<td>(Byte, Byte, Byte)</td>
-				<td>The x and y coordinates followed by the direction of the shot. The values for
-				specific directions are shown below.</td>
-			</tr>
-			<tr>
-				<td>numberOfAmmoPickups</td>
+				<td>segmentY</td>
 				<td>1</td>
 				<td>Byte</td>
-				<td>The number of ammo pickups in the game</td>
+				<td>The y position on the grid of the current snakes nth segment.</td>
 			</tr>
 			<tr>
-				<td>ammoPickupData</td>
-				<td>numberOfAmmoPickups</td>
-				<td>(Byte, Byte)</td>
-				<td>The x and y coordinates of the pickup</td>
+				<td>numberOfGameObjects</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The number of game objects to be received. For each game object, read the x and y coordinates.</td>
+			</tr>
+			<tr>
+				<td>gameObjectX</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The x position on the grid of the game object being received.</td>
+			</tr>
+			<tr>
+				<td>gameObjectY</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The y position on the grid of the game object being received.</td>
+			</tr>
+			<tr>
+				<td>gameObjectType</td>
+				<td>1</td>
+				<td>Byte</td>
+				<td>The type of the game object being received.</td>
 			</tr>
 		</table>
 		
-		<p>Each turn two bytes must be sent to the server.</p>
+		<p>Each turn one byte must be sent to the server.</p>
 		<table class="table">
 			<tr>
 				<th>Name</th>
@@ -264,200 +160,44 @@ import java.io.IOException;
 				<th>Meaning</th>
 			</tr>
 			<tr>
-				<td>action</td>
-				<td>1</td>
-				<td>Byte</td>
-				<td>The value given in the action table. If the action is nothing then there doesn't need to be a direction
-				byte send.</td>
-			</tr>
-			<tr>
 				<td>direction</td>
 				<td>1</td>
 				<td>Byte</td>
-				<td>The direction that the action is to take place in.</td>
+				<td>The direction that the snake should move.</td>
 			</tr>
 		</table>
 		
-		<p>The values of the direction and action bytes are given below.</p>
+		<p>The values of the direction byte, and game object types are given below.</p>
 		<div class="row"><div class="col-md-6">
-		<h4>Action Byte</h4>
-		<table class="table">
-			<tr>
-				<th>Value</th>
-				<th>Meaning</th>
-			</tr><tr>
-				<td>0</td><td>No action (No direction required)</td>
-			</tr><tr>
-				<td>1</td><td>Move</td>
-			</tr><tr>	
-				<td>2</td><td>Shoot</td>
-			</tr>
-		</table>
+			<h4>Direction Byte</h4>
+			<table class="table">
+				<tr>
+					<th>Value</th>
+					<th>Meaning</th>
+				</tr><tr>
+					<td>0</td><td>North</td>
+				</tr><tr>
+					<td>1</td><td>South</td>
+				</tr><tr>	
+					<td>2</td><td>East</td>
+				</tr><tr>	
+					<td>3</td><td>West</td>
+				</tr>
+			</table>
 		</div><div class="col-md-6">
-		<h4>Direction Byte</h4>
-		<table class="table">
-			<tr>
-				<th>Value</th>
-				<th>Meaning</th>
-			</tr><tr>
-				<td>0</td><td>Up</td>
-			</tr><tr>
-				<td>1</td><td>Left</td>
-			</tr><tr>	
-				<td>2</td><td>Down</td>
-			</tr><tr>	
-				<td>3</td><td>Right</td>
-			</tr>
-		</table>
+			<h4>Game Object Types</h4>
+			<table class="table">
+				<tr>
+					<th>Value</th>
+					<th>Meaning</th>
+				</tr><tr>
+					<td>0</td><td>Food</td>
+				</tr><tr>
+					<td>1</td><td>Wormhole</td>
+				</tr>
+			</table>
 		</div></div>
 		
-		<h3>Example Code</h3>
-		<pre><code>
-import java.io.IOException;
-
-import brownshome.scriptwars.connection.Network;
-
-/**
- * This is an example of reading data from the server. We avoid using the pre-built Tank and
- * Shot classes as they would not be available in languages other than Java. The actual processing
- * of the data is left to the reader. But structs or classes would be useful.
- * 
- * @author James
- */
-public class ExampleTankAIBasic {
-	private static Network network;
-	
-	/**
-	 * The main method to start the AI and connect to the server.
-	 * 
-	 * args[0] should contain the game id.
-	 * You can request one from: http://script-wars.com/games/Tanks
-	 * by clicking the 'Join' button.
-	 * 
-	 * @param args The input arguments containing the ID allocated by the server
-	 * @throws IOException If we failed to connect to the server
-	 */
-	public static void main(String[] args) throws IOException {
-		// args[0] should contain the game id.
-		// You can request one from: http://script-wars.com/games/Tanks
-		// by clicking the 'Join' button
-
-		int id;
-		if(args.length &gt; 0){
-			id = Integer.valueOf(args[0]);
-		} else {
-			System.out.println(&quot;Usage: JAVACOMMAND serverid&quot;);
-			System.exit(1);
-			return;
-		}
-
-		network = new Network(id, &quot;www.script-wars.com&quot;, &quot;John Smith Low Level&quot;);
-		int direction = 0; //The initial direction, UP
-		boolean hasHitWall = false;
-
-		while(network.nextTick()) {
-			boolean isAlive = network.getByte() == 1;
-			if(!isAlive) {
-				network.sendByte(0);
-				System.out.println(&quot;We are dead, not big surprise&quot;);
-				continue;
-			}
-			
-			int ammo = network.getByte();
-			
-			int xPos = network.getByte();
-			int yPos = network.getByte();
-			
-			int width = network.getByte();
-			int height = network.getByte();
-			
-			boolean[][] map = new boolean[width][height];
-			for(int y = 0; y &lt; height; y++) {
-				for(int x = 0; x &lt; width; x++) {
-					map[y][x] = network.getBoolean();
-				}
-			}
-			
-			int noTanks = network.getByte();
-			
-			int[][] tanks = new int[noTanks][3]; //An array holding the X, Y and ID of each tank
-			for(int i = 0; i &lt; noTanks; i++) {
-				tanks[i][0] = network.getByte();
-				tanks[i][1] = network.getByte();
-				tanks[i][2] = network.getByte();
-			}
-			
-			int noShots = network.getByte();
-			
-			int[][] shots = new int[noShots][3]; //An array holding the X, Y and direction of each shot
-			for(int i = 0; i &lt; noShots; i++) {
-				shots[i][0] = network.getByte();
-				shots[i][1] = network.getByte();
-				shots[i][2] = network.getByte();
-			}
-			
-			int noAmmo = network.getByte();
-			int[][] ammoPickups = new int[noAmmo][2];
-			for(int i = 0; i &lt; noAmmo; i++) {
-				ammoPickups[i][0] = network.getByte();
-				ammoPickups[i][1] = network.getByte();
-			}
-			
-			//For the actual AI, we shall hug the left wall and keep moving around, should keep things interesting
-			//Check the anti-clockwise direction, then the straight, then the clockwise direction, then the reverse
-			int antiClock = (direction + 1) % 4; //Cool right : D
-			int clockwise = (direction + 3) % 4;
-			int reverse = (direction + 2) % 4;
-			
-			if(isWall(direction, xPos, yPos, map)) {
-				hasHitWall = true;
-			}
-			
-			if(hasHitWall) {
-				if(!isWall(antiClock, xPos, yPos, map)) {
-					direction = antiClock;
-				} else if(!isWall(direction, xPos, yPos, map)){
-					//Don't change the direction
-				} else if(!isWall(clockwise, xPos, yPos, map)) {
-					direction = clockwise;
-				} else if(!isWall(reverse, xPos, yPos, map)) {
-					direction = reverse;
-				} else {
-					//We are trapped in a box, time to panic, and panic hard
-				}
-			}
-			
-			network.sendByte(1); //Move
-			network.sendByte(direction);
-		}
-		
-		System.out.println(network.getConnectionStatus()); //This function may not be available on some languages.
-	}
-	
-	/**
-	 * Check if there is a wall in the direction we are trying to go.
-	 */
-	private static boolean isWall(int direction, int xPos, int yPos, boolean[][] map) {
-		switch(direction) {
-			case 0: //UP
-				yPos--;
-				break;
-			case 1: //LEFT
-				xPos--;
-				break;
-			case 2: //DOWN
-				yPos++;
-				break;
-			case 3: //RIGHT
-				xPos++;
-				break;
-		}
-		
-		//x and yPos are now the next space.
-		return map[yPos][xPos];
-	}
-}
-		</code></pre>
 	</div>
 </div>
 </div>
