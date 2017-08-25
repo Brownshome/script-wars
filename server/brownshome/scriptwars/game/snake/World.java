@@ -3,8 +3,12 @@ package brownshome.scriptwars.game.snake;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 import com.liamtbrand.snake.controller.AbstractGameObject;
 import com.liamtbrand.snake.controller.AbstractSnake;
@@ -94,11 +98,18 @@ public class World {
 	 */
 	public void spawnSnake(Player<?> player, Engine engine) {
 		// TODO make this choose a suitable spawn based on the map and current snakes, etc.
-		int spawnx = 2;
-		int spawny = 7;
-		Direction spawnDirection = Direction.EAST;
+		List<Coordinates> spawnableCoords = new ArrayList<>();
+		for(int x = 0; x < engine.stage.getMap().getWidth(); x++) {
+			for(int y = 0; y < engine.stage.getMap().getHeight(); y++) {
+				if(!engine.stage.getMap().isWall(x, y) && engine.stage.getGameObjectsAt(x, y).isEmpty())
+					spawnableCoords.add(new Coordinates(x, y));
+			}
+		}
+		Coordinates spawn = spawnableCoords.get(new Random().nextInt(spawnableCoords.size()));
+		
+		Direction spawnDirection = Direction.WEST;
 		int spawnLength = 3;
-		ISnakeModel model = new BasicSnakeModel(spawnx, spawny, spawnDirection, spawnLength);
+		ISnakeModel model = new BasicSnakeModel(spawn.getX(), spawn.getY(), spawnDirection, spawnLength);
 		AbstractSnake snake;
 		snake = new Snake(model);
 		this.registerSnake(player, snake);
