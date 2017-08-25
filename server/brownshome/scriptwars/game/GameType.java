@@ -156,6 +156,7 @@ public class GameType {
 	public void endGame(Game game) {
 		gamesLock.writeLock().lock();
 		games.remove(game);
+		signalListUpdate();
 		gamesLock.writeLock().unlock();
 	}
 	
